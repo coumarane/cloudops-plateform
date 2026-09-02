@@ -1,9 +1,65 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
+
+
+class CloudProviderRow(Base):
+    __tablename__ = "cloud_providers"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+class PlatformRegionRow(Base):
+    __tablename__ = "platform_regions"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    provider: Mapped[str] = mapped_column(String(32), ForeignKey("cloud_providers.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(32), nullable=False)
+    cloud_region: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+class CloudAccountRow(Base):
+    __tablename__ = "cloud_accounts"
+    __table_args__ = (UniqueConstraint("alias", name="uq_cloud_accounts_alias"),)
+
+    id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    platform_region: Mapped[str] = mapped_column(String(32), nullable=False)
+    cloud_region: Mapped[str] = mapped_column(String(64), nullable=False)
+    alias: Mapped[str] = mapped_column(String(128), nullable=False)
+    account_id: Mapped[str] = mapped_column(String(32), default="")
+    role_arn: Mapped[str] = mapped_column(String(512), default="")
+    external_id: Mapped[str] = mapped_column(String(256), default="")
+    account_class: Mapped[str] = mapped_column(String(32), nullable=False)
+    readonly: Mapped[bool] = mapped_column(Boolean, default=False)
+    session_name: Mapped[str] = mapped_column(String(128), default="")
+    cluster_environment_tag: Mapped[str] = mapped_column(String(64), default="Environment")
+
+
+class CloudEnvironmentRow(Base):
+    __tablename__ = "cloud_environments"
+
+    id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    account_id: Mapped[str] = mapped_column(String(128), ForeignKey("cloud_accounts.id"), nullable=False)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    platform_region: Mapped[str] = mapped_column(String(32), nullable=False)
+    cloud_region: Mapped[str] = mapped_column(String(64), nullable=False)
+    environment: Mapped[str] = mapped_column(String(32), nullable=False)
+    account_alias: Mapped[str] = mapped_column(String(128), nullable=False)
+    readonly: Mapped[bool] = mapped_column(Boolean, default=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    discovery_active: Mapped[bool] = mapped_column(Boolean, default=False)
+    last_discovery_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_health_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_certificate_scan_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_successful_scan_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error: Mapped[str] = mapped_column(Text, default="")
+    last_error_class: Mapped[str] = mapped_column(String(64), default="")
+    last_error_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class EksClusterRow(Base):
@@ -26,6 +82,7 @@ class EksClusterRow(Base):
     created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     present: Mapped[bool] = mapped_column(Boolean, default=True)
+    environment_id: Mapped[str] = mapped_column(String(128), default="")
 
 
 class EksClusterHealthRow(Base):

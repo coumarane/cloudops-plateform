@@ -3,7 +3,14 @@ from collections.abc import Sequence
 from app.domain.enums import ENVIRONMENTS, Environment
 from app.domain.models import CellMetrics, DashboardResponse, KpiSummary, MatrixRow, OperationalAlert, RecentFailure, Scope
 from app.providers.registry import registry
-from app.services.overlay import overlay_certificates, overlay_clusters, overlay_environment, overlay_jobs, overlay_matrix
+from app.services.overlay import (
+    overlay_certificates,
+    overlay_clusters,
+    overlay_environment,
+    overlay_environment_identities,
+    overlay_jobs,
+    overlay_matrix,
+)
 
 
 def matches_scope(item: object, scope: Scope) -> bool:
@@ -51,7 +58,7 @@ class CatalogService:
         return filter_items(self._collect("list_accounts"), scope)
 
     def environments(self, scope: Scope):
-        return filter_items(self._collect("list_environments"), scope)
+        return filter_items(overlay_environment_identities(self._collect("list_environments")), scope)
 
     def environment_detail(self, provider, region, environment):
         record = registry.get(provider).get_environment(region, environment)
@@ -79,7 +86,7 @@ class CatalogService:
         return filter_items(self._collect("list_pipelines"), scope)
 
     def jobs(self, scope: Scope):
-        return filter_items(overlay_jobs(self._collect("list_jobs")), scope)
+        return overlay_jobs(filter_items(self._collect("list_jobs"), scope))
 
     def github_runs(self, scope: Scope):
         return filter_items(self._collect("list_github_runs"), scope)

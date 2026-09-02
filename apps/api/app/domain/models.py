@@ -69,6 +69,12 @@ class EnvironmentIdentity(StrictModel):
     cloudRegion: str
     account: str
     clusterName: str
+    readonly: bool = False
+    source: Literal["mock", "aws"] = "mock"
+    lastSuccessfulScan: str | None = None
+    lastError: str | None = None
+    discoveryActive: bool = False
+    awsAccountId: str | None = None
 
 
 class CellMetrics(StrictModel):
@@ -86,6 +92,9 @@ class CellMetrics(StrictModel):
     githubFailures: int = 0
     pipelineFailures: int = 0
     openAlerts: int = 0
+    live: bool = False
+    lastError: str | None = None
+    readonly: bool = False
 
 
 class MatrixRow(StrictModel):

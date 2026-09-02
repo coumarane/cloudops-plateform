@@ -20,8 +20,18 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, futu
 
 def init_db() -> None:
     from app.db import models  # noqa: F401
+    from app.topology.seed import seed_topology
 
     Base.metadata.create_all(bind=engine)
+    session = SessionLocal()
+    try:
+        seed_topology(session)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def get_session() -> Generator[Session, None, None]:

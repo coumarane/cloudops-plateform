@@ -79,7 +79,7 @@ def test_environment_detail_emea_uat() -> None:
     response = client.get("/api/v1/environments/aws/emea/uat")
     assert response.status_code == 200
     body = response.json()
-    assert body["identity"]["account"] == "nonprod-emea"
+    assert body["identity"]["account"] == "aws-emea-nonprod"
     assert body["clusters"][0]["status"] == "Unreachable"
     assert len(body["applications"]) == 4
 

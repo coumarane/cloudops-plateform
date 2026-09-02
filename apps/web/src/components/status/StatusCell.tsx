@@ -28,6 +28,8 @@ export function StatusCell({ cell, dimmed }: { cell: CellMetrics; dimmed?: boole
           {label}
         </span>
       ) : null}
+      {cell.live ? <span className="text-[9px] font-bold uppercase tracking-wide text-action">Live</span> : null}
+      {cell.readonly ? <span className="text-[9px] font-bold uppercase tracking-wide text-prd">RO</span> : null}
     </div>
   );
 }

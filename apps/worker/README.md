@@ -1,6 +1,6 @@
 # CloudOps worker
 
-Celery worker for AWS EMEA DEV discovery jobs.
+Celery worker for AWS multi-account discovery jobs (AMER, EMEA, APAC).
 
 ```bash
 cd apps/worker

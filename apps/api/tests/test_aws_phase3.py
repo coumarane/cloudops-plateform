@@ -1,10 +1,8 @@
 from datetime import datetime, timezone
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
-from app.db.models import AcmCertificateRow, EksClusterHealthRow, EksClusterRow, LiveScopeStateRow, PlatformJobRow
 from app.db.repository import InventoryRepository
 from app.db.session import SessionLocal
 from app.main import app
@@ -13,16 +11,6 @@ from app.providers.aws.models import ClusterHealthSnapshot, DiscoveredCertificat
 from botocore.exceptions import ClientError, NoCredentialsError
 
 client = TestClient(app)
-
-
-@pytest.fixture(autouse=True)
-def reset_live_tables() -> None:
-    session = SessionLocal()
-    for model in (EksClusterHealthRow, EksClusterRow, AcmCertificateRow, PlatformJobRow, LiveScopeStateRow):
-        session.query(model).delete()
-    session.commit()
-    session.close()
-
 
 
 def _cluster(name: str = "platform-dev") -> DiscoveredCluster:
@@ -37,7 +25,28 @@ def _cluster(name: str = "platform-dev") -> DiscoveredCluster:
         platform_version="eks.5",
         created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
         endpoint="https://eks.example.eu-west-1.amazonaws.com",
+        environment="DEV",
+        platform_region="EMEA",
+        account_alias="aws-emea-nonprod",
+        environment_id="aws-emea-nonprod-dev",
     )
+
+
+CLUSTER_ID = "eks-eu-west-1-123456789012-platform-dev"
+
+
+def _discovery_for_config(factory, config):
+    mock = MagicMock()
+    if config and config.platform_region == "EMEA" and config.account_alias == "aws-emea-nonprod":
+        mock.list_clusters.return_value = [_cluster()]
+        mock.describe_raw.return_value = {
+            "endpoint": "https://eks.example.eu-west-1.amazonaws.com",
+            "certificateAuthority": {"data": None},
+        }
+    else:
+        mock.list_clusters.return_value = []
+        mock.describe_raw.return_value = {}
+    return mock
 
 
 def _health(arn: str) -> ClusterHealthSnapshot:
@@ -58,8 +67,7 @@ def _health(arn: str) -> ClusterHealthSnapshot:
 
 
 def test_live_clusters_replace_aws_emea_dev_mock() -> None:
-    with patch("app.services.aws_sync.EksDiscovery") as discovery:
-        discovery.return_value.list_dev_clusters.return_value = [_cluster()]
+    with patch("app.services.aws_sync.EksDiscovery", side_effect=_discovery_for_config):
         response = client.post("/api/v1/jobs/aws/cluster-discovery")
     assert response.status_code == 200
     clusters = client.get("/api/v1/clusters", params={"provider": "aws", "region": "emea", "environment": "dev"}).json()["items"]
@@ -67,24 +75,19 @@ def test_live_clusters_replace_aws_emea_dev_mock() -> None:
     assert "platform-dev" in names
     assert "eu-west-1-dev-k8s" not in names
     assert all(item["source"] == "aws" for item in clusters)
-    detail = client.get("/api/v1/clusters/eks-eu-west-1-platform-dev")
+    detail = client.get(f"/api/v1/clusters/{CLUSTER_ID}")
     assert detail.status_code == 200
     assert detail.json()["version"] == "1.31"
 
 
 def test_health_and_certificate_scan_endpoints() -> None:
-    with patch("app.services.aws_sync.EksDiscovery") as discovery:
-        discovery.return_value.list_dev_clusters.return_value = [_cluster()]
-        discovery.return_value.describe_raw.return_value = {
-            "endpoint": "https://eks.example.eu-west-1.amazonaws.com",
-            "certificateAuthority": {"data": None},
-        }
+    with patch("app.services.aws_sync.EksDiscovery", side_effect=_discovery_for_config):
         client.post("/api/v1/jobs/aws/cluster-discovery")
         with patch("app.services.aws_sync.ClusterHealthCollector") as collector:
             collector.return_value.collect.return_value = _health(_cluster().arn)
             health_job = client.post("/api/v1/jobs/aws/health-scan")
     assert health_job.status_code == 200
-    health = client.get("/api/v1/clusters/eks-eu-west-1-platform-dev/health")
+    health = client.get(f"/api/v1/clusters/{CLUSTER_ID}/health")
     assert health.status_code == 200
     body = health.json()
     assert body["kubernetesApiReachable"] is True
@@ -102,9 +105,18 @@ def test_health_and_certificate_scan_endpoints() -> None:
         days_remaining=90,
         in_use_by=["arn:aws:elasticloadbalancing:eu-west-1:123456789012:loadbalancer/app/dev"],
         renewal_eligibility="ELIGIBLE",
+        environment="",
+        platform_region="EMEA",
+        account_alias="aws-emea-nonprod",
+        cloud_region="eu-west-1",
     )
-    with patch("app.services.aws_sync.AcmScanner") as scanner:
-        scanner.return_value.list_certificates.return_value = [cert]
+
+    def _acm(factory, config):
+        mock = MagicMock()
+        mock.list_certificates.return_value = [cert] if config.account_alias == "aws-emea-nonprod" else []
+        return mock
+
+    with patch("app.services.aws_sync.AcmScanner", side_effect=_acm):
         client.post("/api/v1/jobs/aws/certificate-scan")
     certs = client.get("/api/v1/certificates", params={"provider": "aws", "region": "emea", "environment": "dev"}).json()["items"]
     assert any(item["domain"] == "dev.emea.example.com" and item["source"] == "aws" for item in certs)
@@ -141,7 +153,7 @@ def test_repository_never_stores_access_keys() -> None:
     repo = InventoryRepository(session)
     repo.replace_clusters([_cluster()])
     session.commit()
-    row = repo.get_cluster("eks-eu-west-1-platform-dev")
+    row = repo.get_cluster(CLUSTER_ID)
     payload = {column.name: getattr(row, column.name) for column in row.__table__.columns}
     session.close()
     assert "access_key" not in str(payload).lower()
@@ -151,7 +163,7 @@ def test_repository_never_stores_access_keys() -> None:
 
 def test_discovery_without_credentials_returns_failed_job() -> None:
     with patch("app.services.aws_sync.EksDiscovery") as discovery:
-        discovery.return_value.list_dev_clusters.side_effect = AwsAuthError("missing credentials")
+        discovery.return_value.list_clusters.side_effect = AwsAuthError("missing credentials")
         response = client.post("/api/v1/jobs/aws/cluster-discovery")
     assert response.status_code == 200
     body = response.json()

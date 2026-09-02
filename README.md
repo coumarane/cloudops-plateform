@@ -2,7 +2,7 @@
 
 Enterprise multi-cloud operations portal for AWS EKS and Alibaba ACK.
 
-## Local run (Phase 3)
+## Local run (Phase 4)
 
 Start PostgreSQL and Redis if you are not using the SQLite / eager-Celery defaults, then FastAPI and Next.js.
 
@@ -28,6 +28,6 @@ cd apps/worker
 PYTHONPATH=../api:. python3 -m celery -A celery_app worker --loglevel=info
 ```
 
-Live AWS data is used only for **AWS EMEA NonProd DEV**. AMER, APAC, production cells, and Alibaba stay on mock data.
+Live AWS data is used for **AMER, EMEA, and APAC** after a successful scan of that account. Alibaba stays on mock data. PRD is read-only.
 
 Secret values are never returned by the API or rendered in the console. See [docs/aws-emea-dev-iam.md](docs/aws-emea-dev-iam.md).

@@ -50,7 +50,7 @@ def account_name(provider: Provider, region: Region, environment: Environment) -
     klass = "prod" if is_production(environment) else "nonprod"
     if provider == "Alibaba":
         return f"{klass}-china"
-    return f"{klass}-{region.lower()}"
+    return f"aws-{region.lower()}-{klass}"
 
 
 def cluster_name(provider: Provider, region: Region, environment: Environment) -> str:

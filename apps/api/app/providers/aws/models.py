@@ -19,6 +19,7 @@ class AwsConnectionConfig:
     environment: str
     account_alias: str
     cluster_environment_tag: str
+    environment_id: str = ""
 
 
 @dataclass
@@ -35,7 +36,8 @@ class DiscoveredCluster:
     endpoint: str | None = None
     environment: str = "DEV"
     platform_region: str = "EMEA"
-    account_alias: str = "nonprod-emea"
+    account_alias: str = "aws-emea-nonprod"
+    environment_id: str = ""
 
 
 @dataclass
@@ -70,5 +72,6 @@ class DiscoveredCertificate:
     last_checked: datetime = field(default_factory=_utc_now)
     environment: str = "DEV"
     platform_region: str = "EMEA"
-    account_alias: str = "nonprod-emea"
+    account_alias: str = "aws-emea-nonprod"
     cloud_region: str = "eu-west-1"
+    environment_id: str = ""

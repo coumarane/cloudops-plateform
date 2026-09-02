@@ -7,25 +7,25 @@ from uuid import uuid4
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
+from app.core.logging import sanitize_text
 from app.db.models import (
     AcmCertificateRow,
+    CloudEnvironmentRow,
     EksClusterHealthRow,
     EksClusterRow,
-    LiveScopeStateRow,
     PlatformJobRow,
 )
 from app.providers.aws.models import ClusterHealthSnapshot, DiscoveredCertificate, DiscoveredCluster
-
-LIVE_SCOPE_ID = "aws-emea-dev"
+from app.topology.models import environment_scope_id
 
 
 def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def cluster_public_id(name: str, cloud_region: str) -> str:
-    return f"eks-{cloud_region}-{name}"
+def cluster_public_id(name: str, cloud_region: str, account_id: str) -> str:
+    account = account_id or "unknown"
+    return f"eks-{cloud_region}-{account}-{name}"
 
 
 def certificate_public_id(arn: str) -> str:
@@ -37,34 +37,76 @@ class InventoryRepository:
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def scope_state(self) -> LiveScopeStateRow:
-        row = self.session.get(LiveScopeStateRow, LIVE_SCOPE_ID)
-        if row is None:
-            row = LiveScopeStateRow(
-                id=LIVE_SCOPE_ID,
-                provider=settings.aws_provider,
-                platform_region=settings.aws_platform_region,
-                environment=settings.aws_environment,
-                discovery_active=False,
+    def environment_row(self, provider: str, platform_region: str, environment: str) -> CloudEnvironmentRow | None:
+        return self.session.scalar(
+            select(CloudEnvironmentRow).where(
+                CloudEnvironmentRow.provider == provider,
+                CloudEnvironmentRow.platform_region == platform_region,
+                CloudEnvironmentRow.environment == environment,
             )
-            self.session.add(row)
-            self.session.flush()
-        return row
+        )
 
-    def discovery_is_live(self) -> bool:
-        row = self.session.get(LiveScopeStateRow, LIVE_SCOPE_ID)
-        return bool(row and row.discovery_active)
+    def environment_by_id(self, environment_id: str) -> CloudEnvironmentRow | None:
+        return self.session.get(CloudEnvironmentRow, environment_id)
 
-    def certificates_are_live(self) -> bool:
-        row = self.session.get(LiveScopeStateRow, LIVE_SCOPE_ID)
-        return bool(row and row.last_certificate_scan_at is not None)
+    def list_environment_rows(self) -> list[CloudEnvironmentRow]:
+        return list(self.session.scalars(select(CloudEnvironmentRow)))
 
-    def replace_clusters(self, clusters: list[DiscoveredCluster]) -> list[EksClusterRow]:
+    def live_discovery_scopes(self) -> set[tuple[str, str, str]]:
+        rows = self.session.scalars(select(CloudEnvironmentRow).where(CloudEnvironmentRow.discovery_active.is_(True)))
+        return {(row.provider, row.platform_region, row.environment) for row in rows}
+
+    def live_certificate_scopes(self) -> set[tuple[str, str, str]]:
+        rows = self.session.scalars(
+            select(CloudEnvironmentRow).where(CloudEnvironmentRow.last_certificate_scan_at.is_not(None))
+        )
+        return {(row.provider, row.platform_region, row.environment) for row in rows}
+
+    def mark_scope_success(self, environment_id: str, kind: str) -> None:
+        row = self.session.get(CloudEnvironmentRow, environment_id)
+        if row is None:
+            return
+        now = utcnow()
+        row.last_error = ""
+        row.last_error_class = ""
+        row.last_successful_scan_at = now
+        if kind == "discovery":
+            row.discovery_active = True
+            row.last_discovery_at = now
+        elif kind == "health":
+            row.last_health_at = now
+        elif kind == "certificates":
+            row.last_certificate_scan_at = now
+        self.session.flush()
+
+    def mark_scope_error(self, environment_id: str, error: Exception) -> None:
+        row = self.session.get(CloudEnvironmentRow, environment_id)
+        if row is None:
+            return
+        row.last_error = sanitize_text(str(error))
+        row.last_error_class = error.__class__.__name__
+        row.last_error_at = utcnow()
+        self.session.flush()
+
+    def replace_clusters_for_scope(
+        self,
+        clusters: list[DiscoveredCluster],
+        *,
+        platform_region: str,
+        environment: str,
+    ) -> list[EksClusterRow]:
         now = utcnow()
         seen_ids: set[str] = set()
         rows: list[EksClusterRow] = []
+        environment_id = clusters[0].environment_id if clusters else environment_scope_id(
+            "", environment
+        )
+        if clusters:
+            environment_id = clusters[0].environment_id or environment_scope_id(
+                clusters[0].account_alias, environment
+            )
         for cluster in clusters:
-            public_id = cluster_public_id(cluster.name, cluster.cloud_region)
+            public_id = cluster_public_id(cluster.name, cluster.cloud_region, cluster.aws_account_id)
             seen_ids.add(public_id)
             row = self.session.get(EksClusterRow, public_id)
             if row is None:
@@ -85,15 +127,32 @@ class InventoryRepository:
             row.created_at = cluster.created_at
             row.last_seen_at = now
             row.present = True
+            row.environment_id = cluster.environment_id or environment_id
             rows.append(row)
-        existing = self.session.scalars(select(EksClusterRow)).all()
+        existing = self.session.scalars(
+            select(EksClusterRow).where(
+                EksClusterRow.provider == "AWS",
+                EksClusterRow.platform_region == platform_region,
+                EksClusterRow.environment == environment,
+            )
+        ).all()
         for row in existing:
             if row.id not in seen_ids:
                 row.present = False
-        state = self.scope_state()
-        state.discovery_active = True
-        state.last_discovery_at = now
         self.session.flush()
+        return rows
+
+    def replace_clusters(self, clusters: list[DiscoveredCluster]) -> list[EksClusterRow]:
+        grouped: dict[tuple[str, str], list[DiscoveredCluster]] = {}
+        for cluster in clusters:
+            grouped.setdefault((cluster.platform_region, cluster.environment), []).append(cluster)
+        rows: list[EksClusterRow] = []
+        for (platform_region, environment), items in grouped.items():
+            rows.extend(
+                self.replace_clusters_for_scope(items, platform_region=platform_region, environment=environment)
+            )
+            env_id = items[0].environment_id or environment_scope_id(items[0].account_alias, environment)
+            self.mark_scope_success(env_id, "discovery")
         return rows
 
     def upsert_health(self, cluster_id: str, snapshot: ClusterHealthSnapshot) -> EksClusterHealthRow:
@@ -113,11 +172,19 @@ class InventoryRepository:
         row.failed_job_count = snapshot.failed_job_count
         row.last_checked = snapshot.last_checked
         row.detail = snapshot.detail
-        self.scope_state().last_health_at = snapshot.last_checked
+        cluster = self.session.get(EksClusterRow, cluster_id)
+        if cluster and cluster.environment_id:
+            self.mark_scope_success(cluster.environment_id, "health")
         self.session.flush()
         return row
 
-    def replace_certificates(self, certificates: list[DiscoveredCertificate]) -> list[AcmCertificateRow]:
+    def replace_certificates_for_account(
+        self,
+        certificates: list[DiscoveredCertificate],
+        *,
+        account_alias: str,
+        platform_region: str,
+    ) -> list[AcmCertificateRow]:
         now = utcnow()
         seen: set[str] = set()
         rows: list[AcmCertificateRow] = []
@@ -146,15 +213,43 @@ class InventoryRepository:
             row.cloud_region = item.cloud_region
             row.present = True
             rows.append(row)
-        for row in self.session.scalars(select(AcmCertificateRow)).all():
+        for row in self.session.scalars(
+            select(AcmCertificateRow).where(AcmCertificateRow.account_alias == account_alias)
+        ).all():
             if row.id not in seen:
                 row.present = False
-        self.scope_state().last_certificate_scan_at = now
+        for env in self.session.scalars(
+            select(CloudEnvironmentRow).where(
+                CloudEnvironmentRow.account_alias == account_alias,
+                CloudEnvironmentRow.platform_region == platform_region,
+            )
+        ):
+            self.mark_scope_success(env.id, "certificates")
         self.session.flush()
+        return rows
+
+    def replace_certificates(self, certificates: list[DiscoveredCertificate]) -> list[AcmCertificateRow]:
+        grouped: dict[tuple[str, str], list[DiscoveredCertificate]] = {}
+        for item in certificates:
+            grouped.setdefault((item.account_alias, item.platform_region), []).append(item)
+        rows: list[AcmCertificateRow] = []
+        for (alias, region), items in grouped.items():
+            rows.extend(self.replace_certificates_for_account(items, account_alias=alias, platform_region=region))
         return rows
 
     def present_clusters(self) -> list[EksClusterRow]:
         return list(self.session.scalars(select(EksClusterRow).where(EksClusterRow.present.is_(True))))
+
+    def present_clusters_for(self, platform_region: str, environment: str) -> list[EksClusterRow]:
+        return list(
+            self.session.scalars(
+                select(EksClusterRow).where(
+                    EksClusterRow.present.is_(True),
+                    EksClusterRow.platform_region == platform_region,
+                    EksClusterRow.environment == environment,
+                )
+            )
+        )
 
     def get_cluster(self, cluster_id: str) -> EksClusterRow | None:
         return self.session.get(EksClusterRow, cluster_id)
@@ -164,6 +259,16 @@ class InventoryRepository:
 
     def present_certificates(self) -> list[AcmCertificateRow]:
         return list(self.session.scalars(select(AcmCertificateRow).where(AcmCertificateRow.present.is_(True))))
+
+    def present_certificates_for_account(self, account_alias: str) -> list[AcmCertificateRow]:
+        return list(
+            self.session.scalars(
+                select(AcmCertificateRow).where(
+                    AcmCertificateRow.present.is_(True),
+                    AcmCertificateRow.account_alias == account_alias,
+                )
+            )
+        )
 
     def find_running_job(self, kind: str) -> PlatformJobRow | None:
         return self.session.scalar(
@@ -182,8 +287,8 @@ class InventoryRepository:
             detail="Queued",
             correlation_id=correlation_id,
             provider="AWS",
-            platform_region=settings.aws_platform_region,
-            environment=settings.aws_environment,
+            platform_region="AMER",
+            environment="DEV",
             created_at=utcnow(),
         )
         self.session.add(row)

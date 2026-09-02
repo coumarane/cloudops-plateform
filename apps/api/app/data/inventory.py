@@ -67,7 +67,7 @@ def _emea_uat() -> EnvironmentRecord:
                 provider="AWS",
                 region="EMEA",
                 environment="UAT",
-                account="nonprod-emea",
+                account="aws-emea-nonprod",
                 status="Unreachable",
                 appsLabel="4 degraded",
             )

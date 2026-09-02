@@ -50,7 +50,29 @@ export function EnvironmentIdentityHeader({ identity }: { identity: EnvironmentI
         </span>
         <span aria-hidden>•</span>
         <span className="text-ink">account: {identity.account}</span>
+        {identity.readonly ? (
+          <>
+            <span aria-hidden>•</span>
+            <span className="rounded bg-prd/10 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-prd">
+              Read-only
+            </span>
+          </>
+        ) : null}
+        {identity.discoveryActive ? (
+          <>
+            <span aria-hidden>•</span>
+            <span className="rounded bg-healthy/10 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-healthy">
+              AWS live
+            </span>
+          </>
+        ) : null}
       </div>
+      {identity.lastError ? (
+        <p className="mt-3 font-mono text-xs text-warning">Last scan error: {identity.lastError}</p>
+      ) : null}
+      {identity.lastSuccessfulScan ? (
+        <p className="mt-2 font-mono text-xs text-muted">Last successful scan: {identity.lastSuccessfulScan}</p>
+      ) : null}
     </div>
   );
 }

@@ -20,8 +20,8 @@ async def lifespan(_application: FastAPI):
 def create_app() -> FastAPI:
     application = FastAPI(
         title=settings.app_name,
-        version="0.3.0",
-        description="CloudOps Platform API. AWS EMEA NonProd DEV uses live adapters; other scopes stay on mock data.",
+        version="0.4.0",
+        description="CloudOps Platform API. AWS AMER, EMEA, and APAC environments use live adapters when scanned; Alibaba stays on mock data. PRD is read-only.",
         lifespan=lifespan,
     )
     application.add_middleware(CorrelationIdMiddleware)

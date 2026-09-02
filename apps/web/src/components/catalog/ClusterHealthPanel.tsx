@@ -12,7 +12,7 @@ export function ClusterHealthPanel({ clusterId }: { clusterId: string }) {
     <section className="rounded border border-outline bg-white">
       <div className="border-b border-outline bg-surface-low px-4 py-3">
         <h2 className="text-[15px] font-semibold text-ink">Live cluster health</h2>
-        <p className="mt-1 text-xs text-muted">AWS EMEA DEV control-plane and Kubernetes API metadata. Kubeconfig is never displayed.</p>
+        <p className="mt-1 text-xs text-muted">Control-plane and Kubernetes API metadata from the live AWS adapter. Kubeconfig is never displayed.</p>
       </div>
       <div className="p-4">
         <QueryState state={state} loadingLabel="Loading cluster health…" emptyLabel="Health has not been collected yet.">

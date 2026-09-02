@@ -21,7 +21,9 @@ _RETRY_CONFIG = Config(
 )
 
 
-def connection_config(cfg: Settings | None = None) -> AwsConnectionConfig:
+def connection_config(cfg: Settings | None = None, override: AwsConnectionConfig | None = None) -> AwsConnectionConfig:
+    if override is not None:
+        return override
     active = cfg or settings
     return AwsConnectionConfig(
         cloud_region=active.aws_cloud_region,
@@ -76,6 +78,7 @@ def _merge_secret_config(config: AwsConnectionConfig, secret: dict[str, Any]) ->
         environment=config.environment,
         account_alias=secret.get("accountAlias") or config.account_alias,
         cluster_environment_tag=secret.get("clusterEnvironmentTag") or config.cluster_environment_tag,
+        environment_id=config.environment_id,
     )
 
 
@@ -122,28 +125,28 @@ def assume_role_session(base: boto3.Session, config: AwsConnectionConfig) -> bot
     )
 
 
-def build_session(cfg: Settings | None = None) -> boto3.Session:
-    config = connection_config(cfg)
+def build_session(cfg: Settings | None = None, config: AwsConnectionConfig | None = None) -> boto3.Session:
+    resolved = config or connection_config(cfg)
     try:
-        session = _base_session(config)
+        session = _base_session(resolved)
         secret: dict[str, Any] = {}
-        if config.config_secret_arn:
-            secret = _load_secret_config(session, config.config_secret_arn)
-            config = _merge_secret_config(config, secret)
-            ephemeral = _ephemeral_key_session(session, secret, config.cloud_region)
+        if resolved.config_secret_arn:
+            secret = _load_secret_config(session, resolved.config_secret_arn)
+            resolved = _merge_secret_config(resolved, secret)
+            ephemeral = _ephemeral_key_session(session, secret, resolved.cloud_region)
             if ephemeral is not None:
                 session = ephemeral
-        session = assume_role_session(session, config)
+        session = assume_role_session(session, resolved)
         sts = session.client("sts", config=_RETRY_CONFIG)
         identity = sts.get_caller_identity()
         account = identity.get("Account")
-        if config.account_id and account and account != config.account_id:
-            raise AwsPermissionError("Assumed AWS identity is not the configured NonProd account")
+        if resolved.account_id and account and account != resolved.account_id:
+            raise AwsPermissionError("Assumed AWS identity is not the configured account")
         logger.info(
             "AWS session ready account=%s arn=%s region=%s",
             account,
             identity.get("Arn"),
-            config.cloud_region,
+            resolved.cloud_region,
         )
         return session
     except (AwsAuthError, AwsPermissionError):

@@ -115,7 +115,7 @@ def to_certificate_record(row: AcmCertificateRow) -> CertificateRecord:
         domain=row.domain_name,
         provider="AWS",
         region=row.platform_region,  # type: ignore[arg-type]
-        environment=row.environment,  # type: ignore[arg-type]
+        environment=(row.environment or "DEV"),  # type: ignore[arg-type]
         cluster="acm",
         namespace="acm",
         issuer=row.issuer or "ACM",
@@ -167,6 +167,7 @@ def discovered_from_row(row: EksClusterRow) -> DiscoveredCluster:
         environment=row.environment,
         platform_region=row.platform_region,
         account_alias=row.account_alias,
+        environment_id=row.environment_id,
     )
 
 

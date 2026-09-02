@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime, timezone
 
 from botocore.exceptions import ClientError
 
 from app.core.logging import get_logger
-from app.providers.aws.auth import connection_config
 from app.providers.aws.client import AwsClientFactory
 from app.providers.aws.errors import classify_aws_error
-from app.providers.aws.models import DiscoveredCluster
+from app.providers.aws.models import AwsConnectionConfig, DiscoveredCluster
+from app.topology.models import environment_scope_id
 
 logger = get_logger(__name__)
 
@@ -19,10 +20,10 @@ def _parse_created_at(value: object) -> datetime | None:
     return None
 
 
-def _environment_from_tags(tags: dict[str, str], expected: str, tag_key: str) -> str | None:
+def environment_from_tags(tags: dict[str, str], tag_key: str) -> str | None:
     raw = tags.get(tag_key) or tags.get(tag_key.lower()) or tags.get("environment")
     if raw is None:
-        return expected
+        return None
     normalized = raw.strip().upper().replace("_", "/")
     if normalized in {"INT/TST", "INT-TST", "INTTST"}:
         return "INT/TST"
@@ -44,12 +45,13 @@ def _endpoint_status(resources_vpc: dict) -> str:
 
 
 class EksDiscovery:
-    def __init__(self, factory: AwsClientFactory | None = None) -> None:
-        self._factory = factory or AwsClientFactory()
+    def __init__(self, factory: AwsClientFactory, config: AwsConnectionConfig) -> None:
+        self._factory = factory
+        self._config = config
 
-    def list_dev_clusters(self) -> list[DiscoveredCluster]:
-        config = connection_config()
-        client = self._factory.client("eks", region_name=config.cloud_region)
+    def list_clusters(self, allowed_environments: Sequence[str]) -> list[DiscoveredCluster]:
+        allowed = {item for item in allowed_environments}
+        client = self._factory.client("eks", region_name=self._config.cloud_region)
         names: list[str] = []
         try:
             paginator = client.get_paginator("list_clusters")
@@ -67,17 +69,17 @@ class EksDiscovery:
                 logger.warning("Skipping EKS cluster name=%s error=%s", name, mapped)
                 continue
             tags = description.get("tags") or {}
-            environment = _environment_from_tags(tags, config.environment, config.cluster_environment_tag)
-            if environment != config.environment:
+            environment = environment_from_tags(tags, self._config.cluster_environment_tag)
+            if environment is None or environment not in allowed:
                 continue
-            arn = description.get("arn") or f"arn:aws:eks:{config.cloud_region}:unknown:cluster/{name}"
-            account_id = arn.split(":")[4] if arn.count(":") >= 4 else (config.account_id or "unknown")
+            arn = description.get("arn") or f"arn:aws:eks:{self._config.cloud_region}:unknown:cluster/{name}"
+            account_id = arn.split(":")[4] if arn.count(":") >= 4 else (self._config.account_id or "unknown")
             resources_vpc = description.get("resourcesVpcConfig") or {}
             discovered.append(
                 DiscoveredCluster(
                     name=description.get("name") or name,
                     arn=arn,
-                    cloud_region=config.cloud_region,
+                    cloud_region=self._config.cloud_region,
                     aws_account_id=account_id,
                     kubernetes_version=description.get("version") or "",
                     endpoint_status=_endpoint_status(resources_vpc),
@@ -85,17 +87,25 @@ class EksDiscovery:
                     platform_version=description.get("platformVersion") or "",
                     created_at=_parse_created_at(description.get("createdAt")),
                     endpoint=description.get("endpoint"),
-                    environment=config.environment,
-                    platform_region=config.platform_region,
-                    account_alias=config.account_alias,
+                    environment=environment,
+                    platform_region=self._config.platform_region,
+                    account_alias=self._config.account_alias,
+                    environment_id=environment_scope_id(self._config.account_alias, environment),
                 )
             )
-        logger.info("Discovered %s EKS clusters in %s DEV", len(discovered), config.cloud_region)
+        logger.info(
+            "Discovered %s EKS clusters account=%s region=%s",
+            len(discovered),
+            self._config.account_alias,
+            self._config.cloud_region,
+        )
         return discovered
 
+    def list_dev_clusters(self) -> list[DiscoveredCluster]:
+        return self.list_clusters([self._config.environment])
+
     def describe_raw(self, name: str) -> dict:
-        config = connection_config()
-        client = self._factory.client("eks", region_name=config.cloud_region)
+        client = self._factory.client("eks", region_name=self._config.cloud_region)
         try:
             return client.describe_cluster(name=name)["cluster"]
         except ClientError as error:
