@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Clusters - CloudOps Platform</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#eceef0",
+                        "on-tertiary-container": "#bf7100",
+                        "secondary-fixed": "#d8e2ff",
+                        "primary": "#000000",
+                        "surface-container-low": "#f2f4f6",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#2c1600",
+                        "inverse-primary": "#bec6e0",
+                        "surface-tint": "#565e74",
+                        "outline": "#76777d",
+                        "tertiary-fixed": "#ffdcbd",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "tertiary": "#000000",
+                        "outline-variant": "#c6c6cd",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-primary-container": "#7c839b",
+                        "primary-container": "#131b2e",
+                        "surface-variant": "#e0e3e5",
+                        "on-secondary-container": "#fefcff",
+                        "surface-bright": "#f7f9fb",
+                        "primary-fixed-dim": "#bec6e0",
+                        "on-surface-variant": "#45464d",
+                        "on-background": "#191c1e",
+                        "tertiary-container": "#2c1600",
+                        "primary-fixed": "#dae2fd",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#001a42",
+                        "tertiary-fixed-dim": "#ffb86f",
+                        "surface-container-high": "#e6e8ea",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed-variant": "#004395",
+                        "error-container": "#ffdad6",
+                        "surface": "#f7f9fb",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "surface-dim": "#d8dadc",
+                        "error": "#ba1a1a",
+                        "on-surface": "#191c1e",
+                        "on-primary-fixed": "#131b2e",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary-container": "#2170e4",
+                        "secondary": "#0058be",
+                        "on-tertiary-fixed-variant": "#693c00",
+                        "inverse-surface": "#2d3133",
+                        "surface-container-lowest": "#ffffff",
+                        "background": "#f7f9fb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-padding": "24px",
+                        "table-cell-padding": "8px 12px",
+                        "gap-md": "16px",
+                        "unit": "4px",
+                        "sidebar-width": "240px",
+                        "sidebar-collapsed": "64px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "table-data": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "body-sm": ["Inter"],
+                        "display": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "table-data": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "450" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Custom Scrollbar for High Density Data */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-sm h-screen overflow-hidden flex selection:bg-secondary-fixed selection:text-on-secondary-fixed">
+<!-- Global PRD Banner (Simulation) -->
+<div class="fixed top-0 left-0 w-full h-1 bg-error z-50"></div>
+<!-- SideNavBar -->
+<aside class="bg-primary dark:bg-primary-container text-on-primary-fixed dark:text-primary-fixed-dim font-body-sm text-body-sm docked h-screen w-sidebar fixed left-0 top-0 flex flex-col h-full py-container-padding flat no shadows bg-primary dark:bg-primary-container flex-shrink-0 z-30 transition-all duration-300" id="sidebar">
+<div class="px-6 mb-8 flex items-center justify-between">
+<div>
+<h1 class="font-display text-display text-on-primary dark:text-primary-fixed m-0">K8s Cockpit</h1>
+<p class="text-on-primary-container text-xs mt-1 font-label-caps">Enterprise Ops</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto px-3 space-y-1">
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">dashboard</span>
+<span class="font-body-sm text-body-sm">Overview</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">account_tree</span>
+<span class="font-body-sm text-body-sm">Infrastructure</span>
+</a>
+<a class="flex items-center px-3 py-2 bg-secondary-container text-on-secondary-container rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined mr-3 icon-fill">hub</span>
+<span class="font-body-sm text-body-sm font-semibold">Clusters</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">layers</span>
+<span class="font-body-sm text-body-sm">Environments</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">vpn_key</span>
+<span class="font-body-sm text-body-sm">Secrets</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">verified_user</span>
+<span class="font-body-sm text-body-sm">Certificates</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">apps</span>
+<span class="font-body-sm text-body-sm">Apps</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">health_and_safety</span>
+<span class="font-body-sm text-body-sm">Health</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">rocket_launch</span>
+<span class="font-body-sm text-body-sm">Deployments</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">dynamic_form</span>
+<span class="font-body-sm text-body-sm">Pipelines</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">terminal</span>
+<span class="font-body-sm text-body-sm">GitHub</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">work</span>
+<span class="font-body-sm text-body-sm">Jobs</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">notifications</span>
+<span class="font-body-sm text-body-sm">Alerts</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">policy</span>
+<span class="font-body-sm text-body-sm">Audit</span>
+</a>
+<a class="flex items-center px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg group" href="#">
+<span class="material-symbols-outlined mr-3 text-on-primary-container group-hover:text-on-primary">settings_applications</span>
+<span class="font-body-sm text-body-sm">Admin</span>
+</a>
+</nav>
+<div class="px-6 mt-auto pt-4 border-t border-on-primary-container/20">
+<div class="flex items-center gap-3">
+<img alt="User Profile" class="w-8 h-8 rounded-full object-cover border border-outline-variant" data-alt="A professional headshot of a female DevOps engineer in her 30s, wearing glasses, in a server room environment with dramatic blue lighting. High contrast, technical aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVTayFxiKOikl3fQZPO06oP4uRzi8h1-EULLiplNdt5x-eOXg9WsGRlgMwS8XBXLw4JyLGBcbiA7RLiIiqMsVZGv1bZqHvaVROmp5FHUQVxTlhRME0cn7uRQejtcNm3iKwDAZdg2Ds9RSjCK-tw_KdONgSX981WP6UNyJh90bRaz4M2ZpmMBKPnOdIySGr48DMlPrW7lzNJL9AGIBSKE8MucgkU2KdQAE1EM7UzQGmwrNCseVJ-dnFmEkkFtIYtBZCFOPW8hdlQlNt"/>
+<div>
+<p class="text-on-primary text-xs font-semibold">sysadmin_01</p>
+<p class="text-on-primary-container text-[10px]">Cloud Ops</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<div class="flex-1 ml-sidebar flex flex-col min-w-0 h-screen bg-surface-container-lowest">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface-dim text-primary dark:text-primary-fixed-dim font-label-caps text-label-caps docked full-width top-0 sticky flex justify-between items-center h-12 px-container-padding w-full z-40 border-b border-outline-variant flat no shadows">
+<!-- Context / Title -->
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md text-primary dark:text-on-surface">CloudOps Console</span>
+<div class="h-4 w-px bg-outline-variant mx-2"></div>
+<!-- Quick Navigation (Pseudo-tabs as per JSON) -->
+<nav class="hidden md:flex space-x-6 h-full items-center">
+<a class="text-on-surface-variant hover:text-primary transition-all duration-200 ease-in-out h-full flex items-center relative" href="#">
+                        AWS
+                    </a>
+<a class="text-on-surface-variant hover:text-primary transition-all duration-200 ease-in-out h-full flex items-center" href="#">
+                        Alibaba Cloud
+                    </a>
+<a class="text-on-surface-variant hover:text-primary transition-all duration-200 ease-in-out h-full flex items-center" href="#">
+                        Region
+                    </a>
+<a class="text-on-surface-variant hover:text-primary transition-all duration-200 ease-in-out h-full flex items-center" href="#">
+                        Namespace
+                    </a>
+</nav>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:scale-95 p-1 rounded">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:scale-95 p-1 rounded">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+</button>
+</div>
+</header>
+<!-- Global Filters / Action Bar -->
+<div class="bg-surface border-b border-surface-variant px-container-padding py-3 flex justify-between items-center z-30 shrink-0">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-sm">filter_alt</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Filters:</span>
+</div>
+<div class="flex gap-2">
+<select class="form-select bg-surface-container-lowest border-outline-variant text-body-sm font-body-sm rounded h-8 py-0 pl-3 pr-8 focus:ring-2 focus:ring-secondary focus:border-secondary border">
+<option>Provider (All)</option>
+<option>AWS</option>
+<option>Alibaba Cloud</option>
+</select>
+<select class="form-select bg-surface-container-lowest border-outline-variant text-body-sm font-body-sm rounded h-8 py-0 pl-3 pr-8 focus:ring-2 focus:ring-secondary focus:border-secondary border">
+<option>Region (All)</option>
+<option>AMER</option>
+<option>EMEA</option>
+<option>APAC</option>
+<option>China</option>
+</select>
+<select class="form-select bg-surface-container-lowest border-outline-variant text-body-sm font-body-sm rounded h-8 py-0 pl-3 pr-8 focus:ring-2 focus:ring-secondary focus:border-secondary border">
+<option>Environment (All)</option>
+<option>PRD</option>
+<option>UAT</option>
+<option>DEV</option>
+<option>INT/TST</option>
+</select>
+</div>
+</div>
+<div class="flex gap-3">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1.5 text-outline text-[18px]">search</span>
+<input class="form-input bg-surface-container-lowest border-outline-variant text-body-sm font-body-sm rounded h-8 py-0 pl-9 pr-3 focus:ring-2 focus:ring-secondary focus:border-secondary border w-64" placeholder="Search clusters..." type="text"/>
+</div>
+<button class="bg-[#0F172A] hover:bg-[#1e293b] text-white px-4 h-8 rounded font-body-sm text-body-sm flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                    Provision
+                </button>
+</div>
+</div>
+<!-- Scrollable Content Canvas -->
+<main class="flex-1 overflow-y-auto bg-surface-container-lowest p-container-padding">
+<!-- Page Header -->
+<div class="mb-6 flex justify-between items-end">
+<div>
+<h2 class="text-2xl font-bold text-primary tracking-tight">Clusters</h2>
+<p class="text-on-surface-variant font-body-sm text-body-sm mt-1">EKS and ACK clusters across all regions.</p>
+</div>
+<div class="text-right">
+<p class="font-code-sm text-code-sm text-outline flex items-center gap-1 justify-end">
+<span class="material-symbols-outlined text-[14px]">sync</span>
+                        Last synced: 14:32:45 UTC
+                    </p>
+</div>
+</div>
+<!-- KPI Strip -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-unit mb-8">
+<!-- Total -->
+<div class="bg-surface-container-low border border-surface-variant rounded p-4 flex flex-col justify-between h-24">
+<span class="font-label-caps text-label-caps text-on-surface-variant">Clusters in scope</span>
+<span class="text-3xl font-display font-semibold text-primary">24</span>
+</div>
+<!-- Healthy -->
+<div class="bg-surface-container-lowest border border-surface-variant rounded p-4 flex flex-col justify-between h-24 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-12 h-12 bg-green-500/10 rounded-bl-full"></div>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Healthy</span>
+<div class="flex items-center gap-2">
+<span class="text-3xl font-display font-semibold text-primary">21</span>
+<span class="material-symbols-outlined text-green-600 text-[20px]">check_circle</span>
+</div>
+</div>
+<!-- Degraded -->
+<div class="bg-surface-container-lowest border border-surface-variant rounded p-4 flex flex-col justify-between h-24 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-12 h-12 bg-amber-500/10 rounded-bl-full"></div>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Degraded</span>
+<div class="flex items-center gap-2">
+<span class="text-3xl font-display font-semibold text-primary">2</span>
+<span class="material-symbols-outlined text-amber-500 text-[20px]">warning</span>
+</div>
+</div>
+<!-- Unreachable -->
+<div class="bg-error-container border border-error/20 rounded p-4 flex flex-col justify-between h-24 relative overflow-hidden shadow-sm">
+<div class="absolute top-0 right-0 w-12 h-12 bg-error/10 rounded-bl-full"></div>
+<span class="font-label-caps text-label-caps text-on-error-container">Unreachable</span>
+<div class="flex items-center gap-2">
+<span class="text-3xl font-display font-bold text-on-error-container">1</span>
+<span class="bg-error text-white text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">Critical</span>
+</div>
+</div>
+<!-- PRD -->
+<div class="bg-surface-container-lowest border border-surface-variant rounded p-4 flex flex-col justify-between h-24">
+<span class="font-label-caps text-label-caps text-on-surface-variant">PRD Clusters</span>
+<span class="text-3xl font-display font-semibold text-primary">8</span>
+</div>
+</div>
+<!-- High Density Table -->
+<div class="bg-surface-container-lowest border border-surface-variant rounded-lg overflow-hidden shadow-[0_2px_4px_rgba(0,0,0,0.02)] flex flex-col">
+<!-- Table Header -->
+<div class="grid grid-cols-10 gap-2 bg-surface-container-low border-b border-surface-variant px-4 py-2 sticky top-0 z-10">
+<div class="col-span-2 font-label-caps text-label-caps text-on-surface-variant flex items-center">Cluster</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant flex items-center">Platform</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant flex items-center">Version</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant flex items-center justify-end pr-4">Nodes</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant flex items-center">Provider / Region</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant flex items-center">Environment</div>
+<div class="col-span-2 font-label-caps text-label-caps text-on-surface-variant flex items-center">Account</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant flex items-center">Status</div>
+</div>
+<!-- Table Body -->
+<div class="flex flex-col">
+<!-- Critical Row -->
+<div class="grid grid-cols-10 gap-2 px-4 h-10 border-b border-error/30 bg-error/5 hover:bg-error/10 transition-colors items-center">
+<div class="col-span-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-error text-[16px]">error</span>
+<span class="font-code-sm text-code-sm font-semibold text-primary truncate" title="eu-west-1-uat-k8s">eu-west-1-uat-k8s</span>
+</div>
+<div class="font-table-data text-table-data text-on-surface">EKS</div>
+<div class="font-table-data text-table-data text-on-surface-variant">1.29</div>
+<div class="font-code-sm text-code-sm text-on-surface text-right pr-4">12</div>
+<div class="font-table-data text-table-data text-on-surface flex items-center gap-1">
+<span class="bg-[#ff9900] w-2 h-2 rounded-full inline-block"></span> AWS <span class="text-outline mx-1">•</span> EMEA
+                        </div>
+<div class="font-table-data text-table-data text-on-surface">
+<span class="bg-surface-variant text-on-surface px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider">UAT</span>
+</div>
+<div class="col-span-2 font-code-sm text-code-sm text-outline truncate" title="nonprod-emea">nonprod-emea</div>
+<div class="font-table-data text-table-data flex items-center gap-2">
+<span class="bg-error text-white px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                                Unreachable
+                            </span>
+</div>
+</div>
+<!-- Row 1 -->
+<div class="grid grid-cols-10 gap-2 px-4 h-10 border-b border-surface-variant hover:bg-surface-container transition-colors items-center group">
+<div class="col-span-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[16px] group-hover:text-primary transition-colors">hub</span>
+<span class="font-code-sm text-code-sm text-primary truncate hover:underline cursor-pointer" title="us-east-1-prd-k8s">us-east-1-prd-k8s</span>
+</div>
+<div class="font-table-data text-table-data text-on-surface">EKS</div>
+<div class="font-table-data text-table-data text-on-surface-variant">1.28</div>
+<div class="font-code-sm text-code-sm text-on-surface text-right pr-4">32</div>
+<div class="font-table-data text-table-data text-on-surface flex items-center gap-1">
+<span class="bg-[#ff9900] w-2 h-2 rounded-full inline-block"></span> AWS <span class="text-outline mx-1">•</span> AMER
+                        </div>
+<div class="font-table-data text-table-data text-on-surface">
+<span class="bg-error text-white px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider shadow-sm border border-error/50">PRD</span>
+</div>
+<div class="col-span-2 font-code-sm text-code-sm text-outline truncate" title="prod-amer">prod-amer</div>
+<div class="font-table-data text-table-data flex items-center gap-1.5">
+<span class="material-symbols-outlined text-green-600 text-[14px]">check_circle</span>
+<span class="text-green-700 text-[11px] font-semibold uppercase tracking-wider">Healthy</span>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-10 gap-2 px-4 h-10 border-b border-surface-variant hover:bg-surface-container transition-colors items-center group">
+<div class="col-span-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[16px] group-hover:text-primary transition-colors">hub</span>
+<span class="font-code-sm text-code-sm text-primary truncate hover:underline cursor-pointer" title="ap-southeast-1-int-k8s">ap-southeast-1-int-k8s</span>
+</div>
+<div class="font-table-data text-table-data text-on-surface">EKS</div>
+<div class="font-table-data text-table-data text-on-surface-variant">1.27 <span class="text-amber-500 text-[10px] ml-1" title="Update Available">⚠</span></div>
+<div class="font-code-sm text-code-sm text-on-surface text-right pr-4">8</div>
+<div class="font-table-data text-table-data text-on-surface flex items-center gap-1">
+<span class="bg-[#ff9900] w-2 h-2 rounded-full inline-block"></span> AWS <span class="text-outline mx-1">•</span> APAC
+                        </div>
+<div class="font-table-data text-table-data text-on-surface">
+<span class="bg-surface-variant text-on-surface px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider">INT/TST</span>
+</div>
+<div class="col-span-2 font-code-sm text-code-sm text-outline truncate" title="nonprod-apac">nonprod-apac</div>
+<div class="font-table-data text-table-data flex items-center gap-1.5">
+<span class="material-symbols-outlined text-amber-500 text-[14px]">warning</span>
+<span class="text-amber-600 text-[11px] font-semibold uppercase tracking-wider">Degraded</span>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="grid grid-cols-10 gap-2 px-4 h-10 border-b border-surface-variant hover:bg-surface-container transition-colors items-center group">
+<div class="col-span-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[16px] group-hover:text-primary transition-colors">hub</span>
+<span class="font-code-sm text-code-sm text-primary truncate hover:underline cursor-pointer" title="cn-hangzhou-uat-ack">cn-hangzhou-uat-ack</span>
+</div>
+<div class="font-table-data text-table-data text-on-surface">ACK</div>
+<div class="font-table-data text-table-data text-on-surface-variant">1.28</div>
+<div class="font-code-sm text-code-sm text-on-surface text-right pr-4">6</div>
+<div class="font-table-data text-table-data text-on-surface flex items-center gap-1">
+<span class="bg-[#ff6600] w-2 h-2 rounded-full inline-block"></span> Alibaba <span class="text-outline mx-1">•</span> China
+                        </div>
+<div class="font-table-data text-table-data text-on-surface">
+<span class="bg-surface-variant text-on-surface px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider">UAT</span>
+</div>
+<div class="col-span-2 font-code-sm text-code-sm text-outline truncate" title="ali-nonprod-china">ali-nonprod-china</div>
+<div class="font-table-data text-table-data flex items-center gap-1.5">
+<span class="material-symbols-outlined text-green-600 text-[14px]">check_circle</span>
+<span class="text-green-700 text-[11px] font-semibold uppercase tracking-wider">Healthy</span>
+</div>
+</div>
+<!-- Row 4 -->
+<div class="grid grid-cols-10 gap-2 px-4 h-10 border-b border-surface-variant hover:bg-surface-container transition-colors items-center group">
+<div class="col-span-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[16px] group-hover:text-primary transition-colors">hub</span>
+<span class="font-code-sm text-code-sm text-primary truncate hover:underline cursor-pointer" title="cn-hangzhou-prd-ack">cn-hangzhou-prd-ack</span>
+</div>
+<div class="font-table-data text-table-data text-on-surface">ACK</div>
+<div class="font-table-data text-table-data text-on-surface-variant">1.29</div>
+<div class="font-code-sm text-code-sm text-on-surface text-right pr-4">15</div>
+<div class="font-table-data text-table-data text-on-surface flex items-center gap-1">
+<span class="bg-[#ff6600] w-2 h-2 rounded-full inline-block"></span> Alibaba <span class="text-outline mx-1">•</span> China
+                        </div>
+<div class="font-table-data text-table-data text-on-surface">
+<span class="bg-error text-white px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider shadow-sm border border-error/50">PRD</span>
+</div>
+<div class="col-span-2 font-code-sm text-code-sm text-outline truncate" title="ali-prod-china">ali-prod-china</div>
+<div class="font-table-data text-table-data flex items-center gap-1.5">
+<span class="material-symbols-outlined text-green-600 text-[14px]">check_circle</span>
+<span class="text-green-700 text-[11px] font-semibold uppercase tracking-wider">Healthy</span>
+</div>
+</div>
+<!-- Row 5 -->
+<div class="grid grid-cols-10 gap-2 px-4 h-10 hover:bg-surface-container transition-colors items-center group">
+<div class="col-span-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-outline text-[16px] group-hover:text-primary transition-colors">hub</span>
+<span class="font-code-sm text-code-sm text-primary truncate hover:underline cursor-pointer" title="us-west-2-dev-k8s">us-west-2-dev-k8s</span>
+</div>
+<div class="font-table-data text-table-data text-on-surface">EKS</div>
+<div class="font-table-data text-table-data text-on-surface-variant">1.29</div>
+<div class="font-code-sm text-code-sm text-on-surface text-right pr-4">3</div>
+<div class="font-table-data text-table-data text-on-surface flex items-center gap-1">
+<span class="bg-[#ff9900] w-2 h-2 rounded-full inline-block"></span> AWS <span class="text-outline mx-1">•</span> AMER
+                        </div>
+<div class="font-table-data text-table-data text-on-surface">
+<span class="bg-surface-variant text-on-surface px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider">DEV</span>
+</div>
+<div class="col-span-2 font-code-sm text-code-sm text-outline truncate" title="nonprod-amer">nonprod-amer</div>
+<div class="font-table-data text-table-data flex items-center gap-1.5">
+<span class="material-symbols-outlined text-green-600 text-[14px]">check_circle</span>
+<span class="text-green-700 text-[11px] font-semibold uppercase tracking-wider">Healthy</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="mt-8 pt-4 border-t border-surface-variant flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[14px] mr-2">lock</span>
+<span class="font-label-caps text-label-caps tracking-widest text-[10px]">Secret values are never displayed in this console.</span>
+</footer>
+</main>
+</div>
+</body></html>

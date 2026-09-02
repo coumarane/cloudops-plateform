@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Jobs - Operations Console</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@450&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "surface-tint": "#565e74",
+                  "secondary-container": "#2170e4",
+                  "inverse-primary": "#bec6e0",
+                  "surface-container-lowest": "#ffffff",
+                  "on-surface": "#191c1e",
+                  "primary-fixed": "#dae2fd",
+                  "inverse-surface": "#2d3133",
+                  "background": "#f7f9fb",
+                  "on-primary": "#ffffff",
+                  "on-tertiary-fixed": "#2c1600",
+                  "on-tertiary-container": "#bf7100",
+                  "surface-container-low": "#f2f4f6",
+                  "secondary-fixed": "#d8e2ff",
+                  "on-secondary": "#ffffff",
+                  "on-primary-fixed-variant": "#3f465c",
+                  "on-primary-fixed": "#131b2e",
+                  "on-secondary-fixed": "#001a42",
+                  "tertiary-fixed-dim": "#ffb86f",
+                  "surface": "#f7f9fb",
+                  "outline-variant": "#c6c6cd",
+                  "on-error-container": "#93000a",
+                  "tertiary": "#000000",
+                  "tertiary-fixed": "#ffdcbd",
+                  "surface-container-highest": "#e0e3e5",
+                  "on-tertiary": "#ffffff",
+                  "on-secondary-container": "#fefcff",
+                  "on-surface-variant": "#45464d",
+                  "surface-variant": "#e0e3e5",
+                  "primary-fixed-dim": "#bec6e0",
+                  "surface-container": "#eceef0",
+                  "surface-container-high": "#e6e8ea",
+                  "on-background": "#191c1e",
+                  "outline": "#76777d",
+                  "on-secondary-fixed-variant": "#004395",
+                  "on-error": "#ffffff",
+                  "tertiary-container": "#2c1600",
+                  "primary": "#000000",
+                  "surface-bright": "#f7f9fb",
+                  "on-tertiary-fixed-variant": "#693c00",
+                  "secondary-fixed-dim": "#adc6ff",
+                  "secondary": "#0058be",
+                  "error": "#ba1a1a",
+                  "surface-dim": "#d8dadc",
+                  "primary-container": "#131b2e",
+                  "on-primary-container": "#7c839b",
+                  "inverse-on-surface": "#eff1f3",
+                  "error-container": "#ffdad6"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.125rem",
+                  "lg": "0.25rem",
+                  "xl": "0.5rem",
+                  "full": "0.75rem"
+          },
+          "spacing": {
+                  "sidebar-collapsed": "64px",
+                  "sidebar-width": "240px",
+                  "table-cell-padding": "8px 12px",
+                  "gap-md": "16px",
+                  "container-padding": "24px",
+                  "unit": "4px"
+          },
+          "fontFamily": {
+                  "code-sm": ["JetBrains Mono"],
+                  "display": ["Inter"],
+                  "table-data": ["Inter"],
+                  "label-caps": ["Inter"],
+                  "headline-md": ["Inter"],
+                  "body-sm": ["Inter"]
+          },
+          "fontSize": {
+                  "code-sm": ["12px", {"lineHeight": "16px", "fontWeight": "450"}],
+                  "display": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                  "table-data": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                  "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                  "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                  "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-background text-on-background font-body-sm flex min-h-screen">
+<!-- SideNavBar -->
+<aside class="docked h-screen w-sidebar fixed left-0 top-0 bg-primary-container flex flex-col h-full w-sidebar py-container-padding z-50">
+<div class="px-4 mb-8">
+<div class="font-headline-md text-headline-md font-bold text-on-primary">K8s Console</div>
+<div class="text-on-primary-container font-code-sm text-code-sm mt-1">Ops Control Plane</div>
+</div>
+<nav class="flex-1 overflow-y-auto px-2 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+<span class="font-table-data text-table-data">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">storage</span>
+<span class="font-table-data text-table-data">Infrastructure</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">layers</span>
+<span class="font-table-data text-table-data">Clusters</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">category</span>
+<span class="font-table-data text-table-data">Environments</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">apps</span>
+<span class="font-table-data text-table-data">Applications</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+<span class="font-table-data text-table-data">Secrets</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">verified</span>
+<span class="font-table-data text-table-data">Certificates</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">health_and_safety</span>
+<span class="font-table-data text-table-data">Health Checks</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">rocket_launch</span>
+<span class="font-table-data text-table-data">Deployments</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+<span class="font-table-data text-table-data">Pipelines</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">source</span>
+<span class="font-table-data text-table-data">GitHub</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-secondary-container bg-on-primary-fixed-variant transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">schedule</span>
+<span class="font-table-data text-table-data font-semibold">Jobs</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="font-table-data text-table-data">Alerts</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">policy</span>
+<span class="font-table-data text-table-data">Audit</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-table-data text-table-data">Administration</span>
+</a>
+</nav>
+<div class="mt-auto px-4 pt-4 border-t border-on-primary-fixed-variant">
+<div class="flex items-center gap-3 text-on-primary-container">
+<span class="material-symbols-outlined text-[24px]">account_circle</span>
+<div class="flex flex-col">
+<span class="font-table-data text-table-data font-semibold">User Profile</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-sidebar min-w-0 flex flex-col h-screen">
+<!-- TopNavBar -->
+<header class="bg-surface border-b border-outline-variant flex justify-between items-center h-12 px-container-padding w-full sticky top-0 z-40">
+<div class="flex items-center gap-8">
+<div class="font-headline-md text-headline-md font-extrabold text-on-surface">Operations Console</div>
+<nav class="hidden md:flex gap-6 h-full items-center">
+<a class="text-on-surface-variant hover:text-secondary transition-all duration-200 h-full flex items-center font-table-data text-table-data" href="#">Provider</a>
+<a class="text-on-surface-variant hover:text-secondary transition-all duration-200 h-full flex items-center font-table-data text-table-data" href="#">Region</a>
+<a class="text-on-surface-variant hover:text-secondary transition-all duration-200 h-full flex items-center font-table-data text-table-data" href="#">Environment</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-1.5 text-[18px] text-outline">search</span>
+<input class="pl-9 pr-3 py-1 bg-surface-container-low border border-outline-variant rounded text-table-data text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary focus:border-transparent w-64 h-8 placeholder:text-outline-variant" placeholder="Search resources..." type="text"/>
+</div>
+<button class="text-on-surface-variant hover:text-secondary transition-colors">
+<span class="material-symbols-outlined text-[20px]">help</span>
+</button>
+<button class="text-on-surface-variant hover:text-secondary transition-colors">
+<span class="material-symbols-outlined text-[20px]">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Page Header & Filters -->
+<div class="px-container-padding py-6 flex-shrink-0 bg-surface">
+<div class="flex justify-between items-end mb-6">
+<div>
+<h1 class="font-display text-display text-on-surface mb-1">Jobs</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Scheduled and batch jobs. Secret values are never displayed.</p>
+</div>
+<div class="font-code-sm text-code-sm text-outline flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+          Last synced 14:32:45 UTC
+        </div>
+</div>
+<!-- KPI Strip -->
+<div class="grid grid-cols-4 gap-4 mb-6">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex flex-col shadow-sm">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-1 uppercase tracking-wider">Jobs in scope</span>
+<span class="font-display text-display text-on-surface">142</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex flex-col shadow-sm border-l-4 border-l-[#10B981]">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-1 uppercase tracking-wider">Succeeded</span>
+<span class="font-display text-display text-on-surface">138</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex flex-col shadow-sm border-l-4 border-l-[#EF4444]">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-1 uppercase tracking-wider">Failed</span>
+<span class="font-display text-display text-error">3</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex flex-col shadow-sm border-l-4 border-l-[#3B82F6]">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-1 uppercase tracking-wider">Running</span>
+<span class="font-display text-display text-on-surface">1</span>
+</div>
+</div>
+<!-- Filter Bar -->
+<div class="flex gap-4 items-center bg-surface-container-low p-2 rounded-lg border border-outline-variant">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline ml-2">filter_list</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Filter</span>
+</div>
+<div class="h-4 w-px bg-outline-variant mx-2"></div>
+<select class="bg-surface-container-lowest border border-outline-variant rounded px-3 py-1 font-table-data text-table-data text-on-surface focus:ring-1 focus:ring-secondary h-8 w-40">
+<option>Provider (All)</option>
+<option>AWS</option>
+<option>Alibaba</option>
+</select>
+<select class="bg-surface-container-lowest border border-outline-variant rounded px-3 py-1 font-table-data text-table-data text-on-surface focus:ring-1 focus:ring-secondary h-8 w-40">
+<option>Region (All)</option>
+<option>EMEA</option>
+<option>AMER</option>
+<option>APAC</option>
+<option>China</option>
+</select>
+<select class="bg-surface-container-lowest border border-outline-variant rounded px-3 py-1 font-table-data text-table-data text-on-surface focus:ring-1 focus:ring-secondary h-8 w-40">
+<option>Environment (All)</option>
+<option>PRD</option>
+<option>NPD</option>
+<option>UAT</option>
+<option>INT/TST</option>
+</select>
+</div>
+</div>
+<!-- Data Table -->
+<div class="flex-1 overflow-auto px-container-padding pb-8">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg shadow-sm overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
+<th class="p-table-cell-padding font-semibold">Job</th>
+<th class="p-table-cell-padding font-semibold">Kind</th>
+<th class="p-table-cell-padding font-semibold">Result</th>
+<th class="p-table-cell-padding font-semibold">Age</th>
+<th class="p-table-cell-padding font-semibold">Provider</th>
+<th class="p-table-cell-padding font-semibold">Region</th>
+<th class="p-table-cell-padding font-semibold">Environment</th>
+<th class="p-table-cell-padding font-semibold">Cluster</th>
+<th class="p-table-cell-padding font-semibold w-10"></th>
+</tr>
+</thead>
+<tbody class="font-table-data text-table-data text-on-surface">
+<!-- Row 1 -->
+<tr class="border-b border-outline-variant hover:bg-surface-container transition-colors group">
+<td class="p-table-cell-padding font-code-sm text-code-sm text-secondary font-medium">nightly-db-backup</td>
+<td class="p-table-cell-padding">CronJob</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-1.5 text-[#10B981]">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Succeeded</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-on-surface-variant">2h ago</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">AWS</td>
+<td class="p-table-cell-padding">EMEA</td>
+<td class="p-table-cell-padding">
+<span class="inline-block px-2 py-0.5 bg-surface-container-highest rounded text-[11px] font-bold text-on-surface-variant">UAT</span>
+</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm text-on-surface-variant">emea-uat-k8s</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="border-b border-outline-variant hover:bg-surface-container transition-colors group">
+<td class="p-table-cell-padding font-code-sm text-code-sm text-secondary font-medium">cert-expiry-scanner</td>
+<td class="p-table-cell-padding">Job</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-1.5 text-[#10B981]">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Succeeded</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-on-surface-variant">45m ago</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">AWS</td>
+<td class="p-table-cell-padding">AMER</td>
+<td class="p-table-cell-padding">
+<span class="inline-block px-2 py-0.5 bg-error text-on-error rounded text-[11px] font-bold uppercase border border-error">PRD</span>
+</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm text-on-surface-variant">us-east-1-prd-k8s</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="border-b border-outline-variant hover:bg-surface-container transition-colors group bg-error-container/20">
+<td class="p-table-cell-padding font-code-sm text-code-sm text-secondary font-medium">data-sync-job</td>
+<td class="p-table-cell-padding">CronJob</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-1.5 text-error font-medium">
+<span class="material-symbols-outlined text-[16px]">error</span>
+<span>Failed</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-on-surface-variant">15m ago</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">AWS</td>
+<td class="p-table-cell-padding">EMEA</td>
+<td class="p-table-cell-padding">
+<span class="inline-block px-2 py-0.5 bg-error text-on-error rounded text-[11px] font-bold uppercase border border-error">NPD</span>
+</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm text-on-surface-variant">eu-west-1-npd-k8s</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="border-b border-outline-variant hover:bg-surface-container transition-colors group">
+<td class="p-table-cell-padding font-code-sm text-code-sm text-secondary font-medium">image-gc</td>
+<td class="p-table-cell-padding">Job</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-1.5 text-[#10B981]">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Succeeded</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-on-surface-variant">4h ago</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">AWS</td>
+<td class="p-table-cell-padding">APAC</td>
+<td class="p-table-cell-padding">
+<span class="inline-block px-2 py-0.5 bg-surface-container-highest rounded text-[11px] font-bold text-on-surface-variant">INT/TST</span>
+</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm text-on-surface-variant">apac-tst-k8s</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container transition-colors group">
+<td class="p-table-cell-padding font-code-sm text-code-sm text-secondary font-medium">ack-log-shipper</td>
+<td class="p-table-cell-padding">Batch</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-1.5 text-[#10B981]">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+<span>Succeeded</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-on-surface-variant">1h ago</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">Alibaba</td>
+<td class="p-table-cell-padding">China</td>
+<td class="p-table-cell-padding">
+<span class="inline-block px-2 py-0.5 bg-surface-container-highest rounded text-[11px] font-bold text-on-surface-variant">UAT</span>
+</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm text-on-surface-variant">ali-uat-hz-01</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-on-surface opacity-0 group-hover:opacity-100 transition-opacity"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Footer -->
+<footer class="bg-surface-container-low border-t border-outline-variant flex justify-between items-center py-2 px-container-padding w-full mt-auto">
+<div class="font-code-sm text-code-sm text-on-surface-variant opacity-80 hover:opacity-100">
+        Security: Secret values are never displayed. All actions are audited.
+      </div>
+<div class="flex gap-4 font-code-sm text-code-sm">
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Security Policy</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Audit Logs</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Support</a>
+</div>
+</footer>
+</main>
+</body></html>

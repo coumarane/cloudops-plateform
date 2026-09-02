@@ -65,3 +65,23 @@ The catalog covers AWS AMER, AWS EMEA, AWS APAC, and Alibaba China. Columns: cer
 Production environments (NPD/PRD) use production stamps. Featured exception: AWS AMER PRD `ingress-tls-wildcard` expiring in 12 days.
 
 Private keys are never shown.
+
+## 9. Remaining console catalogs
+
+All primary nav routes are implemented in `apps/web`. Fleet catalogs use Provider → Region → Environment filters, cover AWS AMER / EMEA / APAC and Alibaba China, stamp production (NPD/PRD), and never display secret values.
+
+| Route | Screen ID | Title |
+|---|---|---|
+| `/infrastructure` | `ea67d2a3833c4683af73a99a2425a3c6` | Infrastructure Inventory |
+| `/clusters` | `d99c299407d24fc9b1517aafe50715ce` | Cluster Management Fleet |
+| `/applications` | `90f089e5523548f682160ac10de64f4a` | Application Health Explorer |
+| `/health-checks` | `098e712b12f74ee19f4f662f7e2571d7` | Health Checks & Monitoring |
+| `/deployments` | `7ec467752b254edeb28114dde0679be6` | Deployments: Rollout History |
+| `/pipelines` | `458cc123554f4be9994960760c4179c7` | DevOps Pipeline Central |
+| `/github` | `bc89840e83cc4fd698594aee2cc21594` | GitHub Operations Hub |
+| `/jobs` | `5e1cef304d9b416e8a99901e9876016c` | Batch Jobs & Operations Monitoring |
+| `/alerts` | `528dcc011a2e47baad5cd4eac8f74616` | Operations Centre: Alerts |
+| `/audit` | `8f9fcbbe73d741dfb6ec7f4d4fffa88d` | Audit Logs Console |
+| `/administration` | `2c1ff965c545494989e01e5f93c322d0` | Administration: Console Access & Integrations |
+
+Known exceptions stay aligned with the dashboard: EMEA UAT cluster unreachable, APAC PRD `payment-svc` failed, EMEA NPD `data-sync` failed, AMER INT/TST `auth-build` failed. GitHub tokens, pipeline secrets, and private keys are never shown.

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Applications - CloudOps Platform</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@450&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#f7f9fb",
+                        "surface-tint": "#565e74",
+                        "on-secondary-fixed-variant": "#004395",
+                        tertiary: "#000000",
+                        surface: "#f7f9fb",
+                        "primary-fixed-dim": "#bec6e0",
+                        "on-surface-variant": "#45464d",
+                        "on-tertiary-fixed-variant": "#693c00",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e6e8ea",
+                        "on-surface": "#191c1e",
+                        "on-secondary-fixed": "#001a42",
+                        "surface-bright": "#f7f9fb",
+                        "on-error-container": "#93000a",
+                        "outline-variant": "#c6c6cd",
+                        error: "#ba1a1a",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-primary-fixed": "#131b2e",
+                        outline: "#76777d",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-container": "#2c1600",
+                        "surface-container-low": "#f2f4f6",
+                        "surface-variant": "#e0e3e5",
+                        "secondary-container": "#2170e4",
+                        "primary-container": "#131b2e",
+                        primary: "#000000",
+                        "on-tertiary-fixed": "#2c1600",
+                        "secondary-fixed": "#d8e2ff",
+                        "surface-container": "#eceef0",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "surface-dim": "#d8dadc",
+                        "on-secondary-container": "#fefcff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-container": "#bf7100",
+                        "tertiary-fixed-dim": "#ffb86f",
+                        "tertiary-fixed": "#ffdcbd",
+                        "primary-fixed": "#dae2fd",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-primary-container": "#7c839b",
+                        secondary: "#0058be",
+                        "on-background": "#191c1e",
+                        "surface-container-highest": "#e0e3e5",
+                        "inverse-primary": "#bec6e0"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.125rem",
+                        lg: "0.25rem",
+                        xl: "0.5rem",
+                        full: "0.75rem"
+                    },
+                    spacing: {
+                        "table-cell-padding": "8px 12px",
+                        "sidebar-collapsed": "64px",
+                        "sidebar-width": "240px",
+                        "gap-md": "16px",
+                        unit: "4px",
+                        "container-padding": "24px"
+                    },
+                    fontFamily: {
+                        "headline-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        display: ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "table-data": ["Inter"],
+                        "label-caps": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-md": ["18px", { lineHeight: "24px", fontWeight: "600" }],
+                        "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        display: ["24px", { lineHeight: "32px", letterSpacing: "-0.02em", fontWeight: "600" }],
+                        "code-sm": ["12px", { lineHeight: "16px", fontWeight: "450" }],
+                        "table-data": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+                        "label-caps": ["11px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-sm overflow-x-hidden min-h-screen flex">
+<!-- SideNavBar -->
+<nav class="bg-primary flex flex-col h-full py-container-padding docked h-screen w-sidebar fixed left-0 top-0 flat no shadows z-50">
+<div class="px-container-padding mb-8">
+<h1 class="font-display text-display text-on-primary">K8s Cockpit</h1>
+<p class="text-on-primary-container text-xs mt-1">Enterprise Ops</p>
+</div>
+<ul class="flex-1 overflow-y-auto px-4 space-y-1">
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+<span>Overview</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">account_tree</span>
+<span>Infrastructure</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">hub</span>
+<span>Clusters</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">layers</span>
+<span>Environments</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">vpn_key</span>
+<span>Secrets</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">verified_user</span>
+<span>Certificates</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 bg-secondary-container text-on-secondary-container rounded-lg transition-colors cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">apps</span>
+<span class="font-semibold">Apps</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">health_and_safety</span>
+<span>Health</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">rocket_launch</span>
+<span>Deployments</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">dynamic_form</span>
+<span>Pipelines</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">terminal</span>
+<span>GitHub</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">work</span>
+<span>Jobs</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+<span>Alerts</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">policy</span>
+<span>Audit</span>
+</a>
+</li>
+<li>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors cursor-pointer active:scale-95 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings_applications</span>
+<span>Admin</span>
+</a>
+</li>
+</ul>
+<div class="px-container-padding mt-auto flex items-center space-x-3">
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-on-primary-fixed-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7h3Qp9_XML6CODVYJNmvn07td4ssmFmoRiB61AJshoLqWHG1Ie1BLk3sO19IWQy2dTxzH07BGXKQC_qqHTfdRNpkzRd2B4Izum4Mrlf-JJAcNtbDzuSBaYu3tNPbPL2npya8RpFaKrUP1okzdG7ZIPWOVCJ9_xuXPyiIb8ppFv10D0aF6_27-7b9WaanNd_jPzHGrNUDEynYZRyWUM7kL_V5MpvY0Saro-w8OgNjQKsIRFaXVkkMcNiBA7NldWylKyCTNWGctws9r"/>
+<div class="text-on-primary-container text-xs">Admin User</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 ml-sidebar-width flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="bg-surface border-b border-outline-variant flat no shadows docked full-width top-0 sticky flex justify-between items-center h-12 px-container-padding w-full z-40">
+<div class="flex items-center space-x-6">
+<span class="font-headline-md text-headline-md text-primary">CloudOps Console</span>
+<nav class="hidden md:flex space-x-4">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-all duration-200 ease-in-out" href="#">AWS</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-all duration-200 ease-in-out" href="#">Alibaba Cloud</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-all duration-200 ease-in-out" href="#">Region</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-all duration-200 ease-in-out" href="#">Namespace</a>
+</nav>
+</div>
+<div class="flex items-center space-x-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+<img alt="Admin Avatar" class="w-7 h-7 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAu9dXlMiKo_2nlYh47CubyzfJrL2FvpOZUpLhfXOytn8FCguzhJwaMak8H4Dgiy56a16bhSkpWfgpHhfbU3WuKa-hH31su2eTYBDGuNrTu27GarMX9W_6jbVoFgktWN32il_P3UkLAXerV2qiqdG4Nrs5imJuNQdnLYvIwEYMw2twwnLcHX25c-2KInj6rk1oBsZlCuUlRcVeG4zNy75I7YeiVMWfsF8jIshNU-0xkelGjOFvY2usu-BuehzhKLTD9bwORERloSTOj"/>
+</div>
+</header>
+<!-- Page Header & Filters -->
+<div class="px-container-padding py-6 border-b border-outline-variant bg-surface-container-lowest">
+<div class="flex justify-between items-end mb-4">
+<div>
+<h2 class="text-2xl font-semibold text-on-surface">Applications</h2>
+<p class="text-on-surface-variant text-sm mt-1">Workloads across AWS EKS and Alibaba ACK</p>
+</div>
+<div class="text-xs text-on-surface-variant font-code-sm">
+                    Last synced: 14:32:45 UTC
+                </div>
+</div>
+<div class="flex space-x-4 items-center">
+<div class="flex items-center space-x-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant">Provider</label>
+<select class="bg-surface border border-outline-variant rounded px-2 py-1 text-sm text-on-surface focus:ring-secondary focus:border-secondary h-8">
+<option>All</option>
+<option>AWS</option>
+<option>Alibaba Cloud</option>
+</select>
+</div>
+<div class="flex items-center space-x-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant">Region</label>
+<select class="bg-surface border border-outline-variant rounded px-2 py-1 text-sm text-on-surface focus:ring-secondary focus:border-secondary h-8">
+<option>All</option>
+<option>EMEA</option>
+<option>APAC</option>
+<option>AMER</option>
+<option>China</option>
+</select>
+</div>
+<div class="flex items-center space-x-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant">Environment</label>
+<select class="bg-surface border border-outline-variant rounded px-2 py-1 text-sm text-on-surface focus:ring-secondary focus:border-secondary h-8">
+<option>All</option>
+<option>PRD</option>
+<option>UAT</option>
+<option>INT</option>
+<option>DEV</option>
+</select>
+</div>
+</div>
+</div>
+<!-- KPI Cards -->
+<div class="px-container-padding py-6 grid grid-cols-4 gap-4">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<div class="text-on-surface-variant font-label-caps text-label-caps mb-1">Applications in scope</div>
+<div class="text-2xl font-semibold text-on-surface">194</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<div class="text-on-surface-variant font-label-caps text-label-caps mb-1">Healthy</div>
+<div class="text-2xl font-semibold text-[#16a34a]">186</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<div class="text-on-surface-variant font-label-caps text-label-caps mb-1">Degraded</div>
+<div class="text-2xl font-semibold text-[#f59e0b]">8</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex justify-between items-start">
+<div>
+<div class="text-on-surface-variant font-label-caps text-label-caps mb-1">PRD apps</div>
+<div class="text-2xl font-semibold text-on-surface">42</div>
+</div>
+<span class="bg-[#DC2626] text-white text-[10px] font-bold px-2 py-1 rounded">PRODUCTION</span>
+</div>
+</div>
+<!-- Data Table -->
+<div class="px-container-padding pb-8 flex-1">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<table class="w-full text-left font-table-data text-table-data border-collapse">
+<thead class="bg-surface-container-low border-b border-outline-variant font-semibold text-on-surface">
+<tr>
+<th class="p-table-cell-padding">Application</th>
+<th class="p-table-cell-padding">Namespace</th>
+<th class="p-table-cell-padding">Replicas (Ready/Desired)</th>
+<th class="p-table-cell-padding">Issue</th>
+<th class="p-table-cell-padding">Provider</th>
+<th class="p-table-cell-padding">Region</th>
+<th class="p-table-cell-padding">Environment</th>
+<th class="p-table-cell-padding">Cluster</th>
+<th class="p-table-cell-padding text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant text-on-surface">
+<tr class="hover:bg-surface-container-low transition-colors h-10">
+<td class="p-table-cell-padding font-code-sm">payment-gateway-svc</td>
+<td class="p-table-cell-padding">finance-uat</td>
+<td class="p-table-cell-padding">2/4</td>
+<td class="p-table-cell-padding text-[#DC2626] font-medium flex items-center space-x-1"><span class="material-symbols-outlined text-sm">error</span><span>CrashLoopBackOff</span></td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">EMEA</td>
+<td class="p-table-cell-padding"><span class="bg-surface-variant text-on-surface-variant text-[10px] font-bold px-2 py-1 rounded">UAT</span></td>
+<td class="p-table-cell-padding font-code-sm text-xs">emea-uat-k8s</td>
+<td class="p-table-cell-padding text-right space-x-2">
+<button class="text-secondary hover:underline text-xs font-medium">Logs</button>
+<button class="text-secondary hover:underline text-xs font-medium">Investigate</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors h-10">
+<td class="p-table-cell-padding font-code-sm">user-profile-api</td>
+<td class="p-table-cell-padding">users-uat</td>
+<td class="p-table-cell-padding">0/2</td>
+<td class="p-table-cell-padding text-[#DC2626] font-medium flex items-center space-x-1"><span class="material-symbols-outlined text-sm">error</span><span>ImagePullBackOff</span></td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">EMEA</td>
+<td class="p-table-cell-padding"><span class="bg-surface-variant text-on-surface-variant text-[10px] font-bold px-2 py-1 rounded">UAT</span></td>
+<td class="p-table-cell-padding font-code-sm text-xs">emea-uat-k8s</td>
+<td class="p-table-cell-padding text-right space-x-2">
+<button class="text-secondary hover:underline text-xs font-medium">Events</button>
+<button class="text-secondary hover:underline text-xs font-medium">Investigate</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors h-10">
+<td class="p-table-cell-padding font-code-sm">api-gateway-v2</td>
+<td class="p-table-cell-padding">gateway-uat</td>
+<td class="p-table-cell-padding">1/3</td>
+<td class="p-table-cell-padding text-[#d97706] font-medium flex items-center space-x-1"><span class="material-symbols-outlined text-sm">warning</span><span>Pod Restart Loop</span></td>
+<td class="p-table-cell-padding">Alibaba</td>
+<td class="p-table-cell-padding">China</td>
+<td class="p-table-cell-padding"><span class="bg-surface-variant text-on-surface-variant text-[10px] font-bold px-2 py-1 rounded">UAT</span></td>
+<td class="p-table-cell-padding font-code-sm text-xs">ali-uat-hz-01</td>
+<td class="p-table-cell-padding text-right space-x-2">
+<button class="text-secondary hover:underline text-xs font-medium">Metrics</button>
+<button class="text-secondary hover:underline text-xs font-medium">Investigate</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors h-10">
+<td class="p-table-cell-padding font-code-sm">payment-svc</td>
+<td class="p-table-cell-padding">payments-prd</td>
+<td class="p-table-cell-padding">3/3</td>
+<td class="p-table-cell-padding text-[#16a34a] font-medium flex items-center space-x-1"><span class="material-symbols-outlined text-sm">check_circle</span><span>Healthy</span></td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">APAC</td>
+<td class="p-table-cell-padding"><span class="bg-[#DC2626] text-white text-[10px] font-bold px-2 py-1 rounded">PRD</span></td>
+<td class="p-table-cell-padding font-code-sm text-xs">ap-south-1-prd-k8s</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-secondary hover:underline text-xs font-medium">View Details</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors h-10">
+<td class="p-table-cell-padding font-code-sm">platform-api</td>
+<td class="p-table-cell-padding">platform-prd</td>
+<td class="p-table-cell-padding">5/5</td>
+<td class="p-table-cell-padding text-[#16a34a] font-medium flex items-center space-x-1"><span class="material-symbols-outlined text-sm">check_circle</span><span>Healthy</span></td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">AMER</td>
+<td class="p-table-cell-padding"><span class="bg-[#DC2626] text-white text-[10px] font-bold px-2 py-1 rounded">PRD</span></td>
+<td class="p-table-cell-padding font-code-sm text-xs">us-east-1-prd-k8s</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-secondary hover:underline text-xs font-medium">View Details</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors h-10">
+<td class="p-table-cell-padding font-code-sm">auth-service</td>
+<td class="p-table-cell-padding">auth-int</td>
+<td class="p-table-cell-padding">2/2</td>
+<td class="p-table-cell-padding text-[#16a34a] font-medium flex items-center space-x-1"><span class="material-symbols-outlined text-sm">check_circle</span><span>Healthy</span></td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">APAC</td>
+<td class="p-table-cell-padding"><span class="bg-surface-variant text-on-surface-variant text-[10px] font-bold px-2 py-1 rounded">INT</span></td>
+<td class="p-table-cell-padding font-code-sm text-xs">ap-south-1-int-k8s</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-secondary hover:underline text-xs font-medium">View Details</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors h-10">
+<td class="p-table-cell-padding font-code-sm">inventory-worker</td>
+<td class="p-table-cell-padding">logistics-dev</td>
+<td class="p-table-cell-padding">1/1</td>
+<td class="p-table-cell-padding text-[#16a34a] font-medium flex items-center space-x-1"><span class="material-symbols-outlined text-sm">check_circle</span><span>Healthy</span></td>
+<td class="p-table-cell-padding">Alibaba</td>
+<td class="p-table-cell-padding">China</td>
+<td class="p-table-cell-padding"><span class="bg-surface-variant text-on-surface-variant text-[10px] font-bold px-2 py-1 rounded">DEV</span></td>
+<td class="p-table-cell-padding font-code-sm text-xs">ali-dev-bj-04</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-secondary hover:underline text-xs font-medium">View Details</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="mt-4 text-center text-xs text-on-surface-variant">
+                Secret values are never displayed in this console.
+            </div>
+</div>
+</main>
+</body></html>

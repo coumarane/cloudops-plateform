@@ -1,6 +1,6 @@
+import { catalogHref } from "./catalog";
 import { certificatesHref } from "./certificates";
 import { assertNoSecretValues, emptyMetrics } from "./dashboard";
-import { environmentHref } from "./environment";
 import { ENVIRONMENTS, type CellMetrics, type MatrixRow, type OperationalAlert, type RecentFailure } from "./types";
 
 function cell(overrides: Partial<CellMetrics> = {}): CellMetrics {
@@ -75,7 +75,12 @@ export const OPERATIONAL_ALERTS: OperationalAlert[] = [
     region: "EMEA",
     environment: "UAT",
     age: "10m ago",
-    href: environmentHref("AWS", "EMEA", "UAT", "clusters"),
+    href: catalogHref("/clusters", {
+      provider: "AWS",
+      region: "EMEA",
+      environment: "UAT",
+      selected: "eu-west-1-uat-k8s",
+    }),
   },
   {
     id: "alert-amer-prd-cert",
@@ -102,7 +107,12 @@ export const OPERATIONAL_ALERTS: OperationalAlert[] = [
     region: "China",
     environment: "UAT",
     age: "2h ago",
-    href: environmentHref("Alibaba", "China", "UAT", "health"),
+    href: catalogHref("/health-checks", {
+      provider: "Alibaba",
+      region: "China",
+      environment: "UAT",
+      selected: "hc-china-uat-prometheus",
+    }),
   },
   {
     id: "alert-china-uat-restarts",
@@ -113,7 +123,12 @@ export const OPERATIONAL_ALERTS: OperationalAlert[] = [
     region: "China",
     environment: "UAT",
     age: "3h ago",
-    href: environmentHref("Alibaba", "China", "UAT", "applications"),
+    href: catalogHref("/applications", {
+      provider: "Alibaba",
+      region: "China",
+      environment: "UAT",
+      selected: "app-china-uat-gateway",
+    }),
   },
 ];
 
@@ -126,7 +141,12 @@ export const RECENT_FAILURES: RecentFailure[] = [
     region: "APAC",
     environment: "PRD",
     age: "15m ago",
-    href: environmentHref("AWS", "APAC", "PRD", "deployments"),
+    href: catalogHref("/deployments", {
+      provider: "AWS",
+      region: "APAC",
+      environment: "PRD",
+      selected: "dep-ap-southeast-1-prd-k8s",
+    }),
   },
   {
     id: "fail-amer-int-github",
@@ -136,7 +156,12 @@ export const RECENT_FAILURES: RecentFailure[] = [
     region: "AMER",
     environment: "INT/TST",
     age: "1h ago",
-    href: environmentHref("AWS", "AMER", "INT/TST", "github"),
+    href: catalogHref("/github", {
+      provider: "AWS",
+      region: "AMER",
+      environment: "INT/TST",
+      selected: "gh-us-east-1-int-k8s",
+    }),
   },
   {
     id: "fail-emea-npd-pipeline",
@@ -146,7 +171,12 @@ export const RECENT_FAILURES: RecentFailure[] = [
     region: "EMEA",
     environment: "NPD",
     age: "2h ago",
-    href: environmentHref("AWS", "EMEA", "NPD", "pipelines"),
+    href: catalogHref("/pipelines", {
+      provider: "AWS",
+      region: "EMEA",
+      environment: "NPD",
+      selected: "pipe-eu-west-1-npd-k8s",
+    }),
   },
 ];
 
