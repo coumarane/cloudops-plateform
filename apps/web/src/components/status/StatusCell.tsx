@@ -7,7 +7,10 @@ export function StatusCell({ cell, dimmed }: { cell: CellMetrics; dimmed?: boole
   const label = cellExceptionLabel(cell);
 
   return (
-    <div className={`flex flex-col items-center gap-1 ${dimmed ? "opacity-30" : ""}`}>
+    <div
+      className={`flex flex-col items-center gap-1 ${dimmed ? "opacity-30" : ""}`}
+      title={cell.lastError || undefined}
+    >
       {severity === "healthy" ? (
         <CheckCircle2 className="h-4 w-4 text-healthy" aria-label="Healthy" />
       ) : null}
@@ -28,6 +31,8 @@ export function StatusCell({ cell, dimmed }: { cell: CellMetrics; dimmed?: boole
           {label}
         </span>
       ) : null}
+      {cell.live ? <span className="text-[9px] font-bold uppercase tracking-wide text-action">Live</span> : null}
+      {cell.readonly ? <span className="text-[9px] font-bold uppercase tracking-wide text-prd">RO</span> : null}
     </div>
   );
 }

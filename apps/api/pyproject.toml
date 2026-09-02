@@ -1,7 +1,7 @@
 [project]
 name = "cloudops-api"
-version = "0.3.0"
-description = "CloudOps Platform API. AWS EMEA DEV uses live adapters; other scopes stay mocked."
+version = "0.4.0"
+description = "CloudOps Platform API. AWS AMER, EMEA, and APAC use live adapters when scanned; Alibaba stays mocked."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

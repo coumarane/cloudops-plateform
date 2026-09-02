@@ -1,6 +1,6 @@
-# AWS EMEA NonProd DEV — IAM permissions
+# AWS multi-account IAM — read-only inventory
 
-Phase 3 reads EKS and ACM in `eu-west-1` only. The identity policy below was generated with IAM Policy Autopilot from the adapter and worker source (do not hand-author this policy from memory):
+Phase 4 scans EKS and ACM in every configured AWS account (AMER, EMEA, APAC NonProd and Prod). The same adapter is used for all accounts; region and account IDs come from topology, not from this policy. The identity policy below was generated with IAM Policy Autopilot from the adapter and worker source (do not hand-author this policy from memory):
 
 ```bash
 uvx iam-policy-autopilot@latest generate-policies \
@@ -13,7 +13,6 @@ uvx iam-policy-autopilot@latest generate-policies \
   apps/worker/tasks/aws_cluster_health.py \
   apps/worker/tasks/aws_certificate_scan.py \
   --pretty \
-  --region eu-west-1 \
   --service-hints eks acm sts secretsmanager
 ```
 
@@ -27,7 +26,7 @@ Generated identity policy (Autopilot 0.3.0):
     {
       "Effect": "Allow",
       "Action": ["acm:DescribeCertificate"],
-      "Resource": ["arn:aws:acm:eu-west-1:*:certificate/*"]
+      "Resource": ["arn:*:acm:*:*:certificate/*"]
     },
     {
       "Effect": "Allow",
@@ -37,7 +36,7 @@ Generated identity policy (Autopilot 0.3.0):
     {
       "Effect": "Allow",
       "Action": ["eks:DescribeCluster"],
-      "Resource": ["arn:aws:eks:eu-west-1:*:cluster/*"]
+      "Resource": ["arn:*:eks:*:*:cluster/*"]
     },
     {
       "Effect": "Allow",
@@ -47,17 +46,17 @@ Generated identity policy (Autopilot 0.3.0):
     {
       "Effect": "Allow",
       "Action": ["kms:Decrypt"],
-      "Resource": ["arn:aws:kms:eu-west-1:*:key/*"],
+      "Resource": ["arn:*:kms:*:*:key/*"],
       "Condition": {
         "StringEquals": {
-          "kms:ViaService": ["secretsmanager.eu-west-1.amazonaws.com"]
+          "kms:ViaService": ["secretsmanager.*.amazonaws.com"]
         }
       }
     },
     {
       "Effect": "Allow",
       "Action": ["secretsmanager:GetSecretValue"],
-      "Resource": ["arn:aws:secretsmanager:eu-west-1:*:secret:*"]
+      "Resource": ["arn:*:secretsmanager:*:*:secret:*"]
     },
     {
       "Effect": "Allow",
@@ -68,8 +67,8 @@ Generated identity policy (Autopilot 0.3.0):
         "sts:TagSession"
       ],
       "Resource": [
-        "arn:aws:iam::*:role/*",
-        "arn:aws:sts::*:self"
+        "arn:*:iam::*:role/*",
+        "arn:*:sts::*:self"
       ]
     },
     {
@@ -81,19 +80,17 @@ Generated identity policy (Autopilot 0.3.0):
 }
 ```
 
-Scope the generated ARNs to the NonProd EMEA account and the CloudOps read-only role before attaching. Prefer IRSA / instance profile / workstation profile assumption over long-lived access keys. Never store access keys in PostgreSQL.
+Attach this (or a tighter copy with explicit account IDs and regions) to the CloudOps scanner identity. Each topology account then uses STS AssumeRole into a **read-only** inventory role (`CLOUDOPS_AWS_{REGION}_{NONPROD|PROD}_ROLE_ARN`). Prefer IRSA / instance profile / workstation profile over long-lived access keys. Never store access keys in PostgreSQL. Prod accounts (NPD/PRD) are scanned read-only; no mutate APIs are called.
 
-Kubernetes API access is not an IAM action. Grant the assumed role an EKS access entry (or `aws-auth` mapping) plus read-only RBAC: `get`/`list` on `nodes`, `pods`, `deployments`, and `jobs`.
+Kubernetes API access is not an IAM action. Grant each assumed role an EKS access entry (or `aws-auth` mapping) plus read-only RBAC: `get`/`list` on `nodes`, `pods`, `deployments`, and `jobs`.
 
 ## What remains mocked
 
-Live adapters replace mock data **only** after a successful AWS EMEA DEV discovery (clusters/dashboard cell) or certificate scan. Until then the console still shows the mock `eu-west-1-dev-k8s` cluster.
+Live adapters replace mock data **only** after a successful scan of that AWS account/environment. Unscanned cells keep mock inventory.
 
 Still mocked:
 
-- AWS AMER — all environments
-- AWS APAC — all environments
-- AWS EMEA INT/TST, UAT, NPD, and PRD
 - Alibaba China — all environments
 - Applications, secrets, health checks, deployments, pipelines, GitHub, alerts, audit, and administration catalogs
 - Destructive AWS actions (none are implemented)
+- Any AWS cell whose last discovery has not succeeded

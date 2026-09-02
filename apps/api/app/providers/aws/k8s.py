@@ -9,7 +9,6 @@ from typing import Protocol
 from botocore.signers import RequestSigner
 
 from app.core.logging import get_logger
-from app.providers.aws.auth import connection_config
 from app.providers.aws.client import AwsClientFactory
 from app.providers.aws.errors import AwsTransientError, classify_aws_error
 from app.providers.aws.models import ClusterHealthSnapshot, DiscoveredCluster
@@ -150,7 +149,6 @@ class ClusterHealthCollector:
         self._kubernetes = kubernetes or DefaultKubernetesCollector()
 
     def collect(self, cluster: DiscoveredCluster, ca_data: str | None = None) -> ClusterHealthSnapshot:
-        config = connection_config()
         now = datetime.now(timezone.utc)
         if cluster.cluster_status not in {"ACTIVE"}:
             return ClusterHealthSnapshot(
@@ -161,7 +159,7 @@ class ClusterHealthCollector:
                 detail="EKS control plane is not ACTIVE",
             )
         try:
-            token = eks_bearer_token(self._factory, cluster.name, config.cloud_region)
+            token = eks_bearer_token(self._factory, cluster.name, cluster.cloud_region)
         except Exception as error:
             mapped = classify_aws_error(error)
             logger.warning("Unable to mint EKS token cluster=%s error=%s", cluster.name, mapped)

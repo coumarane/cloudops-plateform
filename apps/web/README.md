@@ -2,7 +2,7 @@
 
 Next.js + TypeScript + Tailwind implementation of the CloudOps operations console.
 
-The console loads fleet data from the FastAPI service at `/api/v1` (proxied to `http://127.0.0.1:8000` by default). AWS EMEA DEV clusters and ACM certificates come from the live backend when discovery jobs have run; other scopes stay mocked.
+The console loads fleet data from the FastAPI service at `/api/v1` (proxied to `http://127.0.0.1:8000` by default). AWS AMER, EMEA, and APAC cells use live backend data after account scans; Alibaba stays mocked. PRD is read-only.
 
 ```bash
 npm install

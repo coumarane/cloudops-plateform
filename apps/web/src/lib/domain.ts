@@ -217,6 +217,12 @@ export type EnvironmentIdentity = {
   cloudRegion: string;
   account: string;
   clusterName: string;
+  source?: "mock" | "aws";
+  lastSuccessfulScan?: string | null;
+  lastError?: string | null;
+  discoveryActive?: boolean;
+  readonly?: boolean;
+  awsAccountId?: string | null;
 };
 
 export type ActivityItem = {

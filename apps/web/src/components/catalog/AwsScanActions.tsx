@@ -8,7 +8,7 @@ const ACTIONS = [
   {
     id: "discovery",
     label: "Discover EKS clusters",
-    hint: "AWS EMEA NonProd DEV only",
+    hint: "All AWS regions and accounts. PRD stays read-only.",
     run: () => cloudOpsApi.triggerClusterDiscovery(),
   },
   {
@@ -44,7 +44,7 @@ export function AwsScanActions({ onQueued }: { onQueued: () => void }) {
   }
 
   return (
-    <CatalogPanel title="AWS EMEA DEV jobs" hint="Read-only discovery. No destructive actions. AWS secrets are never sent to the browser.">
+    <CatalogPanel title="AWS inventory jobs" hint="Read-only discovery across AMER, EMEA, and APAC. PRD is scanned read-only. No destructive actions. AWS secrets are never sent to the browser.">
       <div className="flex flex-wrap gap-3 p-4">
         {ACTIONS.map((action) => (
           <button

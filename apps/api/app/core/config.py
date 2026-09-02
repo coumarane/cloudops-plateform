@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     aws_provider: str = "AWS"
     aws_platform_region: str = "EMEA"
     aws_environment: str = "DEV"
-    aws_account_alias: str = "nonprod-emea"
+    aws_account_alias: str = "aws-emea-nonprod"
     aws_cloud_region: str = "eu-west-1"
     aws_account_id: str | None = None
     aws_role_arn: str | None = None
@@ -26,10 +26,8 @@ class Settings(BaseSettings):
     aws_profile: str | None = None
     aws_config_secret_arn: str | None = None
     aws_cluster_environment_tag: str = "Environment"
-
-    @property
-    def live_scope(self) -> tuple[str, str, str]:
-        return (self.aws_provider, self.aws_platform_region, self.aws_environment)
+    aws_scan_concurrency: int = 3
+    aws_topology_path: str | None = None
 
 
 settings = Settings()

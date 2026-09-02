@@ -3,9 +3,9 @@ KIND_HEALTH = "aws-health-scan"
 KIND_CERTIFICATES = "aws-certificate-scan"
 
 JOB_NAMES = {
-    KIND_DISCOVERY: "AWS EMEA DEV cluster discovery",
-    KIND_HEALTH: "AWS EMEA DEV cluster health scan",
-    KIND_CERTIFICATES: "AWS EMEA DEV ACM certificate scan",
+    KIND_DISCOVERY: "AWS multi-account cluster discovery",
+    KIND_HEALTH: "AWS multi-account cluster health scan",
+    KIND_CERTIFICATES: "AWS multi-account ACM certificate scan",
 }
 
 TASK_NAMES = {

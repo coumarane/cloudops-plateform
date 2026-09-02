@@ -1,0 +1,72 @@
+{
+  "concurrency": 3,
+  "clusterEnvironmentTag": "Environment",
+  "regions": [
+    {
+      "id": "AMER",
+      "cloudRegion": "us-east-1",
+      "accounts": [
+        {
+          "alias": "aws-amer-nonprod",
+          "accountClass": "Non-production",
+          "readonly": false,
+          "environments": ["DEV", "INT/TST", "UAT"],
+          "accountId": "111111111111",
+          "roleArn": "arn:aws:iam::111111111111:role/CloudOpsInventoryReadOnly"
+        },
+        {
+          "alias": "aws-amer-prod",
+          "accountClass": "Production",
+          "readonly": true,
+          "environments": ["NPD", "PRD"],
+          "accountId": "222222222222",
+          "roleArn": "arn:aws:iam::222222222222:role/CloudOpsInventoryReadOnly"
+        }
+      ]
+    },
+    {
+      "id": "EMEA",
+      "cloudRegion": "eu-west-1",
+      "accounts": [
+        {
+          "alias": "aws-emea-nonprod",
+          "accountClass": "Non-production",
+          "readonly": false,
+          "environments": ["DEV", "INT/TST", "UAT"],
+          "accountId": "333333333333",
+          "roleArn": "arn:aws:iam::333333333333:role/CloudOpsInventoryReadOnly"
+        },
+        {
+          "alias": "aws-emea-prod",
+          "accountClass": "Production",
+          "readonly": true,
+          "environments": ["NPD", "PRD"],
+          "accountId": "444444444444",
+          "roleArn": "arn:aws:iam::444444444444:role/CloudOpsInventoryReadOnly"
+        }
+      ]
+    },
+    {
+      "id": "APAC",
+      "cloudRegion": "ap-southeast-1",
+      "accounts": [
+        {
+          "alias": "aws-apac-nonprod",
+          "accountClass": "Non-production",
+          "readonly": false,
+          "environments": ["DEV", "INT/TST", "UAT"],
+          "accountId": "555555555555",
+          "roleArn": "arn:aws:iam::555555555555:role/CloudOpsInventoryReadOnly"
+        },
+        {
+          "alias": "aws-apac-prod",
+          "accountClass": "Production",
+          "readonly": true,
+          "environments": ["NPD", "PRD"],
+          "accountId": "666666666666",
+          "roleArn": "arn:aws:iam::666666666666:role/CloudOpsInventoryReadOnly"
+        }
+      ]
+    }
+  ]
+}

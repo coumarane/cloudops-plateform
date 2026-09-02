@@ -5,10 +5,9 @@ from datetime import datetime, timezone
 from botocore.exceptions import ClientError
 
 from app.core.logging import get_logger
-from app.providers.aws.auth import connection_config
 from app.providers.aws.client import AwsClientFactory
 from app.providers.aws.errors import classify_aws_error
-from app.providers.aws.models import DiscoveredCertificate
+from app.providers.aws.models import AwsConnectionConfig, DiscoveredCertificate
 
 logger = get_logger(__name__)
 
@@ -37,12 +36,12 @@ def _renewal_status(days: int | None, eligibility: str) -> str:
 
 
 class AcmScanner:
-    def __init__(self, factory: AwsClientFactory | None = None) -> None:
-        self._factory = factory or AwsClientFactory()
+    def __init__(self, factory: AwsClientFactory, config: AwsConnectionConfig) -> None:
+        self._factory = factory
+        self._config = config
 
     def list_certificates(self) -> list[DiscoveredCertificate]:
-        config = connection_config()
-        client = self._factory.client("acm", region_name=config.cloud_region)
+        client = self._factory.client("acm", region_name=self._config.cloud_region)
         summaries: list[dict] = []
         try:
             paginator = client.get_paginator("list_certificates")
@@ -80,11 +79,11 @@ class AcmScanner:
                     in_use_by=in_use,
                     renewal_eligibility=_renewal_status(days, eligibility),
                     last_checked=now,
-                    environment=config.environment,
-                    platform_region=config.platform_region,
-                    account_alias=config.account_alias,
-                    cloud_region=config.cloud_region,
+                    environment="",
+                    platform_region=self._config.platform_region,
+                    account_alias=self._config.account_alias,
+                    cloud_region=self._config.cloud_region,
                 )
             )
-        logger.info("Discovered %s ACM certificates in %s", len(discovered), config.cloud_region)
+        logger.info("Discovered %s ACM certificates account=%s", len(discovered), self._config.account_alias)
         return discovered

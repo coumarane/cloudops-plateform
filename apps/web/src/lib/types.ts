@@ -40,6 +40,9 @@ export type CellMetrics = {
   githubFailures: number;
   pipelineFailures: number;
   openAlerts: number;
+  live?: boolean;
+  lastError?: string | null;
+  readonly?: boolean;
 };
 
 export type MatrixRow = {

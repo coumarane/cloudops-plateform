@@ -48,7 +48,7 @@ describe("environment routing", () => {
     const scopes = new Set(listEnvironmentIdentities().map((item) => `${item.provider} ${item.region}`));
     expect(scopes).toEqual(new Set(["AWS AMER", "AWS EMEA", "AWS APAC", "Alibaba China"]));
     expect(listEnvironmentIdentities().find((item) => item.provider === "AWS" && item.region === "EMEA" && item.environment === "UAT")?.account).toBe(
-      "nonprod-emea",
+      "aws-emea-nonprod",
     );
   });
 });
