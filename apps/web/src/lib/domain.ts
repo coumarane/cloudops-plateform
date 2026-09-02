@@ -1,6 +1,5 @@
 import type {
   AlertSeverity,
-  CellMetrics,
   ClusterPlatform,
   Environment,
   KpiSummary,
