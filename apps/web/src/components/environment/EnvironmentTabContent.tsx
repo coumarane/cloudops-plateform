@@ -65,7 +65,10 @@ export function EnvironmentTabContent({
                 </Link>
               }
             >
-              <ApplicationsTable applications={record.applications} degradedOnly />
+              <ApplicationsTable
+                applications={record.applications}
+                degradedOnly={degradedApps.length > 0}
+              />
             </Panel>
           </div>
           <div className="flex flex-col gap-4 xl:col-span-4">
