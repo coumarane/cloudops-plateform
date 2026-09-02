@@ -175,7 +175,7 @@ def test_notification_retries_temporary_failure() -> None:
     try:
         alert = publish(session, _signal(environment="UAT", environment_id="aws-emea-uat", severity="MEDIUM", application_id="demo"))
         session.flush()
-        delivery = session.query(NotificationDeliveryRow).filter_by(alert_id=alert.id).first()
+        delivery = session.query(NotificationDeliveryRow).filter_by(alert_id=alert.id, destination_id="dest-log-ops").first()
         assert delivery is not None
         assert delivery.status == DeliveryStatus.RETRY
         assert delivery.error_category == FailureClass.TEMPORARY_FAILURE
