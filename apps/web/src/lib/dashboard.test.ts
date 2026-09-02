@@ -40,5 +40,8 @@ describe("dashboard aggregations", () => {
     expect(alerts).toHaveLength(1);
     expect(alerts[0]?.environment).toBe("PRD");
     expect(alerts[0]?.region).toBe("AMER");
+    expect(alerts[0]?.href).toBe(
+      "/certificates?provider=aws&region=amer&environment=prd&certificate=cert-amer-prd-wildcard",
+    );
   });
 });

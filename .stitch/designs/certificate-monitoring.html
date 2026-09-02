@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Certificate Monitoring - CloudOps Platform</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@450&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-highest": "#e0e3e5",
+                      "on-surface": "#191c1e",
+                      "surface-bright": "#f7f9fb",
+                      "outline": "#76777d",
+                      "tertiary-fixed-dim": "#ffb86f",
+                      "secondary-fixed-dim": "#adc6ff",
+                      "background": "#f7f9fb",
+                      "surface-container-high": "#e6e8ea",
+                      "surface-dim": "#d8dadc",
+                      "on-background": "#191c1e",
+                      "secondary-fixed": "#d8e2ff",
+                      "on-primary-container": "#7c839b",
+                      "secondary": "#0058be",
+                      "on-secondary-fixed-variant": "#004395",
+                      "error": "#ba1a1a",
+                      "surface": "#f7f9fb",
+                      "surface-variant": "#e0e3e5",
+                      "on-secondary-container": "#fefcff",
+                      "tertiary": "#000000",
+                      "surface-container": "#eceef0",
+                      "primary-container": "#131b2e",
+                      "on-tertiary-fixed-variant": "#693c00",
+                      "on-primary": "#ffffff",
+                      "surface-tint": "#565e74",
+                      "primary-fixed-dim": "#bec6e0",
+                      "on-tertiary-fixed": "#2c1600",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-low": "#f2f4f6",
+                      "on-tertiary-container": "#bf7100",
+                      "inverse-on-surface": "#eff1f3",
+                      "tertiary-fixed": "#ffdcbd",
+                      "tertiary-container": "#2c1600",
+                      "inverse-surface": "#2d3133",
+                      "on-error-container": "#93000a",
+                      "outline-variant": "#c6c6cd",
+                      "on-surface-variant": "#45464d",
+                      "on-primary-fixed-variant": "#3f465c",
+                      "primary": "#000000",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-fixed": "#131b2e",
+                      "inverse-primary": "#bec6e0",
+                      "secondary-container": "#2170e4",
+                      "error-container": "#ffdad6",
+                      "on-secondary-fixed": "#001a42",
+                      "on-error": "#ffffff",
+                      "primary-fixed": "#dae2fd",
+                      "on-secondary": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "sidebar-width": "240px",
+                      "container-padding": "24px",
+                      "table-cell-padding": "8px 12px",
+                      "sidebar-collapsed": "64px",
+                      "gap-md": "16px",
+                      "unit": "4px"
+              },
+              "fontFamily": {
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "display": [
+                              "Inter"
+                      ],
+                      "code-sm": [
+                              "JetBrains Mono"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ],
+                      "table-data": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "headline-md": [
+                              "18px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "code-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "450"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "table-data": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; color: #0F172A; }
+        .table-row-hover:hover { background-color: #F1F5F9; }
+        .border-layout { border-color: #E2E8F0; }
+        .chip-green { background-color: rgba(34, 197, 94, 0.1); color: #166534; }
+        .chip-amber { background-color: rgba(245, 158, 11, 0.1); color: #92400E; }
+        .chip-blue { background-color: rgba(59, 130, 246, 0.1); color: #1E40AF; }
+        .chip-red { background-color: #DC2626; color: white; }
+        .stamp-red { background-color: #DC2626; color: white; font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; }
+    </style>
+</head>
+<body class="flex min-h-screen">
+<!-- Environment Banner (PRD) -->
+<div class="fixed top-0 left-0 w-full h-1 bg-red-600 z-50"></div>
+<div class="fixed top-1 left-0 w-full text-center bg-red-600 text-white font-label-caps text-label-caps py-0.5 z-50 shadow-md">
+        PRODUCTION ENVIRONMENT
+    </div>
+<!-- SideNavBar -->
+<aside class="bg-primary dark:bg-primary-container text-on-primary-fixed dark:text-primary-fixed-dim font-body-sm text-body-sm docked h-screen w-sidebar fixed left-0 top-0 flex flex-col h-full py-container-padding z-40 mt-5">
+<div class="px-6 mb-8 flex items-center gap-3">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">cloud_sync</span>
+<div>
+<h1 class="font-display text-display text-on-primary dark:text-primary-fixed tracking-tight">K8s Cockpit</h1>
+<p class="text-xs text-on-primary-fixed-variant">Enterprise Ops</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Overview</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span>Infrastructure</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span>Clusters</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">layers</span>
+<span>Environments</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">apps</span>
+<span>Applications</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">vpn_key</span>
+<span>Secrets</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-secondary-container text-on-secondary-container rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span class="font-semibold">Certificates</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">health_and_safety</span>
+<span>Health Checks</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">rocket_launch</span>
+<span>Deployments</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">dynamic_form</span>
+<span>Pipelines</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span>GitHub</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">work</span>
+<span>Jobs</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">notifications</span>
+<span>Alerts</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">policy</span>
+<span>Audit</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined">settings_applications</span>
+<span>Admin</span>
+</a>
+</nav>
+<div class="px-6 mt-auto">
+<div class="flex items-center gap-3 border-t border-on-primary-fixed-variant pt-4">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface text-sm">person</span>
+</div>
+<div class="text-sm">
+<p class="font-medium">User Profile</p>
+<p class="text-xs text-on-primary-fixed-variant">SRE Admin</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-[240px] flex flex-col min-h-screen bg-background mt-5">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface-dim font-label-caps text-label-caps docked full-width top-0 sticky border-b border-outline-variant flat no shadows flex justify-between items-center h-12 px-container-padding w-full z-30 transition-all duration-200 ease-in-out">
+<div class="flex items-center gap-6">
+<h2 class="font-headline-md text-headline-md text-primary dark:text-on-surface">CloudOps Console</h2>
+<!-- Search Bar -->
+<div class="relative ml-4">
+<span class="material-symbols-outlined absolute left-2 top-1.5 text-on-surface-variant text-sm">search</span>
+<input class="pl-8 pr-3 py-1 bg-surface-container-low border border-outline-variant rounded text-xs focus:ring-2 focus:ring-secondary focus:border-secondary outline-none w-64" placeholder="Search resources..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<div class="flex gap-4">
+<a class="text-on-surface-variant hover:text-primary transition-all" href="#">AWS</a>
+<a class="text-on-surface-variant hover:text-primary transition-all" href="#">Alibaba Cloud</a>
+<a class="text-on-surface-variant hover:text-primary transition-all" href="#">Region</a>
+<a class="text-on-surface-variant hover:text-primary transition-all" href="#">Namespace</a>
+</div>
+<div class="h-4 w-px bg-outline-variant mx-2"></div>
+<button class="hover:text-primary transition-all"><span class="material-symbols-outlined text-sm">notifications</span></button>
+<button class="hover:text-primary transition-all"><span class="material-symbols-outlined text-sm">help_outline</span></button>
+</div>
+</header>
+<!-- Page Header & Global Filters -->
+<div class="px-container-padding py-6 border-b border-layout bg-white">
+<div class="flex justify-between items-start mb-6">
+<div>
+<h1 class="text-2xl font-semibold text-slate-900 tracking-tight">Certificate Monitoring</h1>
+<p class="text-sm text-slate-500 mt-1">TLS certificates across AWS EKS and Alibaba ACK. Private keys are never displayed.</p>
+</div>
+<div class="text-xs text-slate-500 flex items-center gap-1 font-code-sm">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                    Last synced 14:32:45 UTC
+                </div>
+</div>
+<div class="flex gap-3">
+<select class="text-xs py-1.5 pl-3 pr-8 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+<option>Provider: All providers</option>
+<option>AWS</option>
+<option>Alibaba Cloud</option>
+</select>
+<select class="text-xs py-1.5 pl-3 pr-8 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+<option>Region: All regions</option>
+<option>AMER</option>
+<option>EMEA</option>
+<option>APAC</option>
+<option>China</option>
+</select>
+<select class="text-xs py-1.5 pl-3 pr-8 border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none">
+<option>Environment: All environments</option>
+<option>PRD</option>
+<option>NPD</option>
+<option>UAT</option>
+<option>DEV</option>
+<option>INT/TST</option>
+</select>
+<button class="ml-auto text-xs font-semibold px-4 py-1.5 bg-slate-900 text-white rounded hover:bg-slate-800 transition-colors">
+                    Refresh
+                </button>
+</div>
+</div>
+<!-- Canvas -->
+<div class="flex-1 p-container-padding">
+<!-- KPI Strip -->
+<div class="grid grid-cols-5 gap-4 mb-6">
+<div class="bg-white border border-layout rounded-lg p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<p class="text-xs text-slate-500 font-medium mb-1">Certificates in scope</p>
+<p class="text-2xl font-semibold text-slate-900">10</p>
+</div>
+<div class="bg-white border border-amber-200 rounded-lg p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<p class="text-xs text-amber-700 font-medium mb-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">warning</span> Expiring within 14d
+                    </p>
+<p class="text-2xl font-semibold text-amber-900">1</p>
+</div>
+<div class="bg-white border border-red-200 rounded-lg p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<p class="text-xs text-red-700 font-medium mb-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">error</span> Expired
+                    </p>
+<p class="text-2xl font-semibold text-red-900">0</p>
+</div>
+<div class="bg-white border border-layout rounded-lg p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<p class="text-xs text-slate-500 font-medium mb-1">Auto-renew OK</p>
+<p class="text-2xl font-semibold text-slate-900">8</p>
+</div>
+<div class="bg-white border border-layout rounded-lg p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<p class="text-xs text-slate-500 font-medium mb-1 flex items-center gap-2">
+                        PRD certificates <span class="stamp-red">PRD</span>
+</p>
+<p class="text-2xl font-semibold text-slate-900">3</p>
+</div>
+</div>
+<!-- Main Data Table -->
+<div class="bg-white border border-layout rounded-lg shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm font-table-data text-table-data whitespace-nowrap">
+<thead class="bg-slate-50 border-b border-layout text-xs font-semibold text-slate-600">
+<tr>
+<th class="px-4 py-3 font-semibold">Certificate</th>
+<th class="px-4 py-3 font-semibold">Domain</th>
+<th class="px-4 py-3 font-semibold">Provider / Region</th>
+<th class="px-4 py-3 font-semibold">Environment</th>
+<th class="px-4 py-3 font-semibold">Cluster / Namespace</th>
+<th class="px-4 py-3 font-semibold">Issuer</th>
+<th class="px-4 py-3 font-semibold">Expiration</th>
+<th class="px-4 py-3 font-semibold text-right">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-layout text-slate-800">
+<!-- Row 1 (Priority) -->
+<tr class="table-row-hover bg-amber-50/30">
+<td class="px-4 py-2">
+<div class="font-code-sm text-slate-900">ingress-tls-wildcard</div>
+</td>
+<td class="px-4 py-2 font-code-sm">*.prd.amer.example.com</td>
+<td class="px-4 py-2">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-slate-400">cloud</span> AWS <span class="text-slate-400 mx-1">|</span> AMER</div>
+</td>
+<td class="px-4 py-2"><span class="stamp-red">PRD</span></td>
+<td class="px-4 py-2">
+<div class="text-xs">us-east-1-prd-k8s</div>
+<div class="text-[11px] text-slate-500 font-code-sm">ns: ingress-prd</div>
+</td>
+<td class="px-4 py-2 text-xs">Let's Encrypt</td>
+<td class="px-4 py-2">
+<div class="text-xs">2026-09-14</div>
+<div class="text-[11px] text-amber-600 font-medium">12d remaining</div>
+</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium chip-amber">Expiring</span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="table-row-hover">
+<td class="px-4 py-2">
+<div class="font-code-sm text-slate-900">platform-api-tls</div>
+</td>
+<td class="px-4 py-2 font-code-sm">platform.dev.amer.example.com</td>
+<td class="px-4 py-2">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-slate-400">cloud</span> AWS <span class="text-slate-400 mx-1">|</span> AMER</div>
+</td>
+<td class="px-4 py-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 uppercase tracking-wider border border-slate-200">DEV</span>
+</td>
+<td class="px-4 py-2">
+<div class="text-xs">us-east-1-dev-k8s</div>
+<div class="text-[11px] text-slate-500 font-code-sm">ns: dev</div>
+</td>
+<td class="px-4 py-2 text-xs">Amazon</td>
+<td class="px-4 py-2">
+<div class="text-xs">2027-03-02</div>
+<div class="text-[11px] text-slate-500">181d remaining</div>
+</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium chip-green">OK</span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="table-row-hover">
+<td class="px-4 py-2">
+<div class="font-code-sm text-slate-900">app-ingress-tls</div>
+</td>
+<td class="px-4 py-2 font-code-sm">uat.amer.example.com</td>
+<td class="px-4 py-2">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-slate-400">cloud</span> AWS <span class="text-slate-400 mx-1">|</span> AMER</div>
+</td>
+<td class="px-4 py-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 uppercase tracking-wider border border-slate-200">UAT</span>
+</td>
+<td class="px-4 py-2">
+<div class="text-xs">us-east-1-uat-k8s</div>
+<div class="text-[11px] text-slate-500 font-code-sm">ns: uat</div>
+</td>
+<td class="px-4 py-2 text-xs">Let's Encrypt</td>
+<td class="px-4 py-2">
+<div class="text-xs">2026-11-20</div>
+<div class="text-[11px] text-slate-500">79d remaining</div>
+</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium chip-green">OK</span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="table-row-hover">
+<td class="px-4 py-2">
+<div class="font-code-sm text-slate-900">finance-tls</div>
+</td>
+<td class="px-4 py-2 font-code-sm">finance.uat.emea.example.com</td>
+<td class="px-4 py-2">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-slate-400">cloud</span> AWS <span class="text-slate-400 mx-1">|</span> EMEA</div>
+</td>
+<td class="px-4 py-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 uppercase tracking-wider border border-slate-200">UAT</span>
+</td>
+<td class="px-4 py-2">
+<div class="text-xs">eu-west-1-uat-k8s</div>
+<div class="text-[11px] text-slate-500 font-code-sm">ns: finance-uat</div>
+</td>
+<td class="px-4 py-2 text-xs">Let's Encrypt</td>
+<td class="px-4 py-2">
+<div class="text-xs">2026-12-01</div>
+<div class="text-[11px] text-slate-500">90d remaining</div>
+</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium chip-green">OK</span>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="table-row-hover">
+<td class="px-4 py-2">
+<div class="font-code-sm text-slate-900">sync-tls</div>
+</td>
+<td class="px-4 py-2 font-code-sm">npd.emea.example.com</td>
+<td class="px-4 py-2">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-slate-400">cloud</span> AWS <span class="text-slate-400 mx-1">|</span> EMEA</div>
+</td>
+<td class="px-4 py-2"><span class="stamp-red">NPD</span></td>
+<td class="px-4 py-2">
+<div class="text-xs">eu-west-1-npd-k8s</div>
+<div class="text-[11px] text-slate-500 font-code-sm">ns: npd</div>
+</td>
+<td class="px-4 py-2 text-xs">DigiCert</td>
+<td class="px-4 py-2">
+<div class="text-xs">2027-01-15</div>
+<div class="text-[11px] text-slate-500">135d remaining</div>
+</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium chip-green">OK</span>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="table-row-hover">
+<td class="px-4 py-2">
+<div class="font-code-sm text-slate-900">auth-tls</div>
+</td>
+<td class="px-4 py-2 font-code-sm">int.apac.example.com</td>
+<td class="px-4 py-2">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-slate-400">cloud</span> AWS <span class="text-slate-400 mx-1">|</span> APAC</div>
+</td>
+<td class="px-4 py-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 uppercase tracking-wider border border-slate-200">INT/TST</span>
+</td>
+<td class="px-4 py-2">
+<div class="text-xs">ap-southeast-1-int-k8s</div>
+<div class="text-[11px] text-slate-500 font-code-sm">ns: int-tst</div>
+</td>
+<td class="px-4 py-2 text-xs">Let's Encrypt</td>
+<td class="px-4 py-2">
+<div class="text-xs">2026-10-18</div>
+<div class="text-[11px] text-slate-500">46d remaining</div>
+</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium chip-green">OK</span>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="table-row-hover">
+<td class="px-4 py-2">
+<div class="font-code-sm text-slate-900">payments-edge-tls</div>
+</td>
+<td class="px-4 py-2 font-code-sm">payments.prd.apac.example.com</td>
+<td class="px-4 py-2">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-slate-400">cloud</span> AWS <span class="text-slate-400 mx-1">|</span> APAC</div>
+</td>
+<td class="px-4 py-2"><span class="stamp-red">PRD</span></td>
+<td class="px-4 py-2">
+<div class="text-xs">ap-southeast-1-prd-k8s</div>
+<div class="text-[11px] text-slate-500 font-code-sm">ns: payments-prd</div>
+</td>
+<td class="px-4 py-2 text-xs">Amazon</td>
+<td class="px-4 py-2">
+<div class="text-xs">2027-02-08</div>
+<div class="text-[11px] text-slate-500">159d remaining</div>
+</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium chip-green">OK</span>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="table-row-hover">
+<td class="px-4 py-2">
+<div class="font-code-sm text-slate-900">ack-dev-tls</div>
+</td>
+<td class="px-4 py-2 font-code-sm">dev.china.example.com</td>
+<td class="px-4 py-2">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-slate-400">cloud</span> Alibaba <span class="text-slate-400 mx-1">|</span> China</div>
+</td>
+<td class="px-4 py-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 uppercase tracking-wider border border-slate-200">DEV</span>
+</td>
+<td class="px-4 py-2">
+<div class="text-xs">cn-hangzhou-dev-ack</div>
+<div class="text-[11px] text-slate-500 font-code-sm">ns: dev</div>
+</td>
+<td class="px-4 py-2 text-xs">Alibaba Cloud SSL</td>
+<td class="px-4 py-2">
+<div class="text-xs">2026-11-05</div>
+<div class="text-[11px] text-slate-500">64d remaining</div>
+</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium chip-green">OK</span>
+</td>
+</tr>
+<!-- Row 9 -->
+<tr class="table-row-hover">
+<td class="px-4 py-2">
+<div class="font-code-sm text-slate-900">gateway-tls</div>
+</td>
+<td class="px-4 py-2 font-code-sm">uat.china.example.com</td>
+<td class="px-4 py-2">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-slate-400">cloud</span> Alibaba <span class="text-slate-400 mx-1">|</span> China</div>
+</td>
+<td class="px-4 py-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 uppercase tracking-wider border border-slate-200">UAT</span>
+</td>
+<td class="px-4 py-2">
+<div class="text-xs">cn-hangzhou-uat-ack</div>
+<div class="text-[11px] text-slate-500 font-code-sm">ns: uat</div>
+</td>
+<td class="px-4 py-2 text-xs">Alibaba Cloud SSL</td>
+<td class="px-4 py-2">
+<div class="text-xs">2026-12-12</div>
+<div class="text-[11px] text-slate-500">101d remaining</div>
+</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium chip-green">OK</span>
+</td>
+</tr>
+<!-- Row 10 -->
+<tr class="table-row-hover bg-blue-50/30">
+<td class="px-4 py-2">
+<div class="font-code-sm text-slate-900">ack-prd-wildcard</div>
+</td>
+<td class="px-4 py-2 font-code-sm">*.prd.china.example.com</td>
+<td class="px-4 py-2">
+<div class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-slate-400">cloud</span> Alibaba <span class="text-slate-400 mx-1">|</span> China</div>
+</td>
+<td class="px-4 py-2"><span class="stamp-red">PRD</span></td>
+<td class="px-4 py-2">
+<div class="text-xs">cn-hangzhou-prd-ack</div>
+<div class="text-[11px] text-slate-500 font-code-sm">ns: ingress-prd</div>
+</td>
+<td class="px-4 py-2 text-xs">DigiCert</td>
+<td class="px-4 py-2">
+<div class="text-xs">2026-10-28</div>
+<div class="text-[11px] text-slate-500">56d remaining</div>
+</td>
+<td class="px-4 py-2 text-right">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium chip-blue flex justify-end gap-1"><span class="material-symbols-outlined text-[12px] animate-spin">sync</span> Renewing</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Footer Note -->
+<div class="mt-4 text-center">
+<p class="text-xs text-slate-400 flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[14px]">lock</span> Private keys are never displayed.
+                </p>
+</div>
+</div>
+</main>
+</body></html>

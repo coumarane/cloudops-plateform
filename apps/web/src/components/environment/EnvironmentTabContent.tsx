@@ -12,6 +12,7 @@ import {
   Panel,
   SecretsTable,
 } from "@/components/environment/EnvironmentPanels";
+import { certificatesHref } from "@/lib/certificates";
 import { environmentHref, type EnvironmentTab } from "@/lib/environment";
 import { secretsHref } from "@/lib/secrets";
 import { summarizeEnvironment, type EnvironmentRecord } from "@/lib/environment-data";
@@ -127,7 +128,24 @@ export function EnvironmentTabContent({
 
   if (tab === "certificates") {
     return (
-      <Panel title="Certificates">
+      <Panel
+        title="Certificates"
+        action={
+          <Link
+            href={certificatesHref({
+              provider: identity.provider,
+              region: identity.region,
+              environment: identity.environment,
+            })}
+            className="text-xs font-semibold text-action hover:underline"
+          >
+            Open Certificate Monitoring
+          </Link>
+        }
+      >
+        <p className="border-b border-outline px-4 py-2 text-xs text-muted">
+          Expiration metadata only. Private keys are never displayed.
+        </p>
         <CertificatesTable certificates={record.certificates} />
       </Panel>
     );

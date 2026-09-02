@@ -55,3 +55,13 @@ Screen ID `5a498af96dc742bfbb21a9d4b13659ca` (AWS AMER PRD) is the source design
 Row actions: Update, Rotate, Validate, Rotation History. Secret values are never shown or accepted.
 
 PRD mutations show a strong production warning and require explicit confirmation.
+
+## 8. Certificate Monitoring
+
+Screen ID `b43e64b6bb56414380ec5e695d76dad5` is the source design for `/certificates`.
+
+The catalog covers AWS AMER, AWS EMEA, AWS APAC, and Alibaba China. Columns: certificate, domain, provider, region, environment, cluster, namespace, issuer, expiration date, days remaining, renewal status.
+
+Production environments (NPD/PRD) use production stamps. Featured exception: AWS AMER PRD `ingress-tls-wildcard` expiring in 12 days.
+
+Private keys are never shown.
