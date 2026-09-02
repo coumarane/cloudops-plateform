@@ -6,7 +6,8 @@ from app.providers.aws.client import AwsClientFactory
 from app.providers.aws.eks import EksDiscovery
 from app.providers.aws.errors import AwsTransientError, classify_aws_error
 from app.providers.aws.k8s import ClusterHealthCollector
-from app.providers.common.models import ClusterHealthSnapshot, DiscoveredCertificate, DiscoveredCluster
+from app.providers.common.models import DiscoveredCertificate, DiscoveredCluster
+from app.providers.kubernetes.collector import inventory_payload
 from app.topology.models import AccountBinding
 
 
@@ -23,20 +24,21 @@ class AWSProviderAdapter:
         self,
         account: AccountBinding,
         clusters: list[tuple[str, DiscoveredCluster]],
-    ) -> list[tuple[str, ClusterHealthSnapshot]]:
+    ) -> list[tuple]:
         if not clusters:
             return []
         config = account.connection_config()
         factory = AwsClientFactory(config=config)
         discovery = EksDiscovery(factory, config)
         collector = ClusterHealthCollector(factory)
-        snapshots: list[tuple[str, ClusterHealthSnapshot]] = []
+        snapshots: list[tuple] = []
         for cluster_id, cluster in clusters:
             try:
                 raw = discovery.describe_raw(cluster.name)
                 cluster.endpoint = raw.get("endpoint")
                 ca_data = (raw.get("certificateAuthority") or {}).get("data")
-                snapshots.append((cluster_id, collector.collect(cluster, ca_data)))
+                snapshot, resources = inventory_payload(collector, cluster, ca_data)
+                snapshots.append((cluster_id, snapshot, resources))
             except Exception as error:
                 mapped = classify_aws_error(error)
                 if isinstance(mapped, AwsTransientError):

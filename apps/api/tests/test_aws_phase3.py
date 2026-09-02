@@ -84,7 +84,9 @@ def test_health_and_certificate_scan_endpoints() -> None:
     with patch("app.services.aws_sync.EksDiscovery", side_effect=_discovery_for_config):
         client.post("/api/v1/jobs/aws/cluster-discovery")
         with patch("app.services.aws_sync.ClusterHealthCollector") as collector:
-            collector.return_value.collect.return_value = _health(_cluster().arn)
+            snapshot = _health(_cluster().arn)
+            collector.return_value.collect.return_value = snapshot
+            collector.return_value.collect_inventory.return_value = (snapshot, [])
             health_job = client.post("/api/v1/jobs/aws/health-scan")
     assert health_job.status_code == 200
     health = client.get(f"/api/v1/clusters/{CLUSTER_ID}/health")

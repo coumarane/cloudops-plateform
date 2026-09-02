@@ -11,7 +11,7 @@ from app.providers.alibaba.client import AlibabaClientFactory
 from app.providers.alibaba.exceptions import classify_alibaba_error
 from app.providers.alibaba.models import AlibabaConnectionConfig
 from app.providers.common.models import ClusterHealthSnapshot, DiscoveredCluster
-from app.providers.kubernetes.collector import SharedKubernetesCollector
+from app.providers.kubernetes.collector import SharedKubernetesCollector, inventory_payload
 
 logger = get_logger(__name__)
 
@@ -56,15 +56,20 @@ class AckHealthCollector:
         self._kubernetes = kubernetes or SharedKubernetesCollector()
 
     def collect(self, cluster: DiscoveredCluster) -> ClusterHealthSnapshot:
+        snapshot, _resources = self.collect_inventory(cluster)
+        return snapshot
+
+    def collect_inventory(self, cluster: DiscoveredCluster):
         now = datetime.now(timezone.utc)
+        empty = ClusterHealthSnapshot(
+            cluster_arn=cluster.arn,
+            control_plane_status=cluster.cluster_status,
+            kubernetes_api_reachable=False,
+            last_checked=now,
+        )
         if cluster.cluster_status not in {"ACTIVE"}:
-            return ClusterHealthSnapshot(
-                cluster_arn=cluster.arn,
-                control_plane_status=cluster.cluster_status,
-                kubernetes_api_reachable=False,
-                last_checked=now,
-                detail="ACK control plane is not ACTIVE",
-            )
+            empty.detail = "ACK control plane is not ACTIVE"
+            return empty, []
         cluster_id = ""
         try:
             import json
@@ -80,13 +85,8 @@ class AckHealthCollector:
             payload = self._factory.describe_kubeconfig(cluster_id)
             kubeconfig_yaml = payload.get("config") or payload.get("kubeconfig") or ""
             if not kubeconfig_yaml:
-                return ClusterHealthSnapshot(
-                    cluster_arn=cluster.arn,
-                    control_plane_status=cluster.cluster_status,
-                    kubernetes_api_reachable=False,
-                    last_checked=now,
-                    detail="ACK kubeconfig was not returned",
-                )
+                empty.detail = "ACK kubeconfig was not returned"
+                return empty, []
             import yaml
 
             kubeconfig = yaml.safe_load(kubeconfig_yaml) if isinstance(kubeconfig_yaml, str) else kubeconfig_yaml
@@ -106,7 +106,8 @@ class AckHealthCollector:
             if key_data:
                 key_path = _write_temp("ack-key-", ".key", base64.b64decode(key_data))
                 temps.append(key_path)
-            return self._kubernetes.collect(
+            return inventory_payload(
+                self._kubernetes,
                 cluster,
                 token or "",
                 ca_path,
@@ -116,13 +117,8 @@ class AckHealthCollector:
         except Exception as error:
             mapped = classify_alibaba_error(error)
             logger.warning("ACK health collection failed cluster=%s error=%s", cluster.name, mapped)
-            return ClusterHealthSnapshot(
-                cluster_arn=cluster.arn,
-                control_plane_status=cluster.cluster_status,
-                kubernetes_api_reachable=False,
-                last_checked=now,
-                detail="Unable to authenticate to the Kubernetes API",
-            )
+            empty.detail = "Unable to authenticate to the Kubernetes API"
+            return empty, []
         finally:
             for path in temps:
                 Path(path).unlink(missing_ok=True)

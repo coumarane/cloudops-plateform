@@ -7,7 +7,8 @@ from app.providers.alibaba.certificates import AlibabaCertificateScanner
 from app.providers.alibaba.client import AlibabaClientFactory
 from app.providers.alibaba.exceptions import AlibabaTransientError, classify_alibaba_error
 from app.providers.alibaba.k8s import AckHealthCollector
-from app.providers.common.models import ClusterHealthSnapshot, DiscoveredCertificate, DiscoveredCluster
+from app.providers.common.models import DiscoveredCertificate, DiscoveredCluster
+from app.providers.kubernetes.collector import inventory_payload
 from app.topology.models import AccountBinding
 
 
@@ -28,15 +29,16 @@ class AlibabaProviderAdapter:
         self,
         account: AccountBinding,
         clusters: list[tuple[str, DiscoveredCluster]],
-    ) -> list[tuple[str, ClusterHealthSnapshot]]:
+    ) -> list[tuple]:
         if not clusters:
             return []
         config = account.connection_config()
         collector = AckHealthCollector(AlibabaClientFactory(config), config)
-        snapshots: list[tuple[str, ClusterHealthSnapshot]] = []
+        snapshots: list[tuple] = []
         for cluster_id, cluster in clusters:
             try:
-                snapshots.append((cluster_id, collector.collect(cluster)))
+                snapshot, resources = inventory_payload(collector, cluster)
+                snapshots.append((cluster_id, snapshot, resources))
             except Exception as error:
                 mapped = classify_alibaba_error(error)
                 if isinstance(mapped, AlibabaTransientError):

@@ -11,7 +11,7 @@ from app.core.logging import get_logger
 from app.providers.aws.client import AwsClientFactory
 from app.providers.aws.errors import AwsTransientError, classify_aws_error
 from app.providers.aws.models import ClusterHealthSnapshot, DiscoveredCluster
-from app.providers.kubernetes.collector import DefaultKubernetesCollector, KubernetesCollector
+from app.providers.kubernetes.collector import DefaultKubernetesCollector, KubernetesCollector, inventory_payload
 
 logger = get_logger(__name__)
 
@@ -56,27 +56,27 @@ class ClusterHealthCollector:
         self._kubernetes = kubernetes or DefaultKubernetesCollector()
 
     def collect(self, cluster: DiscoveredCluster, ca_data: str | None = None) -> ClusterHealthSnapshot:
+        snapshot, _resources = self.collect_inventory(cluster, ca_data)
+        return snapshot
+
+    def collect_inventory(self, cluster: DiscoveredCluster, ca_data: str | None = None):
         now = datetime.now(timezone.utc)
+        empty = ClusterHealthSnapshot(
+            cluster_arn=cluster.arn,
+            control_plane_status=cluster.cluster_status,
+            kubernetes_api_reachable=False,
+            last_checked=now,
+        )
         if cluster.cluster_status not in {"ACTIVE"}:
-            return ClusterHealthSnapshot(
-                cluster_arn=cluster.arn,
-                control_plane_status=cluster.cluster_status,
-                kubernetes_api_reachable=False,
-                last_checked=now,
-                detail="EKS control plane is not ACTIVE",
-            )
+            empty.detail = "EKS control plane is not ACTIVE"
+            return empty, []
         try:
             token = eks_bearer_token(self._factory, cluster.name, cluster.cloud_region)
         except Exception as error:
             mapped = classify_aws_error(error)
             logger.warning("Unable to mint EKS token cluster=%s error=%s", cluster.name, mapped)
-            return ClusterHealthSnapshot(
-                cluster_arn=cluster.arn,
-                control_plane_status=cluster.cluster_status,
-                kubernetes_api_reachable=False,
-                last_checked=now,
-                detail="Unable to authenticate to the Kubernetes API",
-            )
+            empty.detail = "Unable to authenticate to the Kubernetes API"
+            return empty, []
         ca_path = None
         try:
             if ca_data:
@@ -85,7 +85,7 @@ class ClusterHealthCollector:
                 handle.write(raw)
                 handle.close()
                 ca_path = handle.name
-            return self._kubernetes.collect(cluster, token, ca_path or "")
+            return inventory_payload(self._kubernetes, cluster, token, ca_path or "")
         finally:
             if ca_path:
                 Path(ca_path).unlink(missing_ok=True)

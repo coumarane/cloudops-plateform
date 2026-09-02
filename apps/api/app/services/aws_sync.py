@@ -11,7 +11,8 @@ from app.providers.aws.eks import EksDiscovery
 from app.providers.aws.errors import AwsTransientError, classify_aws_error
 from app.providers.alibaba.exceptions import AlibabaIntegrationError, classify_alibaba_error
 from app.providers.aws.k8s import ClusterHealthCollector
-from app.providers.aws.models import ClusterHealthSnapshot, DiscoveredCertificate, DiscoveredCluster
+from app.providers.aws.models import DiscoveredCertificate, DiscoveredCluster
+from app.providers.kubernetes.collector import inventory_payload
 from app.services.mappers import discovered_from_row
 from app.topology.loader import load_topology
 from app.topology.models import AccountBinding, environment_scope_id
@@ -46,19 +47,20 @@ def discover_account(account: AccountBinding) -> list[DiscoveredCluster]:
     return EksDiscovery(factory, account.connection_config()).list_clusters(account.environments)
 
 
-def health_account(account: AccountBinding, clusters: list[tuple[str, DiscoveredCluster]]) -> list[tuple[str, ClusterHealthSnapshot]]:
+def health_account(account: AccountBinding, clusters: list[tuple[str, DiscoveredCluster]]) -> list[tuple]:
     if not clusters:
         return []
     factory = AwsClientFactory(config=account.connection_config())
     discovery = EksDiscovery(factory, account.connection_config())
     collector = ClusterHealthCollector(factory)
-    snapshots: list[tuple[str, ClusterHealthSnapshot]] = []
+    snapshots: list[tuple] = []
     for cluster_id, cluster in clusters:
         try:
             raw = discovery.describe_raw(cluster.name)
             cluster.endpoint = raw.get("endpoint")
             ca_data = (raw.get("certificateAuthority") or {}).get("data")
-            snapshots.append((cluster_id, collector.collect(cluster, ca_data)))
+            snapshot, resources = inventory_payload(collector, cluster, ca_data)
+            snapshots.append((cluster_id, snapshot, resources))
         except Exception as error:
             mapped = classify_aws_error(error)
             if isinstance(mapped, AwsTransientError):
@@ -171,26 +173,10 @@ def _store_discovery(account: AccountBinding, clusters: list[DiscoveredCluster],
     return len(clusters)
 
 
-def _store_health(
-    account: AccountBinding, snapshots: list[tuple[str, ClusterHealthSnapshot]], repo: InventoryRepository
-) -> int:
-    from app.db.models import CloudEnvironmentRow, EksClusterRow
-    from app.services.health_sync import ingest_snapshot
-    from app.topology.models import environment_scope_id
+def _store_health(account: AccountBinding, snapshots: list[tuple], repo: InventoryRepository) -> int:
+    from app.services.health_sync import persist_account_health
 
-    for cluster_id, snapshot in snapshots:
-        repo.upsert_health(cluster_id, snapshot)
-        cluster = repo.session.get(EksClusterRow, cluster_id)
-        if cluster is None:
-            continue
-        env = repo.session.get(CloudEnvironmentRow, environment_scope_id(account.alias, cluster.environment))
-        if env is None:
-            env = repo.environment_row(cluster.provider, cluster.platform_region, cluster.environment)
-        if env is not None:
-            ingest_snapshot(repo.session, cluster, snapshot, env)
-    for environment in account.environments:
-        repo.mark_scope_success(environment_scope_id(account.alias, environment), "health")
-    return len(snapshots)
+    return persist_account_health(account, snapshots, repo)
 
 
 def _store_certificates(

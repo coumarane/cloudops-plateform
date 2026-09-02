@@ -9,6 +9,7 @@ from app.db.models import (
     ApplicationDependencyRow,
     ApplicationResourceMappingRow,
     CloudEnvironmentRow,
+    EksClusterRow,
     HealthAlertRow,
     HealthCheckDefinitionRow,
     HealthCheckResultRow,
@@ -16,6 +17,7 @@ from app.db.models import (
     PipelineProviderRow,
     PipelineRow,
     PipelineRunRow,
+    ResourceHealthRow,
 )
 from app.db.repository import InventoryRepository
 from app.db.session import SessionLocal
@@ -516,3 +518,237 @@ def test_same_health_model_aws_and_alibaba() -> None:
     assert statuses <= {HEALTHY, DEGRADED, UNHEALTHY, CRITICAL, UNKNOWN}
     resources = client.get("/api/v1/health/resources", headers=_headers("Developer")).json()["items"]
     assert {item["resourceType"] for item in resources} & {"cluster", "deployment", "pod"}
+
+
+def test_inventory_payload_falls_back_for_magicmock_collectors() -> None:
+    from unittest.mock import MagicMock
+
+    from app.providers.common.models import ClusterHealthSnapshot, DiscoveredCluster
+    from app.providers.kubernetes.collector import inventory_payload
+
+    snapshot = ClusterHealthSnapshot(
+        cluster_arn="arn:aws:eks:eu-west-1:1:cluster/x",
+        control_plane_status="ACTIVE",
+        kubernetes_api_reachable=True,
+    )
+    collector = MagicMock()
+    collector.collect.return_value = snapshot
+    cluster = DiscoveredCluster(
+        name="x",
+        arn=snapshot.cluster_arn,
+        cloud_region="eu-west-1",
+        aws_account_id="1",
+        kubernetes_version="1.31",
+        endpoint_status="PRIVATE",
+        cluster_status="ACTIVE",
+        platform_version="eks.1",
+        created_at=datetime.now(timezone.utc),
+        endpoint="https://eks.example",
+    )
+    out, resources = inventory_payload(collector, cluster, None)
+    assert out is snapshot
+    assert resources == []
+
+
+def test_shared_collector_normalizes_inventory_and_namespaces() -> None:
+    from types import SimpleNamespace
+    from unittest.mock import MagicMock, patch
+    import sys
+
+    from app.providers.common.models import DiscoveredCluster
+    from app.providers.kubernetes.collector import SharedKubernetesCollector
+
+    labels = {"app.kubernetes.io/name": "payments-api"}
+    node = SimpleNamespace(
+        metadata=SimpleNamespace(name="ip-10-0-1-10", namespace="", labels={}),
+        status=SimpleNamespace(conditions=[SimpleNamespace(type="Ready", status="True")]),
+    )
+    pod = SimpleNamespace(
+        metadata=SimpleNamespace(name="payments-api-0", namespace="payments", labels=labels),
+        status=SimpleNamespace(
+            phase="Running",
+            container_statuses=[
+                SimpleNamespace(
+                    restart_count=8,
+                    state=SimpleNamespace(waiting=SimpleNamespace(reason="CrashLoopBackOff"), terminated=None),
+                    last_state=None,
+                )
+            ],
+        ),
+    )
+    deployment = SimpleNamespace(
+        metadata=SimpleNamespace(name="payments-api", namespace="payments", labels=labels),
+        spec=SimpleNamespace(replicas=3),
+        status=SimpleNamespace(available_replicas=2),
+    )
+    service = SimpleNamespace(metadata=SimpleNamespace(name="payments-api", namespace="payments", labels=labels))
+    ingress = SimpleNamespace(
+        metadata=SimpleNamespace(name="payments-api", namespace="payments", labels=labels),
+        spec=SimpleNamespace(tls=None),
+        status=SimpleNamespace(load_balancer=SimpleNamespace(ingress=[SimpleNamespace(ip="1.2.3.4")])),
+    )
+    empty = SimpleNamespace(items=[])
+    k8s = MagicMock()
+    config = SimpleNamespace(host="", ssl_ca_cert="", verify_ssl=True, api_key={}, cert_file="", key_file="")
+    k8s.client.Configuration.return_value = config
+    k8s.client.ApiClient.return_value = MagicMock()
+    k8s.client.VersionApi.return_value.get_code.return_value = SimpleNamespace(git_version="v1.31.2")
+    core = MagicMock()
+    core.list_node.return_value = SimpleNamespace(items=[node])
+    core.list_pod_for_all_namespaces.return_value = SimpleNamespace(items=[pod])
+    core.list_service_for_all_namespaces.return_value = SimpleNamespace(items=[service])
+    core.read_namespaced_endpoints.return_value = SimpleNamespace(
+        subsets=[SimpleNamespace(addresses=[SimpleNamespace(ip="10.0.0.8")])]
+    )
+    apps = MagicMock()
+    apps.list_deployment_for_all_namespaces.return_value = SimpleNamespace(items=[deployment])
+    apps.list_stateful_set_for_all_namespaces.return_value = empty
+    apps.list_daemon_set_for_all_namespaces.return_value = empty
+    batch = MagicMock()
+    batch.list_job_for_all_namespaces.return_value = empty
+    networking = MagicMock()
+    networking.list_ingress_for_all_namespaces.return_value = SimpleNamespace(items=[ingress])
+    k8s.client.CoreV1Api.return_value = core
+    k8s.client.AppsV1Api.return_value = apps
+    k8s.client.BatchV1Api.return_value = batch
+    k8s.client.NetworkingV1Api.return_value = networking
+    cluster = DiscoveredCluster(
+        name="platform-dev",
+        arn="arn:aws:eks:eu-west-1:1:cluster/platform-dev",
+        cloud_region="eu-west-1",
+        aws_account_id="1",
+        kubernetes_version="1.31",
+        endpoint_status="PRIVATE",
+        cluster_status="ACTIVE",
+        platform_version="eks.5",
+        created_at=datetime.now(timezone.utc),
+        endpoint="https://eks.example.eu-west-1.amazonaws.com",
+        environment="DEV",
+        platform_region="EMEA",
+        account_alias="aws-emea-nonprod",
+    )
+    with patch.dict(sys.modules, {"kubernetes": k8s}):
+        snapshot, resources = SharedKubernetesCollector().collect_inventory(cluster, "token", "")
+    types = {(item.resource_type, item.name) for item in resources}
+    assert ("pod", "payments-api-0") in types
+    assert ("deployment", "payments-api") in types
+    assert ("namespace", "payments") in types
+    assert ("service", "payments-api") in types
+    assert ("ingress", "payments-api") in types
+    assert ("node", "ip-10-0-1-10") in types
+    assert snapshot.kubernetes_api_reachable is True
+    assert snapshot.crashloop_backoff_count == 1
+    assert snapshot.unavailable_deployment_count == 1
+    namespace = next(item for item in resources if item.resource_type == "namespace")
+    assert namespace.status == UNHEALTHY
+
+
+def test_live_health_scan_persists_inventory_not_summaries() -> None:
+    from sqlalchemy import select
+
+    from app.integrations.health.normalize import NormalizedResource, snapshot_from_resources
+    from app.services.health_sync import persist_account_health
+    from app.topology.loader import load_topology
+
+    session = SessionLocal()
+    try:
+        env = _env(session, environment="DEV")
+        cluster_id = "eks-health-inventory-dev"
+        cluster = session.get(EksClusterRow, cluster_id)
+        if cluster is None:
+            cluster = EksClusterRow(
+                id=cluster_id,
+                arn="arn:aws:eks:eu-west-1:123456789012:cluster/health-inv",
+                name="health-inv",
+                cloud_region="eu-west-1",
+                aws_account_id="123456789012",
+                account_alias="aws-emea-nonprod",
+                provider="AWS",
+                platform_region="EMEA",
+                environment="DEV",
+                last_seen_at=datetime.now(timezone.utc),
+            )
+            session.add(cluster)
+        session.add(
+            ResourceHealthRow(
+                id="rh-http-keep",
+                resource_type="http_endpoint",
+                resource_name="payments-api",
+                cluster_id=cluster_id,
+                environment_id=env.id,
+                status=HEALTHY,
+                summary="HTTP 200",
+                check_type="HTTP_ENDPOINT",
+                last_checked_at=datetime.now(timezone.utc),
+            )
+        )
+        session.commit()
+        labels = {"app.kubernetes.io/name": "payments-api"}
+        resources = _inventory(crashloop=True, available=2, desired=3)
+        resources.append(
+            NormalizedResource(
+                resource_type="namespace",
+                name="payments",
+                namespace="payments",
+                status=UNHEALTHY,
+                summary="3 resources",
+                check_type="POD_STATUS",
+                labels=labels,
+            )
+        )
+        snapshot = snapshot_from_resources(
+            resources,
+            cluster_arn=cluster.arn,
+            control_plane_status="ACTIVE",
+        )
+        account = next(item for item in load_topology().accounts if item.alias == "aws-emea-nonprod")
+        persist_account_health(account, [(cluster_id, snapshot, resources)], InventoryRepository(session))
+        session.commit()
+        rows = list(session.scalars(select(ResourceHealthRow).where(ResourceHealthRow.cluster_id == cluster_id)))
+        names = {(row.resource_type, row.resource_name) for row in rows}
+        assert ("pod", "payments-api-0") in names
+        assert ("deployment", "payments-api") in names
+        assert ("namespace", "payments") in names
+        assert ("pod", "_summary") not in names
+        assert ("deployment", "_summary") not in names
+        http = session.get(ResourceHealthRow, "rh-http-keep")
+        assert http is not None
+        listed = client.get(
+            "/api/v1/health/resources",
+            params={"cluster": cluster_id},
+            headers=_headers("Developer"),
+        ).json()["items"]
+        assert any(item["resourceType"] == "pod" and item["name"] == "payments-api-0" for item in listed)
+        assert any(item["resourceType"] == "namespace" and item["name"] == "payments" for item in listed)
+    finally:
+        session.close()
+
+
+def test_aws_and_alibaba_share_kubernetes_collector_class() -> None:
+    from unittest.mock import MagicMock
+
+    from app.providers.alibaba.k8s import AckHealthCollector
+    from app.providers.alibaba.models import AlibabaConnectionConfig
+    from app.providers.aws.k8s import ClusterHealthCollector
+    from app.providers.kubernetes.collector import SharedKubernetesCollector
+
+    aws = ClusterHealthCollector(factory=MagicMock())
+    ali = AckHealthCollector(
+        MagicMock(),
+        AlibabaConnectionConfig(
+            cloud_region="cn-hangzhou",
+            account_id="1",
+            role_arn=None,
+            session_name="cloudops",
+            access_key_id_ref=None,
+            access_key_secret_ref=None,
+            credential_ref=None,
+            platform_region="CHINA",
+            environment="DEV",
+            account_alias="alibaba-china-nonprod",
+            cluster_environment_tag="Environment",
+        ),
+    )
+    assert isinstance(aws._kubernetes, SharedKubernetesCollector)
+    assert isinstance(ali._kubernetes, SharedKubernetesCollector)
+    assert type(aws._kubernetes) is type(ali._kubernetes)

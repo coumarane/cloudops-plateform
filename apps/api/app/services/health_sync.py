@@ -315,6 +315,22 @@ def match_application(
     return ""
 
 
+KUBERNETES_RESOURCE_TYPES = frozenset(
+    {
+        "cluster",
+        "node",
+        "namespace",
+        "pod",
+        "deployment",
+        "statefulset",
+        "daemonset",
+        "job",
+        "service",
+        "ingress",
+    }
+)
+
+
 def persist_resources(
     session: Session,
     resources: list[NormalizedResource],
@@ -323,6 +339,8 @@ def persist_resources(
     environment: CloudEnvironmentRow,
     application_id: str = "",
     definition_id: str = "",
+    prune_stale: bool = True,
+    prune_types: frozenset[str] | None = None,
 ) -> list[ResourceHealthRow]:
     now = utcnow()
     rows: list[ResourceHealthRow] = []
@@ -373,10 +391,13 @@ def persist_resources(
             )
         )
         rows.append(row)
+    if not prune_stale:
+        return rows
     seen = {item.id for item in rows}
-    for existing in list(
-        session.scalars(select(ResourceHealthRow).where(ResourceHealthRow.cluster_id == cluster_id))
-    ):
+    stale_query = select(ResourceHealthRow).where(ResourceHealthRow.cluster_id == cluster_id)
+    if prune_types:
+        stale_query = stale_query.where(ResourceHealthRow.resource_type.in_(tuple(prune_types)))
+    for existing in list(session.scalars(stale_query)):
         if existing.id not in seen:
             session.delete(existing)
     return rows
@@ -391,7 +412,13 @@ def ingest_cluster_inventory(
     error_category: str = "",
 ) -> None:
     now = utcnow()
-    persist_resources(session, resources, cluster_id=cluster.id, environment=environment)
+    persist_resources(
+        session,
+        resources,
+        cluster_id=cluster.id,
+        environment=environment,
+        prune_types=KUBERNETES_RESOURCE_TYPES,
+    )
     environment.last_attempted_scan_at = now
     environment.last_health_at = now
     if error_category:
@@ -416,6 +443,41 @@ def ingest_cluster_inventory(
 def ingest_snapshot(session: Session, cluster: EksClusterRow, snapshot, environment: CloudEnvironmentRow) -> None:
     resources = resources_from_snapshot(snapshot, cluster_name=cluster.name)
     ingest_cluster_inventory(session, environment=environment, cluster=cluster, resources=resources)
+
+
+def split_health_scan_item(item) -> tuple[str, object, list]:
+    """Accept 2-tuples (id, snapshot) or 3-tuples (id, snapshot, resources)."""
+    if not isinstance(item, tuple) or len(item) < 2:
+        raise TypeError("health scan item must be a (cluster_id, snapshot[, resources]) tuple")
+    cluster_id, snapshot = item[0], item[1]
+    resources = item[2] if len(item) >= 3 else []
+    if not isinstance(resources, list):
+        resources = []
+    return str(cluster_id), snapshot, resources
+
+
+def persist_account_health(account, items, repo) -> int:
+    """Store cluster snapshots and, when present, per-resource Kubernetes inventory."""
+    from app.topology.models import environment_scope_id
+
+    for item in items:
+        cluster_id, snapshot, resources = split_health_scan_item(item)
+        repo.upsert_health(cluster_id, snapshot)
+        cluster = repo.session.get(EksClusterRow, cluster_id)
+        if cluster is None:
+            continue
+        env = repo.session.get(CloudEnvironmentRow, environment_scope_id(account.alias, cluster.environment))
+        if env is None:
+            env = repo.environment_row(cluster.provider, cluster.platform_region, cluster.environment)
+        if env is None:
+            continue
+        if resources:
+            ingest_cluster_inventory(repo.session, environment=env, cluster=cluster, resources=resources)
+        else:
+            ingest_snapshot(repo.session, cluster, snapshot, env)
+    for environment in account.environments:
+        repo.mark_scope_success(environment_scope_id(account.alias, environment), "health")
+    return len(items)
 
 
 def correlate_changes(session: Session, row: ApplicationHealthRow) -> dict:
@@ -990,6 +1052,7 @@ def run_http_health_check(job_id: str) -> int:
                         environment=env,
                         application_id=definition.application_id,
                         definition_id=definition.id,
+                        prune_stale=False,
                     )
                 if result.status in {UNHEALTHY, CRITICAL} and definition.application_id:
                     app_row = session.scalar(
