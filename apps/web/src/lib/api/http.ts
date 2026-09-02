@@ -38,6 +38,19 @@ export async function getJson<T>(path: string, scope?: ScopeQuery, signal?: Abor
   return (await response.json()) as T;
 }
 
+export async function postJson<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const response = await fetch(`${API_PREFIX}${path}`, {
+    method: "POST",
+    signal,
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new ApiError(`CloudOps API request failed (${response.status})`, response.status);
+  }
+  return (await response.json()) as T;
+}
+
 export async function getList<T>(path: string, scope?: ScopeQuery, signal?: AbortSignal): Promise<ListResponse<T>> {
   return getJson<ListResponse<T>>(path, scope, signal);
 }

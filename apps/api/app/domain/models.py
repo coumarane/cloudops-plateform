@@ -144,6 +144,32 @@ class ClusterRecord(StrictModel):
     account: str
     status: ClusterStatus
     appsLabel: str
+    source: Literal["mock", "aws"] = "mock"
+    awsAccountId: str | None = None
+    cloudRegion: str | None = None
+    endpointStatus: str | None = None
+    clusterStatus: str | None = None
+    platformVersion: str | None = None
+    createdAt: str | None = None
+    lastChecked: str | None = None
+
+
+class ClusterHealthRecord(StrictModel):
+    clusterId: str
+    clusterName: str
+    controlPlaneStatus: str
+    kubernetesApiReachable: bool
+    nodeCount: int
+    readyNodeCount: int
+    podCount: int
+    unhealthyPodCount: int
+    crashLoopBackOffCount: int
+    pendingPodCount: int
+    unavailableDeploymentCount: int
+    failedJobCount: int
+    lastChecked: str
+    detail: str = ""
+    status: ClusterStatus
 
 
 class ApplicationRecord(StrictModel):
@@ -182,6 +208,10 @@ class RunRecord(StrictModel):
     region: Region
     environment: Environment
     cluster: str
+    source: Literal["mock", "aws"] = "mock"
+    kind: str | None = None
+    correlationId: str | None = None
+    jobStatus: str | None = None
 
 
 class AuditEvent(StrictModel):
@@ -209,6 +239,15 @@ class CertificateRecord(StrictModel):
     expiresOn: str
     daysRemaining: int
     renewalStatus: RenewalStatus
+    source: Literal["mock", "aws"] = "mock"
+    arn: str | None = None
+    subjectAlternativeNames: list[str] = Field(default_factory=list)
+    status: str | None = None
+    notBefore: str | None = None
+    notAfter: str | None = None
+    inUseBy: list[str] = Field(default_factory=list)
+    renewalEligibility: str | None = None
+    lastChecked: str | None = None
 
 
 class SecretHistoryEvent(StrictModel):

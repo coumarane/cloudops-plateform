@@ -46,8 +46,7 @@ export function CertificatesTable({
             <th className="p-3">Provider</th>
             <th className="p-3">Region</th>
             <th className="p-3">Environment</th>
-            <th className="p-3">Cluster</th>
-            <th className="p-3">Namespace</th>
+            <th className="p-3">Source</th>
             <th className="p-3">Issuer</th>
             <th className="p-3">Expiration date</th>
             <th className="p-3">Days remaining</th>
@@ -77,8 +76,7 @@ export function CertificatesTable({
                 <td className="p-3">
                   <EnvBadge environment={certificate.environment} />
                 </td>
-                <td className="p-3 font-mono text-xs text-muted">{certificate.cluster}</td>
-                <td className="p-3 font-mono text-xs text-muted">{certificate.namespace}</td>
+                <td className="p-3 text-xs text-muted">{certificate.source === "aws" ? "ACM live" : "Mock"}</td>
                 <td className="p-3 text-muted">{certificate.issuer}</td>
                 <td className="p-3 font-mono text-xs text-muted">{certificate.expiresOn}</td>
                 <td

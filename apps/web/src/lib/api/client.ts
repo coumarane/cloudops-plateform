@@ -1,4 +1,4 @@
-import { getJson, getList, type ListResponse, type ScopeQuery } from "./http";
+import { getJson, getList, postJson, type ListResponse, type ScopeQuery } from "./http";
 import type {
   AccountRecord,
   AdminIntegration,
@@ -6,6 +6,7 @@ import type {
   ApplicationRecord,
   AuditEvent,
   CertificateRecord,
+  ClusterHealthRecord,
   ClusterRecord,
   DashboardSnapshot,
   EnvironmentIdentity,
@@ -33,6 +34,8 @@ export const cloudOpsApi = {
       signal,
     ),
   clusters: (scope?: ScopeQuery, signal?: AbortSignal) => getList<ClusterRecord>("/clusters", scope, signal),
+  cluster: (id: string, signal?: AbortSignal) => getJson<ClusterRecord & { health?: ClusterHealthRecord | null }>(`/clusters/${id}`, undefined, signal),
+  clusterHealth: (id: string, signal?: AbortSignal) => getJson<ClusterHealthRecord>(`/clusters/${id}/health`, undefined, signal),
   applications: (scope?: ScopeQuery, signal?: AbortSignal) =>
     getList<ApplicationRecord>("/applications", scope, signal),
   certificates: (scope?: ScopeQuery, signal?: AbortSignal) =>
@@ -43,6 +46,9 @@ export const cloudOpsApi = {
   deployments: (scope?: ScopeQuery, signal?: AbortSignal) => getList<RunRecord>("/deployments", scope, signal),
   pipelines: (scope?: ScopeQuery, signal?: AbortSignal) => getList<RunRecord>("/pipelines", scope, signal),
   jobs: (scope?: ScopeQuery, signal?: AbortSignal) => getList<RunRecord>("/jobs", scope, signal),
+  triggerClusterDiscovery: (signal?: AbortSignal) => postJson<RunRecord>("/jobs/aws/cluster-discovery", signal),
+  triggerHealthScan: (signal?: AbortSignal) => postJson<RunRecord>("/jobs/aws/health-scan", signal),
+  triggerCertificateScan: (signal?: AbortSignal) => postJson<RunRecord>("/jobs/aws/certificate-scan", signal),
   githubRuns: (scope?: ScopeQuery, signal?: AbortSignal) => getList<RunRecord>("/github-runs", scope, signal),
   alerts: (scope?: ScopeQuery, signal?: AbortSignal) => getList<OperationalAlert>("/alerts", scope, signal),
   auditEvents: (scope?: ScopeQuery, signal?: AbortSignal) => getList<AuditEvent>("/audit-events", scope, signal),

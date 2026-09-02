@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { AwsScanActions } from "@/components/catalog/AwsScanActions";
 import { CatalogBody, CatalogPanel, Kpi, KpiGrid, StatusChip } from "@/components/catalog/CatalogChrome";
+import { ClusterHealthPanel } from "@/components/catalog/ClusterHealthPanel";
 import { HierarchyFilters, useCatalogFilters } from "@/components/catalog/HierarchyFilters";
 import { EnvBadge } from "@/components/status/EnvBadge";
 import { QueryState } from "@/components/status/QueryState";
@@ -10,6 +12,7 @@ import { cloudOpsApi } from "@/lib/api/client";
 import type { ListResponse } from "@/lib/api/http";
 import { useResource } from "@/lib/api/use-resource";
 import type { CatalogFilters } from "@/lib/catalog";
+import { catalogHref } from "@/lib/catalog";
 import { isProductionEnvironment } from "@/lib/dashboard";
 import type {
   AccountRecord,
@@ -45,6 +48,7 @@ function Shell<T>({
   loader,
   kpis,
   children,
+  refreshKey = 0,
 }: {
   title: string;
   subtitle: string;
@@ -54,12 +58,13 @@ function Shell<T>({
   loader: (scope: ScopeFilters, signal: AbortSignal) => Promise<ListResponse<T>>;
   kpis: (rows: T[]) => ReactNode;
   children: (rows: T[], selected: string | null) => ReactNode;
+  refreshKey?: number;
 }) {
   const filters = useCatalogFilters(initial);
   const scope = scopeOf(filters);
   const state = useResource(
     (signal) => loader(scope, signal),
-    [scope.provider, scope.region, scope.environment],
+    [scope.provider, scope.region, scope.environment, refreshKey],
   );
 
   return (
@@ -189,32 +194,50 @@ export function ClustersCatalog({ initial }: { initial: CatalogFilters }) {
       }}
     >
       {(rows: ClusterRecord[], selected) => (
-        <CatalogPanel title="Cluster fleet" hint="Cluster health and identity only. Kubeconfig material is never displayed.">
-          <Table headers={["Cluster", "Platform", "Version", "Nodes", "Provider", "Region", "Environment", "Account", "Status", "Apps"]}>
-            {rows.map((row) => (
-              <tr key={row.id} className={rowClass(row.id === selected, row.status !== "Healthy")}>
-                <td className="p-3 font-mono text-xs font-semibold text-ink">
-                  <Link href={environmentHref(row.provider, row.region, row.environment, "clusters")} className="hover:underline">
-                    {row.name}
-                  </Link>
-                </td>
-                <td className="p-3 text-muted">{row.platform}</td>
-                <td className="p-3 text-muted">{row.version}</td>
-                <td className="p-3 text-muted">{row.nodes}</td>
-                <td className="p-3 text-muted">{row.provider}</td>
-                <td className="p-3 font-mono text-xs text-muted">{row.region}</td>
-                <td className="p-3">
-                  <EnvBadge environment={row.environment} />
-                </td>
-                <td className="p-3 font-mono text-xs text-muted">{row.account}</td>
-                <td className="p-3">
-                  <StatusChip value={row.status} />
-                </td>
-                <td className="p-3 text-xs text-muted">{row.appsLabel}</td>
-              </tr>
-            ))}
-          </Table>
-        </CatalogPanel>
+        <div className="space-y-4">
+          <CatalogPanel title="Cluster fleet" hint="Cluster health and identity only. Kubeconfig material is never displayed.">
+            <Table headers={["Cluster", "Platform", "Version", "Nodes", "Provider", "Region", "Environment", "Account", "Source", "Status", "Apps"]}>
+              {rows.map((row) => (
+                <tr key={row.id} className={rowClass(row.id === selected, row.status !== "Healthy")}>
+                  <td className="p-3 font-mono text-xs font-semibold text-ink">
+                    <Link
+                      href={
+                        row.source === "aws"
+                          ? catalogHref("/clusters", {
+                              provider: row.provider,
+                              region: row.region,
+                              environment: row.environment,
+                              selected: row.id,
+                            })
+                          : environmentHref(row.provider, row.region, row.environment, "clusters")
+                      }
+                      className="hover:underline"
+                    >
+                      {row.name}
+                    </Link>
+                  </td>
+                  <td className="p-3 text-muted">{row.platform}</td>
+                  <td className="p-3 text-muted">{row.version}</td>
+                  <td className="p-3 text-muted">{row.nodes}</td>
+                  <td className="p-3 text-muted">{row.provider}</td>
+                  <td className="p-3 font-mono text-xs text-muted">{row.region}</td>
+                  <td className="p-3">
+                    <EnvBadge environment={row.environment} />
+                  </td>
+                  <td className="p-3 font-mono text-xs text-muted">{row.account}</td>
+                  <td className="p-3 text-xs text-muted">{row.source === "aws" ? "AWS live" : "Mock"}</td>
+                  <td className="p-3">
+                    <StatusChip value={row.status} />
+                  </td>
+                  <td className="p-3 text-xs text-muted">{row.appsLabel}</td>
+                </tr>
+              ))}
+            </Table>
+          </CatalogPanel>
+          {selected && rows.some((row) => row.id === selected && row.source === "aws") ? (
+            <ClusterHealthPanel clusterId={selected} />
+          ) : null}
+        </div>
       )}
     </Shell>
   );
@@ -442,18 +465,55 @@ export function GitHubCatalog({ initial }: { initial: CatalogFilters }) {
 }
 
 export function JobsCatalog({ initial }: { initial: CatalogFilters }) {
+  const [refreshKey, setRefreshKey] = useState(0);
   return (
-    <RunsCatalog
+    <Shell
       title="Jobs"
-      subtitle="Scheduled and batch jobs. Secret values are never displayed."
-      tableTitle="Job catalog"
-      hint="Job result only. Secret values are never displayed."
-      loader={(scope, signal) => cloudOpsApi.jobs(scope, signal)}
-      headers={["Job", "Kind", "Result", "Age", "Provider", "Region", "Environment", "Cluster"]}
-      nameHeader="Job"
-      hrefTab="overview"
+      subtitle="Platform scans and scheduled jobs. Secret values are never displayed."
       initial={initial}
-    />
+      loadingLabel="Loading jobs…"
+      emptyLabel="No jobs in the current hierarchy filter."
+      refreshKey={refreshKey}
+      loader={(scope, signal) => cloudOpsApi.jobs(scope, signal)}
+      kpis={(rows) => {
+        const summary = summarizeStatus(rows, "runs");
+        return (
+          <KpiGrid>
+            <Kpi label="Jobs in scope" value={summary.inScope} />
+            <Kpi label="Succeeded" value={summary.succeeded ?? 0} />
+            <Kpi label="Failed" value={summary.failed ?? 0} tone={summary.failed ? "critical" : undefined} />
+            <Kpi label="Running" value={summary.running ?? 0} />
+            <Kpi label="PRD jobs" value={countPrd(rows)} tone={countPrd(rows) > 0 ? "prd" : undefined} />
+          </KpiGrid>
+        );
+      }}
+    >
+      {(rows, selected) => (
+        <div className="space-y-4">
+          <AwsScanActions onQueued={() => setRefreshKey((value) => value + 1)} />
+          <CatalogPanel title="Job catalog" hint="Job result only. Secret values are never displayed.">
+            <Table headers={["Job", "Kind", "Result", "Age", "Provider", "Region", "Environment", "Cluster"]}>
+              {rows.map((row) => (
+                <tr key={row.id} className={rowClass(row.id === selected, row.result === "Failed")}>
+                  <td className="p-3 font-mono text-xs font-semibold text-ink">{row.name}</td>
+                  <td className="p-3 font-mono text-xs text-muted">{row.kind ?? row.detail}</td>
+                  <td className="p-3">
+                    <StatusChip value={row.result} />
+                  </td>
+                  <td className="p-3 font-mono text-xs text-muted">{row.age}</td>
+                  <td className="p-3 text-muted">{row.provider}</td>
+                  <td className="p-3 font-mono text-xs text-muted">{row.region}</td>
+                  <td className="p-3">
+                    <EnvBadge environment={row.environment} />
+                  </td>
+                  <td className="p-3 font-mono text-xs text-muted">{row.cluster}</td>
+                </tr>
+              ))}
+            </Table>
+          </CatalogPanel>
+        </div>
+      )}
+    </Shell>
   );
 }
 
