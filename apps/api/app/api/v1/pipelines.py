@@ -34,7 +34,7 @@ from app.services.pipeline_presenters import (
     run_dump,
     stage_dump,
 )
-from app.services.pipeline_sync import _id, ensure_provider_rows, record_audit, utcnow
+from app.services.pipeline_sync import _id, ensure_provider_rows, recorrelate_pipeline_runs, record_audit, utcnow
 from app.services.pipeline_webhooks import accept_azure_webhook
 
 router = APIRouter()
@@ -233,6 +233,7 @@ def create_mapping(pipeline_id: str, body: MappingWriteRequest, principal: Princ
             pipeline_id=pipeline_id,
             environment=body.environmentId,
         )
+        recorrelate_pipeline_runs(session, pipeline)
         session.commit()
         session.refresh(row)
         return _payload(mapping_dump(session, row))
@@ -267,6 +268,7 @@ def create_app_mapping(pipeline_id: str, body: ApplicationMappingRequest, princi
             pipeline_id=pipeline_id,
             detail=f"application={body.applicationId}",
         )
+        recorrelate_pipeline_runs(session, pipeline)
         session.commit()
         return _payload({"id": row.id, "pipelineId": pipeline_id, "applicationId": body.applicationId})
     finally:
@@ -281,6 +283,7 @@ def delete_mapping(mapping_id: str, principal: Principal = Depends(principal_fro
         row = session.get(PipelineEnvironmentMappingRow, mapping_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Mapping not found")
+        pipeline = session.get(PipelineRow, row.pipeline_id)
         record_audit(
             session,
             "PIPELINE_MAPPING_DELETED",
@@ -290,6 +293,9 @@ def delete_mapping(mapping_id: str, principal: Principal = Depends(principal_fro
             environment=row.environment_id,
         )
         session.delete(row)
+        session.flush()
+        if pipeline is not None:
+            recorrelate_pipeline_runs(session, pipeline)
         session.commit()
         return _payload({"deleted": True})
     finally:

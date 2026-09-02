@@ -99,12 +99,13 @@ def test_environment_mapping_and_correlation(monkeypatch) -> None:
         session.commit()
         run = session.scalar(select(PipelineRunRow).where(PipelineRunRow.pipeline_id == pipeline.id))
         matched = match_environment(session, pipeline, run)
+        assert matched is not None
+        assert matched.id == "aws-emea-nonprod-uat"
         run.environment_id = "aws-emea-nonprod-uat"
         session.commit()
         assert run.environment_id == "aws-emea-nonprod-uat"
         assert run.commit_sha
         assert run.deployment_id
-        _ = matched
     finally:
         session.close()
 
@@ -341,3 +342,45 @@ def test_azure_adapter_normalizes_runs() -> None:
             session.close()
     finally:
         override_pipeline_providers(None)
+
+
+def test_mapping_api_recorrelates_existing_runs(monkeypatch) -> None:
+    _seed_github(monkeypatch)
+    run_pipeline_sync()
+    session = SessionLocal()
+    try:
+        pipeline = session.scalar(select(PipelineRow).where(PipelineRow.name == "Deploy"))
+        run = session.scalar(select(PipelineRunRow).where(PipelineRunRow.pipeline_id == pipeline.id))
+        assert pipeline is not None
+        assert run is not None
+        pipeline_id = pipeline.id
+        run_id = run.id
+    finally:
+        session.close()
+    created = client.post(
+        f"/api/v1/pipelines/{pipeline_id}/environment-mappings",
+        json={"environmentId": "aws-emea-nonprod-uat", "branchPattern": "main", "priority": 20},
+        headers=_headers(),
+    )
+    assert created.status_code == 200
+    linked = client.post(
+        f"/api/v1/pipelines/{pipeline_id}/application-mappings",
+        json={"applicationId": "app-AWS-EMEA-UAT-payment-gateway-svc"},
+        headers=_headers(),
+    )
+    assert linked.status_code == 200
+    session = SessionLocal()
+    try:
+        run = session.get(PipelineRunRow, run_id)
+        assert run is not None
+        assert run.environment_id == "aws-emea-nonprod-uat"
+        assert run.application_id == "app-AWS-EMEA-UAT-payment-gateway-svc"
+    finally:
+        session.close()
+    body = client.get("/api/v1/environments/aws/emea/uat").json()
+    app = next(item for item in body["applications"] if item["id"] == "app-AWS-EMEA-UAT-payment-gateway-svc")
+    assert app["pipelineId"] == pipeline_id
+    assert app["pipelineName"] == "Deploy"
+    assert app["latestPipelineRunId"]
+    assert any("Deploy" in (item.get("title") or "") for item in body["pipelines"])
+

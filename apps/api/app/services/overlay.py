@@ -188,6 +188,7 @@ def apply_environment_certificates(
 def overlay_environment(record: EnvironmentRecord | None) -> EnvironmentRecord | None:
     if record is None:
         return record
+    original = record
     session = SessionLocal()
     try:
         repo = InventoryRepository(session)
@@ -212,31 +213,42 @@ def overlay_environment(record: EnvironmentRecord | None) -> EnvironmentRecord |
                 updated = apply_environment_certificates(updated, certs)
         github_items = []
         from app.domain.models import ActivityItem
-        from app.services.github_presenters import to_run_record
+        from app.services.github_presenters import apply_source_control, to_run_record
+        from app.services.pipeline_presenters import apply_pipeline, to_activity, to_run_record as to_pipeline_run_record
 
         for run in session.scalars(select(GithubWorkflowRunRow).order_by(GithubWorkflowRunRow.started_at.desc())):
-            record = to_run_record(session, run)
-            if record.provider == updated.identity.provider and record.region == updated.identity.region and record.environment == updated.identity.environment:
-                github_items.append(ActivityItem(title=record.name, detail=record.detail, age=record.age, href=record.href))
+            github_run = to_run_record(session, run)
+            if (
+                github_run.provider == updated.identity.provider
+                and github_run.region == updated.identity.region
+                and github_run.environment == updated.identity.environment
+            ):
+                github_items.append(
+                    ActivityItem(title=github_run.name, detail=github_run.detail, age=github_run.age, href=github_run.href)
+                )
             if len(github_items) >= 8:
                 break
         if github_items:
             updated = updated.model_copy(update={"github": github_items})
         pipeline_items = []
-        from app.services.pipeline_presenters import to_activity, to_run_record as to_pipeline_run_record
-
         for run in session.scalars(select(PipelineRunRow).order_by(PipelineRunRow.started_at.desc())):
-            record = to_pipeline_run_record(session, run)
-            if record.provider == updated.identity.provider and record.region == updated.identity.region and record.environment == updated.identity.environment:
+            run_record = to_pipeline_run_record(session, run)
+            if (
+                run_record.provider == updated.identity.provider
+                and run_record.region == updated.identity.region
+                and run_record.environment == updated.identity.environment
+            ):
                 pipeline_items.append(to_activity(session, run))
             if len(pipeline_items) >= 8:
                 break
+        applications = [apply_pipeline(session, apply_source_control(session, app)) for app in updated.applications]
+        patch: dict = {"applications": applications}
         if pipeline_items:
-            updated = updated.model_copy(update={"pipelines": pipeline_items})
-        return updated
+            patch["pipelines"] = pipeline_items
+        return updated.model_copy(update=patch)
     except Exception:
         logger.exception("Live environment overlay unavailable; using mock data")
-        return record
+        return original
     finally:
         session.close()
 

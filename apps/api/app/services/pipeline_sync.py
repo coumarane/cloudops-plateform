@@ -194,6 +194,12 @@ def correlate_run(session: Session, pipeline: PipelineRow, run: PipelineRunRow, 
         run.deployment_id = run.deployment_id or _id("pd", run.repository_id or pipeline.id, run.commit_sha, run.external_run_id)
 
 
+def recorrelate_pipeline_runs(session: Session, pipeline: PipelineRow) -> None:
+    for run in session.scalars(select(PipelineRunRow).where(PipelineRunRow.pipeline_id == pipeline.id)):
+        correlate_run(session, pipeline, run)
+        evaluate_run_alert(session, pipeline, run)
+
+
 def evaluate_run_alert(session: Session, pipeline: PipelineRow, run: PipelineRunRow) -> None:
     env_row = session.get(CloudEnvironmentRow, run.environment_id) if run.environment_id else None
     environment = env_row.environment if env_row else _environment_class(run.environment_id)
