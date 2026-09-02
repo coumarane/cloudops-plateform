@@ -328,7 +328,15 @@ def upsert_run(
     row.completed_at = item.completed_at
     row.duration_seconds = duration_seconds(item.started_at, item.completed_at)
     row.external_url = item.html_url
-    row.metadata_json = _meta(item.metadata)
+    prior = {}
+    try:
+        prior = json.loads(row.metadata_json or "{}")
+    except json.JSONDecodeError:
+        prior = {}
+    merged = dict(item.metadata or {})
+    if prior.get("detailsSynced"):
+        merged["detailsSynced"] = True
+    row.metadata_json = _meta(merged)
     row.updated_at = now
     correlate_run(session, pipeline, row, item)
     evaluate_run_alert(session, pipeline, row)
@@ -498,13 +506,25 @@ def _sync_runs(session: Session, provider_row: PipelineProviderRow, adapter: Pip
                 continue
             row = upsert_run(session, provider_row, pipeline, item)
             count += 1
-            if details or row.status == RUNNING:
+            meta: dict = {}
+            try:
+                meta = json.loads(row.metadata_json or "{}")
+            except json.JSONDecodeError:
+                meta = {}
+            has_stage = session.scalar(select(PipelineStageRow.id).where(PipelineStageRow.run_id == row.id).limit(1))
+            has_job = session.scalar(select(PipelineJobRow.id).where(PipelineJobRow.run_id == row.id).limit(1))
+            needs_details = details or row.status == RUNNING or (
+                not meta.get("detailsSynced") and has_stage is None and has_job is None
+            )
+            if needs_details:
                 try:
                     stages = {}
                     for stage in adapter.list_stages(item):
                         stages[stage.external_id] = upsert_stage(session, row, provider_row.key, stage)
                     for job in adapter.list_jobs(item):
                         upsert_job(session, row, provider_row.key, job, stages)
+                    meta["detailsSynced"] = True
+                    row.metadata_json = _meta(meta)
                 except Exception:
                     logger.info("Run detail skipped run=%s", item.external_id)
     session.flush()
