@@ -1,18 +1,17 @@
+"use client";
+
+import { useSearchParams } from "next/navigation";
 import { EnvironmentIdentityHeader } from "@/components/environment/EnvironmentIdentityHeader";
 import { EnvironmentTabContent } from "@/components/environment/EnvironmentTabContent";
 import { EnvironmentTabs } from "@/components/environment/EnvironmentTabs";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { parseTab } from "@/lib/environment";
 import { LAST_SYNCED_LABEL } from "@/lib/mock-data";
-import type { EnvironmentTab } from "@/lib/environment";
 import { environmentTitle, type EnvironmentRecord } from "@/lib/environment-data";
 
-export function EnvironmentDetails({
-  record,
-  tab,
-}: {
-  record: EnvironmentRecord;
-  tab: EnvironmentTab;
-}) {
+export function EnvironmentDetails({ record }: { record: EnvironmentRecord }) {
+  const searchParams = useSearchParams();
+  const tab = parseTab(searchParams.get("tab"));
   const title = environmentTitle(record.identity);
 
   return (
@@ -31,3 +30,4 @@ export function EnvironmentDetails({
     </>
   );
 }
+

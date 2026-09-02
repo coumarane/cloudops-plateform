@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { EnvironmentDetails } from "@/components/environment/EnvironmentDetails";
 import {
   environmentToSlug,
@@ -6,7 +7,6 @@ import {
   parseEnvironment,
   parseProvider,
   parseRegion,
-  parseTab,
   providerToSlug,
   regionToSlug,
 } from "@/lib/environment";
@@ -19,6 +19,8 @@ export function generateStaticParams() {
     environment: environmentToSlug(identity.environment),
   }));
 }
+
+export const dynamicParams = false;
 
 export async function generateMetadata({
   params,
@@ -36,20 +38,21 @@ export async function generateMetadata({
 
 export default async function EnvironmentDetailsPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ provider: string; region: string; environment: string }>;
-  searchParams: Promise<{ tab?: string }>;
 }) {
   const parsed = parseParams(await params);
   if (!parsed) {
     notFound();
   }
 
-  const tab = parseTab((await searchParams).tab ?? null);
   const record = getEnvironmentRecord(parsed.provider, parsed.region, parsed.environment);
 
-  return <EnvironmentDetails record={record} tab={tab} />;
+  return (
+    <Suspense fallback={<p className="p-6 text-sm text-muted">Loading environment…</p>}>
+      <EnvironmentDetails record={record} />
+    </Suspense>
+  );
 }
 
 function parseParams(params: { provider: string; region: string; environment: string }) {
