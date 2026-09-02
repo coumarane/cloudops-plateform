@@ -35,6 +35,83 @@
       "height": 2088,
       "html": "designs/certificate-monitoring.html",
       "screenshot": "designs/certificate-monitoring.png"
+    },
+    {
+      "screenId": "ea67d2a3833c4683af73a99a2425a3c6",
+      "title": "Infrastructure Inventory",
+      "deviceType": "DESKTOP",
+      "html": "designs/infrastructure.html",
+      "screenshot": "designs/infrastructure.png"
+    },
+    {
+      "screenId": "d99c299407d24fc9b1517aafe50715ce",
+      "title": "Cluster Management Fleet",
+      "deviceType": "DESKTOP",
+      "html": "designs/clusters.html",
+      "screenshot": "designs/clusters.png"
+    },
+    {
+      "screenId": "90f089e5523548f682160ac10de64f4a",
+      "title": "Application Health Explorer",
+      "deviceType": "DESKTOP",
+      "html": "designs/applications.html",
+      "screenshot": "designs/applications.png"
+    },
+    {
+      "screenId": "098e712b12f74ee19f4f662f7e2571d7",
+      "title": "Health Checks & Monitoring",
+      "deviceType": "DESKTOP",
+      "html": "designs/health-checks.html",
+      "screenshot": "designs/health-checks.png"
+    },
+    {
+      "screenId": "7ec467752b254edeb28114dde0679be6",
+      "title": "Deployments: Rollout History",
+      "deviceType": "DESKTOP",
+      "html": "designs/deployments.html",
+      "screenshot": "designs/deployments.png"
+    },
+    {
+      "screenId": "458cc123554f4be9994960760c4179c7",
+      "title": "DevOps Pipeline Central",
+      "deviceType": "DESKTOP",
+      "html": "designs/pipelines.html",
+      "screenshot": "designs/pipelines.png"
+    },
+    {
+      "screenId": "bc89840e83cc4fd698594aee2cc21594",
+      "title": "GitHub Operations Hub",
+      "deviceType": "DESKTOP",
+      "html": "designs/github.html",
+      "screenshot": "designs/github.png"
+    },
+    {
+      "screenId": "5e1cef304d9b416e8a99901e9876016c",
+      "title": "Batch Jobs & Operations Monitoring",
+      "deviceType": "DESKTOP",
+      "html": "designs/jobs.html",
+      "screenshot": "designs/jobs.png"
+    },
+    {
+      "screenId": "528dcc011a2e47baad5cd4eac8f74616",
+      "title": "Operations Centre: Alerts",
+      "deviceType": "DESKTOP",
+      "html": "designs/alerts.html",
+      "screenshot": "designs/alerts.png"
+    },
+    {
+      "screenId": "8f9fcbbe73d741dfb6ec7f4d4fffa88d",
+      "title": "Audit Logs Console",
+      "deviceType": "DESKTOP",
+      "html": "designs/audit.html",
+      "screenshot": "designs/audit.png"
+    },
+    {
+      "screenId": "2c1ff965c545494989e01e5f93c322d0",
+      "title": "Administration: Console Access & Integrations",
+      "deviceType": "DESKTOP",
+      "html": "designs/administration.html",
+      "screenshot": "designs/administration.png"
     }
   ],
   "designSystem": {
@@ -47,5 +124,5 @@
     "roundness": "ROUND_FOUR",
     "customColor": "#0f172a"
   },
-  "notes": "Dashboard, Environment Details, Secrets Management, and Certificate Monitoring are implemented in apps/web from these Stitch screens. Secret values and private keys are never displayed."
+  "notes": "All primary CloudOps console routes are implemented in apps/web from these Stitch screens. Secret values, tokens, and private keys are never displayed."
 }

@@ -13,6 +13,7 @@ import {
   SecretsTable,
 } from "@/components/environment/EnvironmentPanels";
 import { certificatesHref } from "@/lib/certificates";
+import { catalogHref } from "@/lib/catalog";
 import { environmentHref, type EnvironmentTab } from "@/lib/environment";
 import { secretsHref } from "@/lib/secrets";
 import { summarizeEnvironment, type EnvironmentRecord } from "@/lib/environment-data";
@@ -86,7 +87,21 @@ export function EnvironmentTabContent({
 
   if (tab === "clusters") {
     return (
-      <Panel title="Clusters">
+      <Panel
+        title="Clusters"
+        action={
+          <Link
+            href={catalogHref("/clusters", {
+              provider: identity.provider,
+              region: identity.region,
+              environment: identity.environment,
+            })}
+            className="text-xs font-semibold text-action hover:underline"
+          >
+            Open Clusters
+          </Link>
+        }
+      >
         <ClustersTable clusters={record.clusters} identity={identity} />
       </Panel>
     );
@@ -94,7 +109,21 @@ export function EnvironmentTabContent({
 
   if (tab === "applications") {
     return (
-      <Panel title="Applications">
+      <Panel
+        title="Applications"
+        action={
+          <Link
+            href={catalogHref("/applications", {
+              provider: identity.provider,
+              region: identity.region,
+              environment: identity.environment,
+            })}
+            className="text-xs font-semibold text-action hover:underline"
+          >
+            Open Applications
+          </Link>
+        }
+      >
         <ApplicationsTable applications={record.applications} />
       </Panel>
     );
@@ -153,7 +182,10 @@ export function EnvironmentTabContent({
 
   if (tab === "deployments") {
     return (
-      <Panel title="Deployments">
+      <Panel
+        title="Deployments"
+        action={<CatalogLink path="/deployments" identity={identity} label="Open Deployments" />}
+      >
         <ActivityList items={record.deployments} empty="No deployments recorded for this environment." />
       </Panel>
     );
@@ -161,7 +193,7 @@ export function EnvironmentTabContent({
 
   if (tab === "pipelines") {
     return (
-      <Panel title="Pipelines">
+      <Panel title="Pipelines" action={<CatalogLink path="/pipelines" identity={identity} label="Open Pipelines" />}>
         <ActivityList items={record.pipelines} empty="No pipelines recorded for this environment." />
       </Panel>
     );
@@ -169,7 +201,7 @@ export function EnvironmentTabContent({
 
   if (tab === "github") {
     return (
-      <Panel title="GitHub">
+      <Panel title="GitHub" action={<CatalogLink path="/github" identity={identity} label="Open GitHub" />}>
         <ActivityList items={record.github} empty="No GitHub workflow activity for this environment." />
       </Panel>
     );
@@ -177,15 +209,38 @@ export function EnvironmentTabContent({
 
   if (tab === "health") {
     return (
-      <Panel title="Health">
+      <Panel title="Health" action={<CatalogLink path="/health-checks" identity={identity} label="Open Health Checks" />}>
         <ActivityList items={record.health} empty="No health events for this environment." />
       </Panel>
     );
   }
 
   return (
-    <Panel title="Audit">
+    <Panel title="Audit" action={<CatalogLink path="/audit" identity={identity} label="Open Audit" />}>
       <ActivityList items={record.audit} empty="No audit events for this environment." />
     </Panel>
+  );
+}
+
+function CatalogLink({
+  path,
+  identity,
+  label,
+}: {
+  path: string;
+  identity: EnvironmentRecord["identity"];
+  label: string;
+}) {
+  return (
+    <Link
+      href={catalogHref(path, {
+        provider: identity.provider,
+        region: identity.region,
+        environment: identity.environment,
+      })}
+      className="text-xs font-semibold text-action hover:underline"
+    >
+      {label}
+    </Link>
   );
 }

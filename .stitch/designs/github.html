@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>GitHub - CloudOps Platform</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#ffb86f",
+                        "on-surface-variant": "#45464d",
+                        "tertiary-fixed": "#ffdcbd",
+                        "tertiary": "#000000",
+                        "surface-container-low": "#f2f4f6",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-secondary-fixed-variant": "#004395",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#d8dadc",
+                        "secondary-container": "#2170e4",
+                        "surface-variant": "#e0e3e5",
+                        "on-tertiary-fixed-variant": "#693c00",
+                        "primary-fixed": "#dae2fd",
+                        "surface-tint": "#565e74",
+                        "primary-fixed-dim": "#bec6e0",
+                        "secondary-fixed": "#d8e2ff",
+                        "on-primary": "#ffffff",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "primary": "#000000",
+                        "secondary": "#0058be",
+                        "surface-container-high": "#e6e8ea",
+                        "on-primary-container": "#7c839b",
+                        "outline": "#76777d",
+                        "on-tertiary-container": "#bf7100",
+                        "inverse-primary": "#bec6e0",
+                        "background": "#f7f9fb",
+                        "on-error": "#ffffff",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "tertiary-container": "#2c1600",
+                        "on-primary-fixed": "#131b2e",
+                        "on-background": "#191c1e",
+                        "outline-variant": "#c6c6cd",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#eceef0",
+                        "on-tertiary-fixed": "#2c1600",
+                        "surface": "#f7f9fb",
+                        "primary-container": "#131b2e",
+                        "inverse-surface": "#2d3133",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#001a42",
+                        "on-secondary-container": "#fefcff",
+                        "surface-bright": "#f7f9fb",
+                        "on-surface": "#191c1e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gap-md": "16px",
+                        "sidebar-collapsed": "64px",
+                        "container-padding": "24px",
+                        "table-cell-padding": "8px 12px",
+                        "sidebar-width": "240px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "label-caps": ["Inter"],
+                        "display": ["Inter"],
+                        "table-data": ["Inter"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "450" }],
+                        "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "display": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "table-data": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .table-row-hover:hover { background-color: #F1F5F9; }
+    </style>
+</head>
+<body class="bg-background text-on-background flex h-screen overflow-hidden">
+<!-- Top Navigation Bar -->
+<div class="fixed top-0 left-sidebar-width right-0 h-12 bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center w-[calc(100%-240px)] px-container-padding z-50">
+<div class="flex items-center space-x-gap-md">
+<span class="font-headline-md text-headline-md font-bold text-primary">CloudOps Console</span>
+</div>
+<div class="flex items-center space-x-6">
+<nav class="flex space-x-6">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-low transition-colors px-2 py-1 rounded" href="#">AWS</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-low transition-colors px-2 py-1 rounded" href="#">Alibaba Cloud</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-low transition-colors px-2 py-1 rounded" href="#">Region</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:bg-surface-container-low transition-colors px-2 py-1 rounded" href="#">Namespace</a>
+</nav>
+<div class="flex items-center space-x-4 border-l border-outline-variant pl-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">help</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">settings</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant cursor-pointer">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKbps1O9P7fh28tkj4uRpZCWbDjWrD2ezOWGHXYef8bUkU-NZbqNtsWaufKO-flsQPw7ffmqIB-pJCM_QGTz-b6ueaV_gKIQtB7qU6_dnGTqaOcVHkMiExsWxvzBj0vPLW4k_zkvhcrQAYJ_e3Et1gkhQNxPiQkeN60UcrMM92hfYe2irpfx-RamDKaMgYigqcn4Zqxdnyys8SSfyB4yCeVAe18cErKdrHTJRgweyttV3k6MUkyMFVu7YzKT0V5LZ9IM0pio2F_umY"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Side Navigation Bar -->
+<div class="fixed left-0 top-0 h-full w-sidebar-width bg-primary-container flex flex-col py-4 z-40">
+<div class="px-6 mb-8 flex items-center space-x-3">
+<div class="w-8 h-8 bg-secondary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-lg">cloud</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-extrabold text-on-primary-container">CloudOps</h1>
+<p class="font-code-sm text-code-sm text-on-primary-container opacity-70">v2.4.0-stable</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto px-4 space-y-1 scrollbar-hide">
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">dashboard</span>
+<span class="font-body-sm text-body-sm">Overview</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">storage</span>
+<span class="font-body-sm text-body-sm">Infrastructure</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">hub</span>
+<span class="font-body-sm text-body-sm">Clusters</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">layers</span>
+<span class="font-body-sm text-body-sm">Environments</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">apps</span>
+<span class="font-body-sm text-body-sm">Applications</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">lock</span>
+<span class="font-body-sm text-body-sm">Secrets</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">verified_user</span>
+<span class="font-body-sm text-body-sm">Certificates</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">monitor_heart</span>
+<span class="font-body-sm text-body-sm">Health Checks</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">rocket_launch</span>
+<span class="font-body-sm text-body-sm">Deployments</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">account_tree</span>
+<span class="font-body-sm text-body-sm">Pipelines</span>
+</a>
+<!-- Active Item -->
+<a class="flex items-center space-x-3 px-3 py-2 bg-secondary-container text-on-secondary-container font-bold rounded-lg scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined text-xl">code</span>
+<span class="font-body-sm text-body-sm">GitHub</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">work</span>
+<span class="font-body-sm text-body-sm">Jobs</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">notifications_active</span>
+<span class="font-body-sm text-body-sm">Alerts</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">history</span>
+<span class="font-body-sm text-body-sm">Audit</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">admin_panel_settings</span>
+<span class="font-body-sm text-body-sm">Administration</span>
+</a>
+</nav>
+<div class="px-4 mt-auto border-t border-on-primary-fixed-variant pt-4 space-y-1">
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">menu_book</span>
+<span class="font-body-sm text-body-sm">Documentation</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 text-on-primary-container opacity-70 hover:bg-on-primary-fixed-variant hover:text-white transition-all rounded" href="#">
+<span class="material-symbols-outlined text-xl">contact_support</span>
+<span class="font-body-sm text-body-sm">Support</span>
+</a>
+</div>
+</div>
+<!-- Main Content Area -->
+<main class="ml-sidebar-width mt-12 flex-1 h-[calc(100vh-48px)] overflow-y-auto flex flex-col">
+<div class="p-container-padding flex-1">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-8">
+<div>
+<h2 class="font-display text-display text-primary mb-1">GitHub</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">GitHub Actions workflow runs. GitHub secrets and tokens are never displayed.</p>
+</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">
+                    Last synced 14:32:45 UTC
+                </div>
+</div>
+<!-- KPI Cards -->
+<div class="grid grid-cols-4 gap-gap-md mb-8">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex flex-col justify-between h-24">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Workflows in Scope</span>
+<span class="font-display text-display text-primary">142</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex flex-col justify-between h-24">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Succeeded</span>
+<span class="font-display text-display text-green-700">139</span>
+</div>
+<div class="bg-surface-container-lowest border border-error rounded-lg p-4 flex flex-col justify-between h-24 shadow-[0_4px_12px_rgba(220,38,38,0.1)]">
+<span class="font-label-caps text-label-caps text-error uppercase font-bold">Failed</span>
+<span class="font-display text-display text-error">3</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex flex-col justify-between h-24 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-2 h-full bg-error"></div>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">PRD Workflows</span>
+<span class="font-display text-display text-primary">24</span>
+</div>
+</div>
+<!-- Featured / Urgent Section -->
+<div class="bg-surface-container-lowest border-l-4 border-error shadow-sm rounded-r-lg p-4 mb-8 flex items-center justify-between">
+<div class="flex items-center space-x-6">
+<div class="flex items-center space-x-2 text-error">
+<span class="material-symbols-outlined">warning</span>
+<span class="font-headline-md text-headline-md">Recent Failure</span>
+</div>
+<div class="font-code-sm text-code-sm text-primary flex items-center space-x-4">
+<span class="font-bold">auth-build</span>
+<span class="text-on-surface-variant">|</span>
+<span>AWS</span>
+<span class="text-on-surface-variant">|</span>
+<span>AMER</span>
+<span class="text-on-surface-variant">|</span>
+<span>INT/TST</span>
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<span class="bg-error text-white px-2 py-1 rounded text-xs font-bold uppercase">Status: Failed</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">Age: 1h ago</span>
+<button class="px-3 py-1 bg-primary text-white font-body-sm text-body-sm rounded hover:bg-on-surface transition-colors">View Logs</button>
+</div>
+</div>
+<!-- Global Filters -->
+<div class="flex items-center space-x-4 mb-4 bg-surface-container-low p-2 rounded-lg border border-outline-variant">
+<span class="material-symbols-outlined text-on-surface-variant ml-2">filter_list</span>
+<select class="bg-surface-container-lowest border border-outline-variant text-body-sm font-body-sm rounded px-3 py-1 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none">
+<option>Provider (All)</option>
+<option>AWS</option>
+<option>Alibaba Cloud</option>
+</select>
+<select class="bg-surface-container-lowest border border-outline-variant text-body-sm font-body-sm rounded px-3 py-1 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none">
+<option>Region (All)</option>
+<option>AMER</option>
+<option>EMEA</option>
+<option>APAC</option>
+<option>China</option>
+</select>
+<select class="bg-surface-container-lowest border border-outline-variant text-body-sm font-body-sm rounded px-3 py-1 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none">
+<option>Environment (All)</option>
+<option>INT/TST</option>
+<option>UAT</option>
+<option>NPD</option>
+<option>PRD</option>
+</select>
+</div>
+<!-- Dense Operations Table -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant">
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant uppercase">Workflow</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant uppercase">Repository</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant uppercase">Result</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant uppercase">Age</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant uppercase">Provider</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant uppercase">Region</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant uppercase">Environment</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant uppercase text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="font-table-data text-table-data text-primary">
+<tr class="border-b border-outline-variant h-10 table-row-hover transition-colors">
+<td class="p-table-cell-padding font-code-sm font-semibold">auth-build</td>
+<td class="p-table-cell-padding text-on-surface-variant">org/auth-service</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center space-x-1 text-error bg-error-container px-2 py-0.5 rounded-full text-xs font-bold">
+<span class="material-symbols-outlined text-[14px]">cancel</span>
+<span>Failed</span>
+</span>
+</td>
+<td class="p-table-cell-padding text-on-surface-variant">1h ago</td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">AMER</td>
+<td class="p-table-cell-padding">INT/TST</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant h-10 table-row-hover transition-colors">
+<td class="p-table-cell-padding font-code-sm font-semibold">ci-verify</td>
+<td class="p-table-cell-padding text-on-surface-variant">org/payment-gateway</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center space-x-1 text-green-800 bg-green-100 px-2 py-0.5 rounded-full text-xs font-bold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Succeeded</span>
+</span>
+</td>
+<td class="p-table-cell-padding text-on-surface-variant">15m ago</td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">EMEA</td>
+<td class="p-table-cell-padding">
+<span class="bg-error text-white px-2 py-0.5 rounded text-xs font-bold border border-error">PRD</span>
+</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant h-10 table-row-hover transition-colors">
+<td class="p-table-cell-padding font-code-sm font-semibold">sync-data</td>
+<td class="p-table-cell-padding text-on-surface-variant">org/data-utils</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center space-x-1 text-green-800 bg-green-100 px-2 py-0.5 rounded-full text-xs font-bold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Succeeded</span>
+</span>
+</td>
+<td class="p-table-cell-padding text-on-surface-variant">2h ago</td>
+<td class="p-table-cell-padding">Alibaba</td>
+<td class="p-table-cell-padding">China</td>
+<td class="p-table-cell-padding">
+<span class="bg-error text-white px-2 py-0.5 rounded text-xs font-bold border border-error">NPD</span>
+</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant h-10 table-row-hover transition-colors">
+<td class="p-table-cell-padding font-code-sm font-semibold">image-scan</td>
+<td class="p-table-cell-padding text-on-surface-variant">org/core-api</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center space-x-1 text-green-800 bg-green-100 px-2 py-0.5 rounded-full text-xs font-bold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Succeeded</span>
+</span>
+</td>
+<td class="p-table-cell-padding text-on-surface-variant">4h ago</td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">APAC</td>
+<td class="p-table-cell-padding">UAT</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</td>
+</tr>
+<tr class="h-10 table-row-hover transition-colors">
+<td class="p-table-cell-padding font-code-sm font-semibold">deploy-prod</td>
+<td class="p-table-cell-padding text-on-surface-variant">org/web-app</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center space-x-1 text-green-800 bg-green-100 px-2 py-0.5 rounded-full text-xs font-bold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Succeeded</span>
+</span>
+</td>
+<td class="p-table-cell-padding text-on-surface-variant">10m ago</td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">AMER</td>
+<td class="p-table-cell-padding">
+<span class="bg-error text-white px-2 py-0.5 rounded text-xs font-bold border border-error">PRD</span>
+</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[18px]">more_vert</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Footer -->
+<footer class="bg-surface border-t border-outline-variant flex justify-between items-center w-full px-container-padding py-2 mt-auto shrink-0">
+<div class="font-code-sm text-code-sm text-on-surface-variant">
+                © 2024 CloudOps Platform. Secret values are never displayed for security compliance.
+            </div>
+<div class="flex space-x-6">
+<a class="font-code-sm text-code-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Security Policy</a>
+<a class="font-code-sm text-code-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="font-code-sm text-code-sm text-on-surface-variant hover:text-primary transition-colors" href="#">SLA</a>
+</div>
+</footer>
+</main>
+</body></html>

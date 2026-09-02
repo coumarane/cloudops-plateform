@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Infrastructure Inventory - CloudOps Platform</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#0058be",
+                        "on-secondary-fixed-variant": "#004395",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#131b2e",
+                        "inverse-primary": "#bec6e0",
+                        "on-tertiary-container": "#bf7100",
+                        "on-secondary-fixed": "#001a42",
+                        "on-secondary-container": "#fefcff",
+                        "surface-container": "#eceef0",
+                        "on-secondary": "#ffffff",
+                        "surface-tint": "#565e74",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-surface-variant": "#45464d",
+                        "surface-dim": "#d8dadc",
+                        "on-error": "#ffffff",
+                        "surface": "#f7f9fb",
+                        "on-tertiary": "#ffffff",
+                        "tertiary": "#000000",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#000000",
+                        "tertiary-fixed-dim": "#ffb86f",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "on-primary-container": "#7c839b",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "outline": "#76777d",
+                        "surface-container-highest": "#e0e3e5",
+                        "secondary-container": "#2170e4",
+                        "tertiary-fixed": "#ffdcbd",
+                        "surface-bright": "#f7f9fb",
+                        "inverse-surface": "#2d3133",
+                        "inverse-on-surface": "#eff1f3",
+                        "primary-fixed": "#dae2fd",
+                        "on-tertiary-fixed": "#2c1600",
+                        "on-background": "#191c1e",
+                        "primary-container": "#131b2e",
+                        "surface-container-high": "#e6e8ea",
+                        "error-container": "#ffdad6",
+                        "background": "#f7f9fb",
+                        "on-surface": "#191c1e",
+                        "secondary-fixed": "#d8e2ff",
+                        "on-tertiary-fixed-variant": "#693c00",
+                        "primary-fixed-dim": "#bec6e0",
+                        "tertiary-container": "#2c1600",
+                        "surface-container-low": "#f2f4f6",
+                        "surface-variant": "#e0e3e5",
+                        "outline-variant": "#c6c6cd",
+                        "danger": "#DC2626"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "sidebar-collapsed": "64px",
+                        "container-padding": "24px",
+                        "gap-md": "16px",
+                        "table-cell-padding": "8px 12px",
+                        "sidebar-width": "240px"
+                    },
+                    "fontFamily": {
+                        "display": ["Inter"],
+                        "table-data": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "body-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "table-data": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "450" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-sm text-body-sm antialiased h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-primary dark:bg-primary-container text-on-primary-fixed dark:text-primary-fixed-dim docked h-screen w-sidebar fixed left-0 top-0 flex flex-col py-container-padding z-50">
+<div class="px-6 mb-8 flex items-center gap-3">
+<span class="material-symbols-outlined text-3xl">terminal</span>
+<div>
+<h1 class="font-display text-display text-on-primary dark:text-primary-fixed leading-tight">K8s Cockpit</h1>
+<p class="font-label-caps text-label-caps text-on-primary-container opacity-80">Enterprise Ops</p>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">dashboard</span>
+<span>Overview</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-secondary-container text-on-secondary-container rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined">account_tree</span>
+<span class="font-semibold">Infrastructure</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">hub</span>
+<span>Clusters</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">layers</span>
+<span>Environments</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">vpn_key</span>
+<span>Secrets</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">verified_user</span>
+<span>Certificates</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">apps</span>
+<span>Apps</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">health_and_safety</span>
+<span>Health</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">rocket_launch</span>
+<span>Deployments</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">dynamic_form</span>
+<span>Pipelines</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">terminal</span>
+<span>GitHub</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">work</span>
+<span>Jobs</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">notifications</span>
+<span>Alerts</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">policy</span>
+<span>Audit</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant hover:text-on-primary-fixed rounded transition-colors cursor-pointer active:scale-95 group mt-auto pt-4 border-t border-on-primary-container/20" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-fixed">settings_applications</span>
+<span>Admin</span>
+</a>
+</div>
+<div class="px-4 mt-4 pt-4 border-t border-on-primary-container/20 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden shrink-0">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A small, professional portrait photo of a network administrator, tightly cropped, modern office lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-fqsGUdFQ9K7H6CGp0Jr-e47UPiB-2cnjQ2w7l2C-8Nzdm3Ytk50cX1h15vCJdpkC8g5Tq5LSwai-j7YYE6J542m2fNHTrm4cZXL2vlCKHDOk0_Ccygvtt_MTF8sK7IPZ79No-A_sz_KVqbXz5_-tP4vm-e_hjMbNQxeysbKJqy7I8G1tIISwZCfPOQCg_67arMxtT_nvg7DI6cobW-CU4mcqtQz-IDw9gaWkfKU0g6Z3NzEISz05zA7ga4Yr94EQKzLLJfxhwAqp"/>
+</div>
+<div class="overflow-hidden">
+<p class="truncate font-medium text-sm text-on-primary">Admin User</p>
+<p class="truncate text-xs text-on-primary-container">admin@enterprise.local</p>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 ml-sidebar flex flex-col h-screen overflow-hidden">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface-dim border-b border-outline-variant flex justify-between items-center h-12 px-container-padding w-full z-40 shrink-0">
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md text-primary dark:text-on-surface tracking-tight">CloudOps Platform</span>
+<div class="hidden md:flex gap-4">
+<a class="text-on-surface-variant hover:text-primary transition-all duration-200 ease-in-out font-label-caps text-label-caps" href="#">AWS</a>
+<a class="text-on-surface-variant hover:text-primary transition-all duration-200 ease-in-out font-label-caps text-label-caps" href="#">Alibaba Cloud</a>
+<a class="text-on-surface-variant hover:text-primary transition-all duration-200 ease-in-out font-label-caps text-label-caps" href="#">Region</a>
+<a class="text-on-surface-variant hover:text-primary transition-all duration-200 ease-in-out font-label-caps text-label-caps" href="#">Namespace</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+</header>
+<!-- Scrollable Canvas -->
+<main class="flex-1 overflow-y-auto p-container-padding">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-6">
+<div>
+<h2 class="font-display text-display text-primary mb-1">Infrastructure</h2>
+<p class="text-on-surface-variant">Provider → Region → Account across AWS EKS and Alibaba ACK</p>
+</div>
+<div class="text-right">
+<p class="font-code-sm text-code-sm text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+                        Last synced 14:32:45 UTC
+                    </p>
+</div>
+</div>
+<!-- Global Filters -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 mb-6 flex flex-wrap gap-4 items-center">
+<div class="flex items-center gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant">PROVIDER:</label>
+<select class="form-select bg-surface border-outline-variant rounded h-8 py-0 pl-2 pr-8 text-sm focus:ring-secondary focus:border-secondary">
+<option>All</option>
+<option>AWS</option>
+<option>Alibaba</option>
+</select>
+</div>
+<div class="w-px h-6 bg-outline-variant/50 hidden sm:block"></div>
+<div class="flex items-center gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant">REGION:</label>
+<select class="form-select bg-surface border-outline-variant rounded h-8 py-0 pl-2 pr-8 text-sm focus:ring-secondary focus:border-secondary">
+<option>All</option>
+<option>AMER</option>
+<option>EMEA</option>
+<option>APAC</option>
+<option>China</option>
+</select>
+</div>
+<div class="w-px h-6 bg-outline-variant/50 hidden sm:block"></div>
+<div class="flex items-center gap-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant">ENVIRONMENT:</label>
+<select class="form-select bg-surface border-outline-variant rounded h-8 py-0 pl-2 pr-8 text-sm focus:ring-secondary focus:border-secondary">
+<option>All</option>
+<option>PRD</option>
+<option>NPD</option>
+<option>DEV</option>
+</select>
+</div>
+<div class="ml-auto">
+<button class="bg-primary text-on-primary hover:bg-surface-tint transition-colors px-4 py-1.5 rounded text-sm font-medium">Apply Filters</button>
+</div>
+</div>
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 flex flex-col shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-1">TOTAL ACCOUNTS</span>
+<span class="font-display text-display text-primary">8</span>
+</div>
+<div class="bg-surface-container-lowest border border-danger/30 rounded p-4 flex flex-col relative overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<div class="absolute top-0 left-0 w-full h-1 bg-danger"></div>
+<span class="font-label-caps text-label-caps text-danger mb-1 font-bold">PRODUCTION ACCOUNTS</span>
+<span class="font-display text-display text-primary">4</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 flex flex-col shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-1">NON-PROD ACCOUNTS</span>
+<span class="font-display text-display text-primary">4</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 flex flex-col shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+<span class="font-label-caps text-label-caps text-on-surface-variant mb-1">PLATFORMS</span>
+<span class="font-display text-display text-primary">2</span>
+<span class="text-xs text-on-surface-variant mt-1">AWS EKS, Alibaba ACK</span>
+</div>
+</div>
+<!-- Data Table -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex flex-col">
+<div class="overflow-x-auto">
+<table class="w-full text-left font-table-data text-table-data border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant text-on-surface-variant font-label-caps text-label-caps">
+<th class="p-table-cell-padding whitespace-nowrap">Account</th>
+<th class="p-table-cell-padding whitespace-nowrap">Provider</th>
+<th class="p-table-cell-padding whitespace-nowrap">Region</th>
+<th class="p-table-cell-padding whitespace-nowrap">Class</th>
+<th class="p-table-cell-padding whitespace-nowrap">Cloud Region</th>
+<th class="p-table-cell-padding whitespace-nowrap">Platform</th>
+<th class="p-table-cell-padding whitespace-nowrap">Environments</th>
+<th class="p-table-cell-padding whitespace-nowrap text-right">Clusters</th>
+<th class="p-table-cell-padding whitespace-nowrap w-10"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/50">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-low transition-colors group h-10">
+<td class="p-table-cell-padding font-code-sm text-code-sm font-medium">prod-amer</td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">AMER</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-danger/10 text-danger border border-danger/20 leading-none">[PRODUCTION]</span>
+</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">us-east-1</td>
+<td class="p-table-cell-padding">EKS</td>
+<td class="p-table-cell-padding text-on-surface-variant">2 (NPD, PRD)</td>
+<td class="p-table-cell-padding text-right font-code-sm">4</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined text-lg">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low transition-colors group h-10">
+<td class="p-table-cell-padding font-code-sm text-code-sm font-medium">nonprod-amer</td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">AMER</td>
+<td class="p-table-cell-padding text-on-surface-variant text-xs">NON-PROD</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">us-east-1</td>
+<td class="p-table-cell-padding">EKS</td>
+<td class="p-table-cell-padding text-on-surface-variant">3 (DEV, TST, UAT)</td>
+<td class="p-table-cell-padding text-right font-code-sm">3</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined text-lg">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low transition-colors group h-10">
+<td class="p-table-cell-padding font-code-sm text-code-sm font-medium">prod-emea</td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">EMEA</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-danger/10 text-danger border border-danger/20 leading-none">[PRODUCTION]</span>
+</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">eu-west-1</td>
+<td class="p-table-cell-padding">EKS</td>
+<td class="p-table-cell-padding text-on-surface-variant">2 (NPD, PRD)</td>
+<td class="p-table-cell-padding text-right font-code-sm">4</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined text-lg">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-low transition-colors group h-10">
+<td class="p-table-cell-padding font-code-sm text-code-sm font-medium">nonprod-emea</td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">EMEA</td>
+<td class="p-table-cell-padding text-on-surface-variant text-xs">NON-PROD</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">eu-west-1</td>
+<td class="p-table-cell-padding">EKS</td>
+<td class="p-table-cell-padding text-on-surface-variant">3 (DEV, TST, UAT)</td>
+<td class="p-table-cell-padding text-right font-code-sm">3</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined text-lg">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-surface-container-low transition-colors group h-10">
+<td class="p-table-cell-padding font-code-sm text-code-sm font-medium">prod-apac</td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">APAC</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-danger/10 text-danger border border-danger/20 leading-none">[PRODUCTION]</span>
+</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">ap-southeast-1</td>
+<td class="p-table-cell-padding">EKS</td>
+<td class="p-table-cell-padding text-on-surface-variant">2 (NPD, PRD)</td>
+<td class="p-table-cell-padding text-right font-code-sm">4</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined text-lg">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="hover:bg-surface-container-low transition-colors group h-10">
+<td class="p-table-cell-padding font-code-sm text-code-sm font-medium">nonprod-apac</td>
+<td class="p-table-cell-padding">AWS</td>
+<td class="p-table-cell-padding">APAC</td>
+<td class="p-table-cell-padding text-on-surface-variant text-xs">NON-PROD</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">ap-southeast-1</td>
+<td class="p-table-cell-padding">EKS</td>
+<td class="p-table-cell-padding text-on-surface-variant">3 (DEV, TST, UAT)</td>
+<td class="p-table-cell-padding text-right font-code-sm">3</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined text-lg">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-surface-container-low transition-colors group h-10">
+<td class="p-table-cell-padding font-code-sm text-code-sm font-medium">prod-china</td>
+<td class="p-table-cell-padding">Alibaba</td>
+<td class="p-table-cell-padding">China</td>
+<td class="p-table-cell-padding">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-danger/10 text-danger border border-danger/20 leading-none">[PRODUCTION]</span>
+</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">cn-hangzhou</td>
+<td class="p-table-cell-padding">ACK</td>
+<td class="p-table-cell-padding text-on-surface-variant">2 (NPD, PRD)</td>
+<td class="p-table-cell-padding text-right font-code-sm">4</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined text-lg">more_vert</span></button>
+</td>
+</tr>
+<!-- Row 8 -->
+<tr class="hover:bg-surface-container-low transition-colors group h-10">
+<td class="p-table-cell-padding font-code-sm text-code-sm font-medium">nonprod-china</td>
+<td class="p-table-cell-padding">Alibaba</td>
+<td class="p-table-cell-padding">China</td>
+<td class="p-table-cell-padding text-on-surface-variant text-xs">NON-PROD</td>
+<td class="p-table-cell-padding font-code-sm text-code-sm">cn-hangzhou</td>
+<td class="p-table-cell-padding">ACK</td>
+<td class="p-table-cell-padding text-on-surface-variant">3 (DEV, TST, UAT)</td>
+<td class="p-table-cell-padding text-right font-code-sm">3</td>
+<td class="p-table-cell-padding text-right">
+<button class="text-outline hover:text-primary"><span class="material-symbols-outlined text-lg">more_vert</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="bg-surface-container-low border-t border-outline-variant p-3 flex justify-between items-center text-xs text-on-surface-variant">
+<span>Showing 1-8 of 8 accounts</span>
+</div>
+</div>
+<!-- Footer -->
+<footer class="mt-8 text-center text-on-surface-variant/70 text-xs flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+                Secret values are never displayed in this console.
+            </footer>
+</main>
+</div>
+</body></html>

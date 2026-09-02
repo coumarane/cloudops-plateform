@@ -37,7 +37,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/administration", label: "Administration", icon: "administration" },
 ];
 
-const IMPLEMENTED_HREFS = new Set(["/", "/environments", "/secrets", "/certificates"]);
+const IMPLEMENTED_HREFS = new Set(NAV_ITEMS.map((item) => item.href));
 
 export const PLACEHOLDER_SECTIONS = NAV_ITEMS.filter((item) => !IMPLEMENTED_HREFS.has(item.href)).map(
   (item) => item.href.slice(1),
