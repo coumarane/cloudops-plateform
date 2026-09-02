@@ -17,6 +17,11 @@ import pytest
 from app.core.rate_limit import reset_rate_limits
 from app.db.models import (
     AcmCertificateRow,
+    CertificateAlertRow,
+    CertificateAuditRow,
+    CertificateEndpointRow,
+    CertificateHistoryRow,
+    CertificateValidationRow,
     CloudEnvironmentRow,
     CredentialAuditRow,
     CredentialRotationEventRow,
@@ -26,6 +31,7 @@ from app.db.models import (
     EksClusterHealthRow,
     EksClusterRow,
     LiveScopeStateRow,
+    NotificationEventRow,
     PlatformJobRow,
 )
 from app.db.session import SessionLocal
@@ -38,6 +44,12 @@ def reset_live_tables() -> None:
     reset_rate_limits()
     session = SessionLocal()
     for model in (
+        CertificateValidationRow,
+        CertificateAlertRow,
+        CertificateHistoryRow,
+        CertificateAuditRow,
+        NotificationEventRow,
+        CertificateEndpointRow,
         CredentialValidationRow,
         CredentialVersionRow,
         CredentialRotationEventRow,
@@ -56,6 +68,7 @@ def reset_live_tables() -> None:
         row.last_health_at = None
         row.last_certificate_scan_at = None
         row.last_successful_scan_at = None
+        row.last_attempted_scan_at = None
         row.last_error = ""
         row.last_error_class = ""
         row.last_error_at = None

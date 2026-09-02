@@ -14,6 +14,10 @@ PERMISSIONS = {
     "credential:rotate",
     "credential:read_history",
     "credential:prod_update",
+    "certificate:read",
+    "certificate:scan",
+    "certificate:validate",
+    "certificate:ack",
 }
 
 ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
@@ -26,11 +30,15 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "credential:validate",
             "credential:rotate",
             "credential:read_history",
+            "certificate:read",
+            "certificate:scan",
+            "certificate:validate",
+            "certificate:ack",
         }
     ),
-    "SecurityAuditor": frozenset({"credential:read", "credential:read_history"}),
-    "Developer": frozenset({"credential:read"}),
-    "ReadOnly": frozenset({"credential:read"}),
+    "SecurityAuditor": frozenset({"credential:read", "credential:read_history", "certificate:read"}),
+    "Developer": frozenset({"credential:read", "certificate:read"}),
+    "ReadOnly": frozenset({"credential:read", "certificate:read"}),
 }
 
 _ROLE_ALIASES = {

@@ -226,6 +226,7 @@ export function CertificatesTable({ certificates }: { certificates: EnvironmentC
           <tr className="border-b border-outline text-[11px] font-bold uppercase tracking-wide text-muted">
             <th className="p-3">Certificate</th>
             <th className="p-3">Days to expiry</th>
+            <th className="p-3">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -233,6 +234,7 @@ export function CertificatesTable({ certificates }: { certificates: EnvironmentC
             <tr key={certificate.name} className="border-b border-outline last:border-b-0">
               <td className="p-3 font-mono text-xs text-ink">{certificate.name}</td>
               <td className="p-3 font-semibold text-warning">{certificate.daysToExpiry}d</td>
+              <td className="p-3 text-xs font-semibold text-muted">{certificate.status || "—"}</td>
             </tr>
           ))}
         </tbody>

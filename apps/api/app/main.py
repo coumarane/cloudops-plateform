@@ -21,8 +21,8 @@ async def lifespan(_application: FastAPI):
 def create_app() -> FastAPI:
     application = FastAPI(
         title=settings.app_name,
-        version="0.6.0",
-        description="CloudOps Platform API. Credential metadata is stored in PostgreSQL; secret material stays in a secret backend. PRD mutations require credential:prod_update.",
+        version="0.7.0",
+        description="CloudOps Platform API. Certificate monitoring classifies expiry in the backend. Credential metadata is stored in PostgreSQL; secret material stays in a secret backend. Private keys are never stored.",
         lifespan=lifespan,
     )
     application.add_middleware(CorrelationIdMiddleware)
@@ -47,6 +47,14 @@ def create_app() -> FastAPI:
     @application.get("/health")
     def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @application.get("/metrics")
+    def metrics():
+        from fastapi.responses import PlainTextResponse
+
+        from app.core.metrics import render_prometheus
+
+        return PlainTextResponse(render_prometheus(), media_type="text/plain; version=0.0.4")
 
     return application
 

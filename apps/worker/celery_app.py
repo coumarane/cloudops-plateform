@@ -26,6 +26,11 @@ celery_app = Celery(
         "tasks.alibaba_certificate_expiry",
         "tasks.credential_validate",
         "tasks.credential_rotation_scan",
+        "tasks.certificate_discovery",
+        "tasks.certificate_expiry",
+        "tasks.certificate_endpoint",
+        "tasks.certificate_alerts",
+        "tasks.certificate_validate",
     ),
 )
 celery_app.conf.update(
@@ -40,6 +45,22 @@ celery_app.conf.update(
         "credential-rotation-status-scan": {
             "task": "tasks.credential_rotation_scan.periodic_scan",
             "schedule": 6 * 60 * 60,
-        }
+        },
+        "certificate-discovery": {
+            "task": "tasks.certificate_discovery.periodic_scan",
+            "schedule": settings.certificate_discovery_interval_seconds,
+        },
+        "certificate-expiry-scan": {
+            "task": "tasks.certificate_expiry.periodic_scan",
+            "schedule": settings.certificate_expiry_interval_seconds,
+        },
+        "certificate-endpoint-validation": {
+            "task": "tasks.certificate_endpoint.periodic_scan",
+            "schedule": settings.certificate_endpoint_interval_seconds,
+        },
+        "certificate-alert-evaluation": {
+            "task": "tasks.certificate_alerts.periodic_scan",
+            "schedule": settings.certificate_alert_interval_seconds,
+        },
     },
 )

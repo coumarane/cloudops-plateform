@@ -60,17 +60,22 @@ describe("certificate monitoring", () => {
         certificate: "cert-amer-prd-wildcard",
       }),
     ).toBe("/certificates?provider=aws&region=amer&environment=prd&certificate=cert-amer-prd-wildcard");
+    expect(certificatesHref({ expiresWithinDays: 7 })).toBe("/certificates?expires_within_days=7");
     expect(parseCertificatesFilters({ provider: "aws", region: "emea", environment: "uat" })).toEqual({
       provider: "AWS",
       region: "EMEA",
       environment: "UAT",
       certificate: null,
+      status: null,
+      expiresWithinDays: null,
+      sort: null,
     });
   });
 
   it("summarizes expiring and PRD certificates for the KPI strip", () => {
     const summary = summarizeCertificates(SAMPLE);
     expect(summary.expiring14d).toBe(1);
+    expect(summary.expiring60).toBe(2);
     expect(summary.prd).toBe(2);
   });
 });

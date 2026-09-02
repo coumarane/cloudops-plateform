@@ -7,6 +7,9 @@ export type ScopeQuery = {
   region?: Region | "all" | null;
   environment?: Environment | "all" | null;
   account?: string | "all" | null;
+  status?: string | null;
+  expiresWithinDays?: number | string | null;
+  sort?: string | null;
 };
 
 export type ListResponse<T> = {
@@ -22,6 +25,9 @@ export function toSearchParams(scope: ScopeQuery = {}): string {
     params.set("environment", environmentToSlug(scope.environment));
   }
   if (scope.account && scope.account !== "all") params.set("account", scope.account);
+  if (scope.status) params.set("status", scope.status);
+  if (scope.expiresWithinDays) params.set("expires_within_days", String(scope.expiresWithinDays));
+  if (scope.sort) params.set("sort", scope.sort);
   const query = params.toString();
   return query ? `?${query}` : "";
 }

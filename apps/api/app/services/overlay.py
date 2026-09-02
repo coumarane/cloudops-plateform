@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from app.core.logging import get_logger
-from app.db.models import CloudEnvironmentRow
+from app.db.models import CertificateAlertRow, CloudEnvironmentRow
 from app.db.repository import InventoryRepository
 from app.db.session import SessionLocal
 from app.domain.models import (
@@ -11,9 +11,11 @@ from app.domain.models import (
     EnvironmentIdentity,
     EnvironmentRecord,
     MatrixRow,
+    OperationalAlert,
     RunRecord,
 )
-from app.services.mappers import to_certificate_record, to_cluster_record, to_health_record, to_job_record
+from app.providers.common.certificates import CRITICAL, EXPIRED, HEALTHY, URGENT, WARNING, classify_expiry
+from app.services.mappers import annotate_certificate, to_certificate_record, to_cluster_record, to_health_record, to_job_record
 from app.topology.models import environment_slug
 
 logger = get_logger(__name__)
@@ -79,20 +81,33 @@ def overlay_clusters(items: list[ClusterRecord]) -> list[ClusterRecord]:
         session.close()
 
 
+def _alert_status_map(session) -> dict[str, str]:
+    from sqlalchemy import select
+
+    mapping: dict[str, str] = {}
+    for alert in session.scalars(
+        select(CertificateAlertRow).where(CertificateAlertRow.status.in_(("OPEN", "ACKNOWLEDGED")))
+    ):
+        mapping[alert.certificate_id] = alert.status
+    return mapping
+
+
 def overlay_certificates(items: list[CertificateRecord]) -> list[CertificateRecord]:
     session = SessionLocal()
     try:
         repo = InventoryRepository(session)
         live_scopes = repo.live_certificate_scopes()
+        annotated = [annotate_certificate(item) for item in items]
         if not live_scopes:
-            return items
+            return annotated
         env_rows = repo.list_environment_rows()
         envs_by_account: dict[str, list[CloudEnvironmentRow]] = {}
         for row in env_rows:
             envs_by_account.setdefault(row.account_alias, []).append(row)
+        alerts = _alert_status_map(session)
         live: list[CertificateRecord] = []
         for row in repo.present_certificates():
-            record = to_certificate_record(row)
+            record = to_certificate_record(row, alert_status=alerts.get(row.id))
             targets = envs_by_account.get(row.account_alias, [])
             if row.environment:
                 targets = [item for item in targets if item.environment == row.environment]
@@ -107,11 +122,11 @@ def overlay_certificates(items: list[CertificateRecord]) -> list[CertificateReco
                     }
                 )
                 live.append(copied)
-        kept = [item for item in items if (item.provider, item.region, item.environment) not in live_scopes]
+        kept = [item for item in annotated if (item.provider, item.region, item.environment) not in live_scopes]
         return kept + live
     except Exception:
         logger.exception("Live certificate overlay unavailable; using mock data")
-        return items
+        return [annotate_certificate(item) for item in items]
     finally:
         session.close()
 
@@ -154,8 +169,54 @@ def overlay_environment(record: EnvironmentRecord | None) -> EnvironmentRecord |
             ]
             if certs:
                 updated.certificates = [
-                    EnvironmentCertificate(name=item.domain, daysToExpiry=item.daysRemaining) for item in certs
+                    EnvironmentCertificate(
+                        name=item.domain,
+                        daysToExpiry=item.daysRemaining,
+                        status=item.expiryStatus,
+                        source=item.source,
+                        issuer=item.issuer,
+                    )
+                    for item in certs
                 ]
+            statuses = [item.expiryStatus for item in certs]
+            warning = sum(1 for status in statuses if status == WARNING)
+            critical = sum(1 for status in statuses if status in {CRITICAL, URGENT, EXPIRED})
+            if critical:
+                cert_status = "Critical"
+            elif warning:
+                cert_status = "Warning"
+            else:
+                cert_status = "Healthy"
+            updated.identity = updated.identity.model_copy(
+                update={
+                    "certificateStatus": cert_status,
+                    "certificateTotal": len(certs),
+                    "certificateWarning": warning,
+                    "certificateCritical": critical,
+                }
+            )
+        if updated.identity.certificateStatus is None:
+            updated.certificates = [
+                item.model_copy(update={"status": item.status or classify_expiry(item.daysToExpiry)})
+                for item in updated.certificates
+            ]
+            statuses = [item.status for item in updated.certificates]
+            warning = sum(1 for status in statuses if status == WARNING)
+            critical = sum(1 for status in statuses if status in {CRITICAL, URGENT, EXPIRED})
+            if critical:
+                cert_status = "Critical"
+            elif warning:
+                cert_status = "Warning"
+            else:
+                cert_status = "Healthy"
+            updated.identity = updated.identity.model_copy(
+                update={
+                    "certificateStatus": cert_status,
+                    "certificateTotal": len(updated.certificates),
+                    "certificateWarning": warning,
+                    "certificateCritical": critical,
+                }
+            )
         return updated
     except Exception:
         logger.exception("Live environment overlay unavailable; using mock data")
@@ -211,20 +272,45 @@ def overlay_matrix(rows: list[MatrixRow]) -> list[MatrixRow]:
                     changed = True
                 if env_row.last_certificate_scan_at is not None:
                     certs = certs_by_account.get(env_row.account_alias, [])
-                    expiring = [
+                    scoped = [
                         item
                         for item in certs
-                        if item.days_remaining is not None
-                        and 0 <= item.days_remaining <= 14
-                        and (not item.environment or item.environment == environment)
+                        if not item.environment or item.environment == environment
                     ]
+                    expiring14 = [
+                        item
+                        for item in scoped
+                        if item.days_remaining is not None and 0 < item.days_remaining <= 14
+                    ]
+                    statuses = [(item.expiry_status or classify_expiry(item.days_remaining)) for item in scoped]
                     next_cert = min(
-                        (item.days_remaining for item in expiring if item.days_remaining is not None),
+                        (
+                            item.days_remaining
+                            for item in scoped
+                            if item.days_remaining is not None and item.days_remaining >= 0
+                        ),
                         default=current.nextCertExpiryDays,
                     )
                     next_cell = next_cell.model_copy(
                         update={
-                            "certsExpiring14d": len(expiring),
+                            "certsExpiring14d": len(expiring14),
+                            "certsHealthy": sum(1 for status in statuses if status == HEALTHY),
+                            "certsExpiring60d": sum(
+                                1
+                                for item in scoped
+                                if item.days_remaining is not None and 0 < item.days_remaining <= 60
+                            ),
+                            "certsExpiring30d": sum(
+                                1
+                                for item in scoped
+                                if item.days_remaining is not None and 0 < item.days_remaining <= 30
+                            ),
+                            "certsExpiring7d": sum(
+                                1
+                                for item in scoped
+                                if item.days_remaining is not None and 0 < item.days_remaining <= 7
+                            ),
+                            "certsExpired": sum(1 for status in statuses if status == EXPIRED),
                             "nextCertExpiryDays": next_cert,
                             "live": True,
                         }
@@ -245,6 +331,58 @@ def overlay_matrix(rows: list[MatrixRow]) -> list[MatrixRow]:
     except Exception:
         logger.exception("Live dashboard overlay unavailable; using mock data")
         return rows
+    finally:
+        session.close()
+
+
+def overlay_alerts(items: list[OperationalAlert]) -> list[OperationalAlert]:
+    session = SessionLocal()
+    try:
+        from sqlalchemy import select
+
+        from app.services.certificate_monitor import to_operational_alert
+
+        live = [
+            to_operational_alert(row)
+            for row in session.scalars(
+                select(CertificateAlertRow).where(CertificateAlertRow.status.in_(("OPEN", "ACKNOWLEDGED")))
+            )
+        ]
+        return live + items
+    except Exception:
+        logger.exception("Live certificate alert overlay unavailable")
+        return items
+    finally:
+        session.close()
+
+
+def overlay_certificate_audit(items):
+    session = SessionLocal()
+    try:
+        from sqlalchemy import select
+
+        from app.db.models import CertificateAuditRow
+        from app.domain.models import AuditEvent
+        from app.services.mappers import _age
+
+        live = [
+            AuditEvent(
+                id=row.id,
+                event=row.action.replace("_", " ").title(),
+                actor=row.actor,
+                objectName=row.certificate_id or "certificates",
+                detail=row.detail,
+                age=_age(row.created_at),
+                provider=row.provider or "AWS",  # type: ignore[arg-type]
+                region=row.platform_region or "EMEA",  # type: ignore[arg-type]
+                environment=row.environment or "DEV",  # type: ignore[arg-type]
+            )
+            for row in session.scalars(select(CertificateAuditRow).order_by(CertificateAuditRow.created_at.desc()))
+        ]
+        return live + items
+    except Exception:
+        logger.exception("Live certificate audit overlay unavailable")
+        return items
     finally:
         session.close()
 

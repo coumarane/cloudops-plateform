@@ -1,13 +1,14 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { CertificateDetails } from "@/components/certificates/CertificateDetails";
 import { CertificatesTable } from "@/components/certificates/CertificatesTable";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { isProductionEnvironment, regionsForProvider } from "@/lib/dashboard";
 import { QueryState } from "@/components/status/QueryState";
 import { cloudOpsApi } from "@/lib/api/client";
 import { useResource } from "@/lib/api/use-resource";
-import { parseCertificatesFilters } from "@/lib/certificates";
+import { certificatesHref, parseCertificatesFilters } from "@/lib/certificates";
 import { summarizeCertificates } from "@/lib/certificates-data";
 import {
   environmentToSlug,
@@ -18,6 +19,8 @@ import {
   regionToSlug,
 } from "@/lib/environment";
 import { ENVIRONMENTS, type Environment } from "@/lib/types";
+import Link from "next/link";
+import { useState } from "react";
 
 export function CertificateMonitoring({
   initial,
@@ -27,12 +30,16 @@ export function CertificateMonitoring({
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const [scanMessage, setScanMessage] = useState<string | null>(null);
 
   const provider = parseProvider(searchParams.get("provider") ?? "") ?? initial.provider ?? "all";
   const region = parseRegion(searchParams.get("region") ?? "") ?? initial.region ?? "all";
   const environment =
     parseEnvironment(searchParams.get("environment") ?? "") ?? initial.environment ?? "all";
   const selectedId = searchParams.get("certificate") || initial.certificate;
+  const status = searchParams.get("status") || initial.status;
+  const expiresWithinDays = searchParams.get("expires_within_days") || (initial.expiresWithinDays ? String(initial.expiresWithinDays) : null);
+  const sort = searchParams.get("sort") || initial.sort || "days_remaining";
 
   const regions = regionsForProvider(provider === "all" ? "all" : provider);
   const scopedRegion = region !== "all" && !regions.includes(region) ? "all" : region;
@@ -43,10 +50,13 @@ export function CertificateMonitoring({
           provider,
           region: scopedRegion,
           environment,
+          status,
+          expiresWithinDays,
+          sort,
         },
         signal,
       ),
-    [provider, scopedRegion, environment],
+    [provider, scopedRegion, environment, status, expiresWithinDays, sort],
   );
   const certificates = state.status === "success" ? state.data.items : [];
   const summary = summarizeCertificates(certificates);
@@ -61,11 +71,20 @@ export function CertificateMonitoring({
     router.replace(query ? `${pathname}?${query}` : pathname);
   }
 
+  async function triggerScan() {
+    try {
+      const job = await cloudOpsApi.triggerCertificateDiscovery();
+      setScanMessage(`Scan queued (${job.kind || "certificate-discovery"})`);
+    } catch (error) {
+      setScanMessage(error instanceof Error ? error.message : "Scan failed");
+    }
+  }
+
   return (
     <>
       <PageHeader
         title="Certificate Monitoring"
-        subtitle="TLS certificates across AWS EKS and Alibaba ACK. Private keys are never displayed."
+        subtitle="TLS certificates across AWS ACM/EKS and Alibaba CAS/ACK. Private keys are never displayed."
         meta={state.status === "success" ? `Last synced: ${state.data.lastSynced}` : "Last synced: —"}
       />
       <div className="flex flex-wrap items-center gap-4 border-b border-outline bg-canvas px-6 py-2 text-[11px] font-bold uppercase tracking-wide text-muted">
@@ -117,10 +136,69 @@ export function CertificateMonitoring({
             ))}
           </select>
         </label>
+        <label className="flex items-center gap-2">
+          Status:
+          <select
+            className="h-6 rounded border border-outline bg-white px-2 text-[11px] font-semibold text-ink"
+            value={status || "all"}
+            onChange={(event) =>
+              setFilter({
+                status: event.target.value === "all" ? null : event.target.value,
+                expires_within_days: null,
+              })
+            }
+          >
+            <option value="all">All</option>
+            <option value="healthy">Healthy</option>
+            <option value="warning">&lt; 60 days</option>
+            <option value="critical">&lt; 30 days</option>
+            <option value="urgent">&lt; 7 days</option>
+            <option value="expired">Expired</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-2">
+          Window:
+          <select
+            className="h-6 rounded border border-outline bg-white px-2 text-[11px] font-semibold text-ink"
+            value={expiresWithinDays || "all"}
+            onChange={(event) =>
+              setFilter({
+                expires_within_days: event.target.value === "all" ? null : event.target.value,
+                status: null,
+              })
+            }
+          >
+            <option value="all">Any</option>
+            <option value="7">&lt; 7 days</option>
+            <option value="30">&lt; 30 days</option>
+            <option value="60">&lt; 60 days</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-2">
+          Sort:
+          <select
+            className="h-6 rounded border border-outline bg-white px-2 text-[11px] font-semibold text-ink"
+            value={sort}
+            onChange={(event) => setFilter({ sort: event.target.value })}
+          >
+            <option value="days_remaining">Days remaining</option>
+            <option value="expires_at">Expiration date</option>
+            <option value="environment">Environment</option>
+            <option value="severity">Severity</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          className="ml-auto h-6 rounded bg-action px-3 text-[11px] font-bold uppercase tracking-wide text-white"
+          onClick={() => void triggerScan()}
+        >
+          Scan certificates
+        </button>
       </div>
       <main className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-[1600px] space-y-6">
           <ProductionBanner environment={environment === "all" ? "all" : environment} />
+          {scanMessage ? <p className="text-sm text-ink">{scanMessage}</p> : null}
           <QueryState
             state={state}
             loadingLabel="Loading certificates…"
@@ -130,19 +208,31 @@ export function CertificateMonitoring({
             {() => (
               <>
                 <section aria-label="Certificate summary" className="grid grid-cols-2 gap-4 md:grid-cols-5">
-                  <Kpi label="Certificates in scope" value={summary.inScope} />
+                  <Kpi href={certificatesHref({ status: "healthy" })} label="Healthy" value={summary.healthy} />
                   <Kpi
-                    label="Expiring within 14d"
-                    value={summary.expiring14d}
-                    tone={summary.expiring14d > 0 ? "warning" : undefined}
+                    href="/certificates?expires_within_days=60"
+                    label="Expiring &lt; 60 days"
+                    value={summary.expiring60}
+                    tone={summary.expiring60 > 0 ? "warning" : undefined}
                   />
                   <Kpi
+                    href="/certificates?expires_within_days=30"
+                    label="Expiring &lt; 30 days"
+                    value={summary.expiring30}
+                    tone={summary.expiring30 > 0 ? "warning" : undefined}
+                  />
+                  <Kpi
+                    href="/certificates?expires_within_days=7"
+                    label="Expiring &lt; 7 days"
+                    value={summary.expiring7}
+                    tone={summary.expiring7 > 0 ? "critical" : undefined}
+                  />
+                  <Kpi
+                    href={certificatesHref({ status: "expired" })}
                     label="Expired"
                     value={summary.expired}
                     tone={summary.expired > 0 ? "critical" : undefined}
                   />
-                  <Kpi label="Auto-renew OK" value={summary.autoRenewOk} />
-                  <Kpi label="PRD certificates" value={summary.prd} tone={summary.prd > 0 ? "prd" : undefined} />
                 </section>
                 <section className="rounded border border-outline bg-white">
                   <div className="border-b border-outline bg-surface-low px-4 py-3">
@@ -153,6 +243,7 @@ export function CertificateMonitoring({
                   </div>
                   <CertificatesTable certificates={certificates} selectedId={selectedId} />
                 </section>
+                {selectedId ? <CertificateDetails certificateId={selectedId} /> : null}
               </>
             )}
           </QueryState>
@@ -198,10 +289,12 @@ function Kpi({
   label,
   value,
   tone,
+  href,
 }: {
   label: string;
   value: number;
   tone?: "warning" | "critical" | "prd";
+  href?: string;
 }) {
   const bar =
     tone === "prd"
@@ -219,10 +312,11 @@ function Kpi({
         : tone === "critical"
           ? "text-critical"
           : "text-ink";
-  return (
+  const body = (
     <article className={`rounded border border-outline bg-white p-3 ${bar}`}>
       <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-muted">{label}</p>
       <p className={`text-lg font-semibold ${valueClass}`}>{value}</p>
     </article>
   );
+  return href ? <Link href={href}>{body}</Link> : body;
 }

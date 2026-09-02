@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.v1.clusters import router as clusters_router
 from app.api.v1.credentials import router as credentials_router
+from app.api.v1.certificates import router as certificates_router
 from app.api.v1.jobs import router as jobs_router
 from app.api.v1.listing import add_list_route, listed
 from app.api.v1.params import parse_environment, parse_provider, parse_region, parse_scope
@@ -23,7 +24,7 @@ add_list_route(router, "/accounts", catalog_service.accounts)
 add_list_route(router, "/environments", catalog_service.environments)
 add_list_route(router, "/clusters", catalog_service.clusters)
 add_list_route(router, "/applications", catalog_service.applications)
-add_list_route(router, "/certificates", catalog_service.certificates)
+router.include_router(certificates_router)
 add_list_route(router, "/secrets", catalog_service.secrets)
 add_list_route(router, "/health-checks", catalog_service.health_checks)
 add_list_route(router, "/deployments", catalog_service.deployments)

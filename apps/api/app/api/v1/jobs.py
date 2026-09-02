@@ -7,6 +7,10 @@ from app.services.job_kinds import (
     KIND_ALIBABA_DISCOVERY,
     KIND_ALIBABA_HEALTH,
     KIND_ALIBABA_VALIDATION,
+    KIND_CERTIFICATE_ALERTS,
+    KIND_CERTIFICATE_DISCOVERY,
+    KIND_CERTIFICATE_ENDPOINT,
+    KIND_CERTIFICATE_EXPIRY,
     KIND_CERTIFICATES,
     KIND_CREDENTIAL_ROTATION_SCAN,
     KIND_DISCOVERY,
@@ -72,3 +76,23 @@ def trigger_alibaba_cert_expiry() -> dict:
 @router.post("/jobs/credentials/rotation-status-scan")
 def trigger_credential_rotation_scan() -> dict:
     return _queued(KIND_CREDENTIAL_ROTATION_SCAN)
+
+
+@router.post("/jobs/certificates/discovery")
+def trigger_certificate_discovery() -> dict:
+    return _queued(KIND_CERTIFICATE_DISCOVERY)
+
+
+@router.post("/jobs/certificates/expiry-scan")
+def trigger_certificate_expiry() -> dict:
+    return _queued(KIND_CERTIFICATE_EXPIRY)
+
+
+@router.post("/jobs/certificates/endpoint-validation")
+def trigger_certificate_endpoints() -> dict:
+    return _queued(KIND_CERTIFICATE_ENDPOINT)
+
+
+@router.post("/jobs/certificates/alert-evaluation")
+def trigger_certificate_alerts() -> dict:
+    return _queued(KIND_CERTIFICATE_ALERTS)

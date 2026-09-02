@@ -243,7 +243,7 @@ export type CertificateRecord = {
   expiresOn: string;
   daysRemaining: number;
   renewalStatus: "OK" | "Expiring" | "Renewing" | "Expired";
-  source?: "mock" | "aws" | "alibaba";
+  source?: string;
   arn?: string | null;
   subjectAlternativeNames?: string[];
   status?: string | null;
@@ -252,6 +252,21 @@ export type CertificateRecord = {
   inUseBy?: string[];
   renewalEligibility?: string | null;
   lastChecked?: string | null;
+  account?: string;
+  expiryStatus?: string;
+  alertStatus?: string | null;
+  serialNumber?: string | null;
+  autoRenew?: boolean;
+  discoveryStatus?: string | null;
+  lastSeenAt?: string | null;
+  firstSeenAt?: string | null;
+  clusterId?: string | null;
+  applicationId?: string | null;
+  handshakeOk?: boolean | null;
+  handshakeLatencyMs?: number | null;
+  history?: Array<{ id: string; event: string; detail: string; createdAt: string }>;
+  alerts?: Array<{ id: string; kind: string; severity: string; status: string; domain: string }>;
+  validations?: Array<{ id: string; hostname: string; handshakeOk: boolean; latencyMs: number; checkedAt: string }>;
 };
 
 export type EnvironmentIdentity = {
@@ -268,6 +283,10 @@ export type EnvironmentIdentity = {
   discoveryActive?: boolean;
   readonly?: boolean;
   awsAccountId?: string | null;
+  certificateStatus?: string | null;
+  certificateTotal?: number | null;
+  certificateWarning?: number | null;
+  certificateCritical?: number | null;
 };
 
 export type ActivityItem = {
@@ -282,7 +301,7 @@ export type EnvironmentRecord = {
   clusters: ClusterRecord[];
   applications: ApplicationRecord[];
   secrets: Array<{ name: string; namespace: string; status: SecretRecord["status"]; detail: string }>;
-  certificates: Array<{ name: string; daysToExpiry: number }>;
+  certificates: Array<{ name: string; daysToExpiry: number; status?: string; source?: string; issuer?: string }>;
   deployments: ActivityItem[];
   pipelines: ActivityItem[];
   github: ActivityItem[];

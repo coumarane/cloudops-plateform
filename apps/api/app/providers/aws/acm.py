@@ -83,6 +83,9 @@ class AcmScanner:
                     platform_region=self._config.platform_region,
                     account_alias=self._config.account_alias,
                     cloud_region=self._config.cloud_region,
+                    source="acm",
+                    serial_number=str(detail.get("Serial") or ""),
+                    auto_renew=eligibility.upper() in {"ELIGIBLE", "PENDING_AUTO_RENEWAL"} or "PENDING" in eligibility.upper(),
                 )
             )
         logger.info("Discovered %s ACM certificates account=%s", len(discovered), self._config.account_alias)

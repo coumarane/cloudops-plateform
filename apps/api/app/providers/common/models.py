@@ -68,3 +68,8 @@ class DiscoveredCertificate:
     cluster_name: str = ""
     namespace: str = ""
     source: str = ""
+    serial_number: str = ""
+    auto_renew: bool = False
+    cluster_id: str = ""
+    application_id: str = ""
+    hostname: str = ""

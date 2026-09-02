@@ -152,6 +152,11 @@ export function summarizeKpis(rows: MatrixRow[], filters: DashboardFilters): Kpi
     appsHealthy: 0,
     appsDegraded: 0,
     certsExpiring14d: 0,
+    certsHealthy: 0,
+    certsExpiring60d: 0,
+    certsExpiring30d: 0,
+    certsExpiring7d: 0,
+    certsExpired: 0,
     secretsOverdue: 0,
     failedDeploys: 0,
     githubFailures: 0,
@@ -171,6 +176,11 @@ export function summarizeKpis(rows: MatrixRow[], filters: DashboardFilters): Kpi
       summary.appsHealthy += cell.appsHealthy;
       summary.appsDegraded += cell.appsDegraded;
       summary.certsExpiring14d += cell.certsExpiring14d;
+      summary.certsHealthy = (summary.certsHealthy ?? 0) + (cell.certsHealthy ?? 0);
+      summary.certsExpiring60d = (summary.certsExpiring60d ?? 0) + (cell.certsExpiring60d ?? 0);
+      summary.certsExpiring30d = (summary.certsExpiring30d ?? 0) + (cell.certsExpiring30d ?? 0);
+      summary.certsExpiring7d = (summary.certsExpiring7d ?? 0) + (cell.certsExpiring7d ?? 0);
+      summary.certsExpired = (summary.certsExpired ?? 0) + (cell.certsExpired ?? 0);
       summary.secretsOverdue += cell.secretsOverdue;
       summary.failedDeploys += cell.failedDeploys;
       summary.githubFailures += cell.githubFailures;

@@ -21,6 +21,9 @@ FORBIDDEN_KEYS = {
     "access_key_id",
     "aws_access_key_id",
     "access_key_secret",
+    "tls.key",
+    "tls_key",
+    "privatekey",
 }
 
 

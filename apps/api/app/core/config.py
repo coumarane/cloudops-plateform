@@ -44,5 +44,19 @@ class Settings(BaseSettings):
     rotation_due_soon_days: int = 14
     require_https: bool = False
 
+    certificate_discovery_interval_seconds: int = 6 * 60 * 60
+    certificate_expiry_interval_seconds: int = 60 * 60
+    certificate_endpoint_interval_seconds: int = 6 * 60 * 60
+    certificate_alert_interval_seconds: int = 60 * 60
+    certificate_https_timeout_seconds: float = 5.0
+    certificate_https_allowlist: str = ""
+    certificate_notification_cooldown_seconds: int = 6 * 60 * 60
+    certificate_alert_severity_warning: str = "MEDIUM"
+    certificate_alert_severity_critical: str = "HIGH"
+    certificate_alert_severity_urgent: str = "CRITICAL"
+    certificate_alert_severity_expired: str = "CRITICAL"
+    certificate_notification_provider: str = "log"
+    slack_webhook_url: str = ""
+
 
 settings = Settings()

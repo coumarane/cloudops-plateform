@@ -70,9 +70,32 @@ export function EnvironmentIdentityHeader({ identity }: { identity: EnvironmentI
       {identity.lastError ? (
         <p className="mt-3 font-mono text-xs text-warning">Last scan error: {identity.lastError}</p>
       ) : null}
-      {identity.lastSuccessfulScan ? (
-        <p className="mt-2 font-mono text-xs text-muted">Last successful scan: {identity.lastSuccessfulScan}</p>
-      ) : null}
+        {identity.lastSuccessfulScan ? (
+          <p className="mt-2 font-mono text-xs text-muted">Last successful scan: {identity.lastSuccessfulScan}</p>
+        ) : null}
+        {identity.certificateStatus ? (
+          <p className="mt-2 text-sm text-ink">
+            Certificate Status:{" "}
+            <span
+              className={
+                identity.certificateStatus === "Critical"
+                  ? "font-semibold text-critical"
+                  : identity.certificateStatus === "Warning"
+                    ? "font-semibold text-warning"
+                    : "font-semibold text-healthy"
+              }
+            >
+              {identity.certificateStatus}
+            </span>
+            {identity.certificateTotal != null ? (
+              <span className="ml-2 font-mono text-xs text-muted">
+                {identity.certificateTotal} total
+                {identity.certificateWarning ? ` · ${identity.certificateWarning} warning` : ""}
+                {identity.certificateCritical ? ` · ${identity.certificateCritical} critical` : ""}
+              </span>
+            ) : null}
+          </p>
+        ) : null}
     </div>
   );
 }

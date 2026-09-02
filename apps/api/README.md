@@ -2,7 +2,7 @@
 
 FastAPI service for the CloudOps console.
 
-Phase 6 stores credential **metadata** in PostgreSQL and secret material in a secret backend (`local` for development only). Topology remains config/database-driven. PRD inventory is read-only. NPD/PRD credential writes require `credential:prod_update`.
+Phase 7 adds certificate monitoring and alerting on the shared certificate model. Phase 6 stores credential **metadata** in PostgreSQL and secret material in a secret backend (`local` for development only). Topology remains config/database-driven. PRD inventory is read-only. NPD/PRD credential writes require `credential:prod_update`.
 
 ```bash
 cd apps/api
@@ -41,7 +41,7 @@ Prefer IAM role assumption. Do not put access keys in PostgreSQL.
 | `CLOUDOPS_REQUIRE_AUTH` | Require `X-CloudOps-User` |
 | `CLOUDOPS_REQUIRE_HTTPS` | Reject non-HTTPS when `X-Forwarded-Proto` is not https |
 
-Secret values, tokens, private keys, PEM, kubeconfig, AWS access keys, and Alibaba AccessKey Secrets are never returned. Credential lifecycle: [docs/credentials.md](../../docs/credentials.md).
+Secret values, tokens, private keys, PEM, kubeconfig, AWS access keys, and Alibaba AccessKey Secrets are never returned. Credential lifecycle: [docs/credentials.md](../../docs/credentials.md). Certificate monitoring: [docs/certificate-monitoring.md](../../docs/certificate-monitoring.md).
 
 ## Alibaba China connection
 

@@ -63,6 +63,13 @@ class InventoryRepository:
         )
         return {(row.provider, row.platform_region, row.environment) for row in rows}
 
+    def mark_scope_attempted(self, environment_id: str) -> None:
+        row = self.session.get(CloudEnvironmentRow, environment_id)
+        if row is None:
+            return
+        row.last_attempted_scan_at = utcnow()
+        self.session.flush()
+
     def mark_scope_success(self, environment_id: str, kind: str) -> None:
         row = self.session.get(CloudEnvironmentRow, environment_id)
         if row is None:
@@ -198,42 +205,15 @@ class InventoryRepository:
         account_alias: str,
         platform_region: str,
     ) -> list[AcmCertificateRow]:
-        now = utcnow()
+        from app.services.certificate_monitor import mark_missing, refresh_monitoring, upsert_discovered
+
         seen: set[str] = set()
         rows: list[AcmCertificateRow] = []
         for item in certificates:
-            public_id = certificate_public_id(item.arn)
-            seen.add(public_id)
-            row = self.session.get(AcmCertificateRow, public_id)
-            if row is None:
-                row = AcmCertificateRow(id=public_id, arn=item.arn, domain_name=item.domain_name)
-                self.session.add(row)
-            row.arn = item.arn
-            row.domain_name = item.domain_name
-            row.subject_alternative_names = json.dumps(item.subject_alternative_names)
-            row.issuer = item.issuer
-            row.status = item.status
-            row.not_before = item.not_before
-            row.not_after = item.not_after
-            row.days_remaining = item.days_remaining
-            row.in_use_by = json.dumps(item.in_use_by)
-            row.renewal_eligibility = item.renewal_eligibility
-            row.last_checked = item.last_checked
-            row.provider = item.provider or "AWS"
-            row.platform_region = item.platform_region
-            row.environment = item.environment
-            row.account_alias = item.account_alias
-            row.cloud_region = item.cloud_region
-            row.present = True
-            row.cluster_name = item.cluster_name
-            row.namespace = item.namespace
-            row.source = item.source or ("acm" if item.provider == "AWS" else "")
+            row = upsert_discovered(self.session, item)
+            seen.add(row.id)
             rows.append(row)
-        for row in self.session.scalars(
-            select(AcmCertificateRow).where(AcmCertificateRow.account_alias == account_alias)
-        ).all():
-            if row.id not in seen:
-                row.present = False
+        mark_missing(self.session, account_alias, seen)
         for env in self.session.scalars(
             select(CloudEnvironmentRow).where(
                 CloudEnvironmentRow.account_alias == account_alias,
@@ -241,6 +221,7 @@ class InventoryRepository:
             )
         ):
             self.mark_scope_success(env.id, "certificates")
+        refresh_monitoring(self.session)
         self.session.flush()
         return rows
 
@@ -272,6 +253,9 @@ class InventoryRepository:
 
     def get_health(self, cluster_id: str) -> EksClusterHealthRow | None:
         return self.session.get(EksClusterHealthRow, cluster_id)
+
+    def get_certificate(self, certificate_id: str) -> AcmCertificateRow | None:
+        return self.session.get(AcmCertificateRow, certificate_id)
 
     def present_certificates(self) -> list[AcmCertificateRow]:
         return list(self.session.scalars(select(AcmCertificateRow).where(AcmCertificateRow.present.is_(True))))

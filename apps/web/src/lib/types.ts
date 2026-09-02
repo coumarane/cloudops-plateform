@@ -32,6 +32,11 @@ export type CellMetrics = {
   appsHealthy: number;
   appsDegraded: number;
   certsExpiring14d: number;
+  certsHealthy?: number;
+  certsExpiring60d?: number;
+  certsExpiring30d?: number;
+  certsExpiring7d?: number;
+  certsExpired?: number;
   nextCertExpiryDays?: number;
   secretsOverdue: number;
   secretsDueSoon: number;
@@ -82,6 +87,11 @@ export type KpiSummary = {
   appsHealthy: number;
   appsDegraded: number;
   certsExpiring14d: number;
+  certsHealthy?: number;
+  certsExpiring60d?: number;
+  certsExpiring30d?: number;
+  certsExpiring7d?: number;
+  certsExpired?: number;
   secretsOverdue: number;
   failedDeploys: number;
   githubFailures: number;
