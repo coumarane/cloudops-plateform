@@ -50,5 +50,15 @@ describe("environment routing", () => {
     expect(listEnvironmentIdentities().find((item) => item.provider === "AWS" && item.region === "EMEA" && item.environment === "UAT")?.account).toBe(
       "aws-emea-nonprod",
     );
+    expect(
+      listEnvironmentIdentities().find(
+        (item) => item.provider === "Alibaba" && item.region === "China" && item.environment === "DEV",
+      )?.account,
+    ).toBe("alibaba-china-nonprod");
+    expect(
+      listEnvironmentIdentities().find(
+        (item) => item.provider === "Alibaba" && item.region === "China" && item.environment === "PRD",
+      )?.account,
+    ).toBe("alibaba-china-prod");
   });
 });

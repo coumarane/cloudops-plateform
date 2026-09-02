@@ -5,7 +5,7 @@ from app.core.logging import get_logger
 from app.db.models import PlatformJobRow
 from app.db.repository import InventoryRepository
 from app.db.session import SessionLocal
-from app.services.job_kinds import JOB_NAMES
+from app.services.job_kinds import JOB_NAMES, JOB_PROVIDERS
 from app.services.task_dispatch import submit_job
 
 logger = get_logger(__name__)
@@ -20,7 +20,7 @@ def enqueue_job(kind: str) -> PlatformJobRow:
         if existing:
             session.commit()
             return existing
-        job = repo.create_job(kind, JOB_NAMES[kind], correlation_id)
+        job = repo.create_job(kind, JOB_NAMES[kind], correlation_id, provider=JOB_PROVIDERS.get(kind, "AWS"))
         session.commit()
         session.refresh(job)
         try:

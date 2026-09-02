@@ -29,5 +29,9 @@ class Settings(BaseSettings):
     aws_scan_concurrency: int = 3
     aws_topology_path: str | None = None
 
+    alibaba_cluster_environment_tag: str = "Environment"
+    alibaba_scan_concurrency: int = 2
+    alibaba_cloud_region: str = "cn-hangzhou"
+
 
 settings = Settings()

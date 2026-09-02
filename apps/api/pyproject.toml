@@ -1,7 +1,7 @@
 [project]
 name = "cloudops-api"
-version = "0.4.0"
-description = "CloudOps Platform API. AWS AMER, EMEA, and APAC use live adapters when scanned; Alibaba stays mocked."
+version = "0.5.0"
+description = "CloudOps Platform API. AWS AMER/EMEA/APAC and Alibaba China use live adapters when scanned."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -15,6 +15,13 @@ dependencies = [
   "botocore>=1.35.0",
   "celery[redis]>=5.4.0",
   "kubernetes>=31.0.0",
+  "alibabacloud-tea-openapi>=0.3.0",
+  "alibabacloud-credentials>=0.3.0",
+  "alibabacloud-cs20151215>=4.0.0",
+  "alibabacloud-sts20150401>=1.1.0",
+  "alibabacloud-cas20200407>=2.0.0",
+  "cryptography>=43.0.0",
+  "PyYAML>=6.0.0",
 ]
 
 [project.optional-dependencies]

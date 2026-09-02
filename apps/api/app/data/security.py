@@ -298,7 +298,7 @@ SECRETS: list[SecretRecord] = [
         "Alibaba",
         "China",
         "PRD",
-        "prod-china",
+        "alibaba-china-prod",
         "Due soon",
         "86d ago",
         "4d",

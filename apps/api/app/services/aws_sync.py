@@ -9,6 +9,7 @@ from app.providers.aws.acm import AcmScanner
 from app.providers.aws.client import AwsClientFactory
 from app.providers.aws.eks import EksDiscovery
 from app.providers.aws.errors import AwsTransientError, classify_aws_error
+from app.providers.alibaba.exceptions import AlibabaIntegrationError, classify_alibaba_error
 from app.providers.aws.k8s import ClusterHealthCollector
 from app.providers.aws.models import ClusterHealthSnapshot, DiscoveredCertificate, DiscoveredCluster
 from app.services.mappers import discovered_from_row
@@ -16,6 +17,12 @@ from app.topology.loader import load_topology
 from app.topology.models import AccountBinding, environment_scope_id
 
 logger = get_logger(__name__)
+
+
+def classify_job_error(error: Exception):
+    if isinstance(error, AlibabaIntegrationError):
+        return classify_alibaba_error(error)
+    return classify_aws_error(error)
 
 
 def _run_bounded(items: list, fn, max_workers: int) -> list[tuple[object, object, Exception | None]]:
@@ -74,6 +81,7 @@ def _store_discovery(account: AccountBinding, clusters: list[DiscoveredCluster],
             grouped.get(environment, []),
             platform_region=account.logical_region,
             environment=environment,
+            provider=account.provider,
         )
         repo.mark_scope_success(environment_scope_id(account.alias, environment), "discovery")
     logger.info("Account discovery stored alias=%s count=%s", account.alias, len(clusters))
@@ -138,7 +146,7 @@ def _finish_fleet_job(
         total = 0
         for account, value, error in results:
             if error is not None:
-                failed.append((account, classify_aws_error(error)))
+                failed.append((account, classify_job_error(error)))
                 continue
             total += int(persist(account, value, repo) or 0)
             succeeded.append(account)

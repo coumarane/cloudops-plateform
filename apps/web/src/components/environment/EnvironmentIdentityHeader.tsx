@@ -62,7 +62,7 @@ export function EnvironmentIdentityHeader({ identity }: { identity: EnvironmentI
           <>
             <span aria-hidden>•</span>
             <span className="rounded bg-healthy/10 px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-healthy">
-              AWS live
+              {identity.provider} live
             </span>
           </>
         ) : null}

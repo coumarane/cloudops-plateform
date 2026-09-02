@@ -2,7 +2,7 @@
 
 FastAPI service for the CloudOps console.
 
-Phase 4 uses one AWS adapter for **AMER, EMEA, and APAC** across NonProd and Prod accounts. Topology is config/database-driven. Alibaba stays on mock data. PRD is read-only.
+Phase 5 uses live adapters for **AWS AMER/EMEA/APAC** and **Alibaba China**. Topology is config/database-driven. PRD is read-only. Discovery and monitoring only.
 
 ```bash
 cd apps/api
@@ -37,4 +37,18 @@ Prefer IAM role assumption. Do not put access keys in PostgreSQL.
 | `CLOUDOPS_REDIS_URL` | Celery broker |
 | `CLOUDOPS_CELERY_EAGER` | `true` runs jobs in-process for local use |
 
-Secret values, tokens, private keys, PEM, kubeconfig, and AWS access keys are never returned.
+## Alibaba China connection
+
+Prefer RAM role assumption. Do not put AccessKey Secrets in PostgreSQL. See [docs/alibaba-china-ram.md](../../docs/alibaba-china-ram.md).
+
+| Variable | Purpose |
+| --- | --- |
+| `CLOUDOPS_ALIBABA_{NONPROD\|PROD}_ACCOUNT_ID` | Expected account ID check |
+| `CLOUDOPS_ALIBABA_{NONPROD\|PROD}_ROLE_ARN` | RAM role to assume |
+| `CLOUDOPS_ALIBABA_{NONPROD\|PROD}_ACCESS_KEY_ID` | AccessKey ID used to assume the role |
+| `CLOUDOPS_ALIBABA_{NONPROD\|PROD}_ACCESS_KEY_SECRET` | AccessKey Secret. Runtime only. |
+| `CLOUDOPS_ALIBABA_ACCOUNT_ID` / `_ROLE_ARN` / `_ACCESS_KEY_*` | Legacy NonProd fallbacks |
+| `CLOUDOPS_ALIBABA_CLOUD_REGION` | ACK region (default `cn-hangzhou`) |
+| `CLOUDOPS_ALIBABA_SCAN_CONCURRENCY` | Max parallel account scans (default 2) |
+
+Secret values, tokens, private keys, PEM, kubeconfig, AWS access keys, and Alibaba AccessKey Secrets are never returned.

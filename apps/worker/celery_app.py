@@ -19,6 +19,11 @@ celery_app = Celery(
         "tasks.aws_cluster_discovery",
         "tasks.aws_cluster_health",
         "tasks.aws_certificate_scan",
+        "tasks.alibaba_account_validation",
+        "tasks.alibaba_cluster_discovery",
+        "tasks.alibaba_cluster_health",
+        "tasks.alibaba_certificate_scan",
+        "tasks.alibaba_certificate_expiry",
     ),
 )
 celery_app.conf.update(

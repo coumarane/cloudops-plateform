@@ -10,7 +10,8 @@ REDACT = "***REDACTED***"
 
 _SECRET_PATTERNS = (
     re.compile(r"AKIA[0-9A-Z]{16}"),
-    re.compile(r"(?i)(aws_secret_access_key|secret_access_key|session_token|private_key)\s*[:=]\s*\S+"),
+    re.compile(r"LTAI[A-Za-z0-9]{12,}"),
+    re.compile(r"(?i)(aws_secret_access_key|secret_access_key|session_token|private_key|access_key_secret)\s*[:=]\s*\S+"),
     re.compile(r"(?i)k8s-aws-v1\.[A-Za-z0-9_\-=]+"),
     re.compile(r"(?i)bearer\s+[A-Za-z0-9\-._~+/]+=*"),
     re.compile(r"(?i)(password|token|apikey|api_key|secret[_-]?value)\s*[:=]\s*\S+"),
@@ -43,6 +44,7 @@ def _is_sensitive_key(key: str) -> bool:
             "secret",
             "token",
             "access_key",
+            "access_key_secret",
             "session",
             "private_key",
             "kubeconfig",

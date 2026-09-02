@@ -64,7 +64,7 @@ export type ClusterRecord = {
   account: string;
   status: "Healthy" | "Degraded" | "Unreachable";
   appsLabel: string;
-  source?: "mock" | "aws";
+  source?: "mock" | "aws" | "alibaba";
   awsAccountId?: string | null;
   cloudRegion?: string | null;
   endpointStatus?: string | null;
@@ -87,6 +87,8 @@ export type ClusterHealthRecord = {
   pendingPodCount: number;
   unavailableDeploymentCount: number;
   failedJobCount: number;
+  statefulSetUnhealthyCount?: number;
+  ingressUnhealthyCount?: number;
   lastChecked: string;
   detail: string;
   status: "Healthy" | "Degraded" | "Unreachable";
@@ -128,7 +130,7 @@ export type RunRecord = {
   region: Region;
   environment: Environment;
   cluster: string;
-  source?: "mock" | "aws";
+  source?: "mock" | "aws" | "alibaba";
   kind?: string | null;
   correlationId?: string | null;
   jobStatus?: string | null;
@@ -198,7 +200,7 @@ export type CertificateRecord = {
   expiresOn: string;
   daysRemaining: number;
   renewalStatus: "OK" | "Expiring" | "Renewing" | "Expired";
-  source?: "mock" | "aws";
+  source?: "mock" | "aws" | "alibaba";
   arn?: string | null;
   subjectAlternativeNames?: string[];
   status?: string | null;
@@ -217,7 +219,7 @@ export type EnvironmentIdentity = {
   cloudRegion: string;
   account: string;
   clusterName: string;
-  source?: "mock" | "aws";
+  source?: "mock" | "aws" | "alibaba";
   lastSuccessfulScan?: string | null;
   lastError?: string | null;
   discoveryActive?: boolean;

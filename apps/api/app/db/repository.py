@@ -15,7 +15,7 @@ from app.db.models import (
     EksClusterRow,
     PlatformJobRow,
 )
-from app.providers.aws.models import ClusterHealthSnapshot, DiscoveredCertificate, DiscoveredCluster
+from app.providers.common.models import ClusterHealthSnapshot, DiscoveredCertificate, DiscoveredCluster
 from app.topology.models import environment_scope_id
 
 
@@ -23,9 +23,10 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def cluster_public_id(name: str, cloud_region: str, account_id: str) -> str:
+def cluster_public_id(name: str, cloud_region: str, account_id: str, provider: str = "AWS") -> str:
     account = account_id or "unknown"
-    return f"eks-{cloud_region}-{account}-{name}"
+    prefix = "ack" if provider == "Alibaba" else "eks"
+    return f"{prefix}-{cloud_region}-{account}-{name}"
 
 
 def certificate_public_id(arn: str) -> str:
@@ -94,19 +95,22 @@ class InventoryRepository:
         *,
         platform_region: str,
         environment: str,
+        provider: str | None = None,
     ) -> list[EksClusterRow]:
         now = utcnow()
         seen_ids: set[str] = set()
         rows: list[EksClusterRow] = []
-        environment_id = clusters[0].environment_id if clusters else environment_scope_id(
-            "", environment
-        )
+        resolved_provider = provider or (clusters[0].provider if clusters else "AWS")
         if clusters:
             environment_id = clusters[0].environment_id or environment_scope_id(
                 clusters[0].account_alias, environment
             )
+        else:
+            environment_id = environment_scope_id("", environment)
         for cluster in clusters:
-            public_id = cluster_public_id(cluster.name, cluster.cloud_region, cluster.aws_account_id)
+            public_id = cluster_public_id(
+                cluster.name, cluster.cloud_region, cluster.aws_account_id, cluster.provider
+            )
             seen_ids.add(public_id)
             row = self.session.get(EksClusterRow, public_id)
             if row is None:
@@ -117,7 +121,7 @@ class InventoryRepository:
             row.cloud_region = cluster.cloud_region
             row.aws_account_id = cluster.aws_account_id
             row.account_alias = cluster.account_alias
-            row.provider = "AWS"
+            row.provider = cluster.provider or resolved_provider
             row.platform_region = cluster.platform_region
             row.environment = cluster.environment
             row.kubernetes_version = cluster.kubernetes_version
@@ -128,10 +132,12 @@ class InventoryRepository:
             row.last_seen_at = now
             row.present = True
             row.environment_id = cluster.environment_id or environment_id
+            row.cluster_type = cluster.cluster_type
+            row.extra_json = cluster.extra_json or "{}"
             rows.append(row)
         existing = self.session.scalars(
             select(EksClusterRow).where(
-                EksClusterRow.provider == "AWS",
+                EksClusterRow.provider == resolved_provider,
                 EksClusterRow.platform_region == platform_region,
                 EksClusterRow.environment == environment,
             )
@@ -149,7 +155,12 @@ class InventoryRepository:
         rows: list[EksClusterRow] = []
         for (platform_region, environment), items in grouped.items():
             rows.extend(
-                self.replace_clusters_for_scope(items, platform_region=platform_region, environment=environment)
+                self.replace_clusters_for_scope(
+                    items,
+                    platform_region=platform_region,
+                    environment=environment,
+                    provider=items[0].provider,
+                )
             )
             env_id = items[0].environment_id or environment_scope_id(items[0].account_alias, environment)
             self.mark_scope_success(env_id, "discovery")
@@ -170,6 +181,8 @@ class InventoryRepository:
         row.pending_pod_count = snapshot.pending_pod_count
         row.unavailable_deployment_count = snapshot.unavailable_deployment_count
         row.failed_job_count = snapshot.failed_job_count
+        row.stateful_set_unhealthy_count = snapshot.stateful_set_unhealthy_count
+        row.ingress_unhealthy_count = snapshot.ingress_unhealthy_count
         row.last_checked = snapshot.last_checked
         row.detail = snapshot.detail
         cluster = self.session.get(EksClusterRow, cluster_id)
@@ -206,12 +219,15 @@ class InventoryRepository:
             row.in_use_by = json.dumps(item.in_use_by)
             row.renewal_eligibility = item.renewal_eligibility
             row.last_checked = item.last_checked
-            row.provider = "AWS"
+            row.provider = item.provider or "AWS"
             row.platform_region = item.platform_region
             row.environment = item.environment
             row.account_alias = item.account_alias
             row.cloud_region = item.cloud_region
             row.present = True
+            row.cluster_name = item.cluster_name
+            row.namespace = item.namespace
+            row.source = item.source or ("acm" if item.provider == "AWS" else "")
             rows.append(row)
         for row in self.session.scalars(
             select(AcmCertificateRow).where(AcmCertificateRow.account_alias == account_alias)
@@ -275,7 +291,7 @@ class InventoryRepository:
             select(PlatformJobRow).where(PlatformJobRow.kind == kind, PlatformJobRow.status.in_(("queued", "running")))
         )
 
-    def create_job(self, kind: str, name: str, correlation_id: str) -> PlatformJobRow:
+    def create_job(self, kind: str, name: str, correlation_id: str, *, provider: str = "AWS") -> PlatformJobRow:
         existing = self.find_running_job(kind)
         if existing:
             return existing
@@ -286,14 +302,25 @@ class InventoryRepository:
             status="queued",
             detail="Queued",
             correlation_id=correlation_id,
-            provider="AWS",
-            platform_region="AMER",
+            provider=provider,
+            platform_region="China" if provider == "Alibaba" else "AMER",
             environment="DEV",
             created_at=utcnow(),
         )
         self.session.add(row)
         self.session.flush()
         return row
+
+    def mark_account_validated(self, account_id: str, *, fingerprint: str, status: str) -> None:
+        from app.db.models import CloudAccountRow
+
+        row = self.session.get(CloudAccountRow, account_id)
+        if row is None:
+            return
+        row.credential_fingerprint = fingerprint
+        row.validation_status = status
+        row.last_validated_at = utcnow()
+        self.session.flush()
 
     def mark_job_running(self, job_id: str) -> PlatformJobRow | None:
         row = self.session.get(PlatformJobRow, job_id)

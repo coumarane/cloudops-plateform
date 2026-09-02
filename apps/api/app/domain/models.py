@@ -70,7 +70,7 @@ class EnvironmentIdentity(StrictModel):
     account: str
     clusterName: str
     readonly: bool = False
-    source: Literal["mock", "aws"] = "mock"
+    source: Literal["mock", "aws", "alibaba"] = "mock"
     lastSuccessfulScan: str | None = None
     lastError: str | None = None
     discoveryActive: bool = False
@@ -153,7 +153,7 @@ class ClusterRecord(StrictModel):
     account: str
     status: ClusterStatus
     appsLabel: str
-    source: Literal["mock", "aws"] = "mock"
+    source: Literal["mock", "aws", "alibaba"] = "mock"
     awsAccountId: str | None = None
     cloudRegion: str | None = None
     endpointStatus: str | None = None
@@ -176,6 +176,8 @@ class ClusterHealthRecord(StrictModel):
     pendingPodCount: int
     unavailableDeploymentCount: int
     failedJobCount: int
+    statefulSetUnhealthyCount: int = 0
+    ingressUnhealthyCount: int = 0
     lastChecked: str
     detail: str = ""
     status: ClusterStatus
@@ -217,7 +219,7 @@ class RunRecord(StrictModel):
     region: Region
     environment: Environment
     cluster: str
-    source: Literal["mock", "aws"] = "mock"
+    source: Literal["mock", "aws", "alibaba"] = "mock"
     kind: str | None = None
     correlationId: str | None = None
     jobStatus: str | None = None
@@ -248,7 +250,7 @@ class CertificateRecord(StrictModel):
     expiresOn: str
     daysRemaining: int
     renewalStatus: RenewalStatus
-    source: Literal["mock", "aws"] = "mock"
+    source: Literal["mock", "aws", "alibaba"] = "mock"
     arn: str | None = None
     subjectAlternativeNames: list[str] = Field(default_factory=list)
     status: str | None = None

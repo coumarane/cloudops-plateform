@@ -3,8 +3,25 @@ from __future__ import annotations
 from app.core.config import settings
 from app.core.correlation import bind_correlation_id
 from app.core.logging import get_logger
+from app.services.alibaba_sync import (
+    run_account_validation as run_alibaba_validation,
+    run_certificate_expiry_scan as run_alibaba_cert_expiry,
+    run_certificate_scan as run_alibaba_certificates,
+    run_cluster_discovery as run_alibaba_discovery,
+    run_health_scan as run_alibaba_health,
+)
 from app.services.aws_sync import run_certificate_scan, run_cluster_discovery, run_health_scan
-from app.services.job_kinds import KIND_CERTIFICATES, KIND_DISCOVERY, KIND_HEALTH, TASK_NAMES
+from app.services.job_kinds import (
+    KIND_ALIBABA_CERT_EXPIRY,
+    KIND_ALIBABA_CERTIFICATES,
+    KIND_ALIBABA_DISCOVERY,
+    KIND_ALIBABA_HEALTH,
+    KIND_ALIBABA_VALIDATION,
+    KIND_CERTIFICATES,
+    KIND_DISCOVERY,
+    KIND_HEALTH,
+    TASK_NAMES,
+)
 
 logger = get_logger(__name__)
 
@@ -16,6 +33,16 @@ def _run_inline(kind: str, job_id: str) -> None:
         run_health_scan(job_id)
     elif kind == KIND_CERTIFICATES:
         run_certificate_scan(job_id)
+    elif kind == KIND_ALIBABA_VALIDATION:
+        run_alibaba_validation(job_id)
+    elif kind == KIND_ALIBABA_DISCOVERY:
+        run_alibaba_discovery(job_id)
+    elif kind == KIND_ALIBABA_HEALTH:
+        run_alibaba_health(job_id)
+    elif kind == KIND_ALIBABA_CERTIFICATES:
+        run_alibaba_certificates(job_id)
+    elif kind == KIND_ALIBABA_CERT_EXPIRY:
+        run_alibaba_cert_expiry(job_id)
     else:
         raise ValueError(kind)
 

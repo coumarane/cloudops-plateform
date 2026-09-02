@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from app.db.models import AcmCertificateRow, EksClusterHealthRow, EksClusterRow, PlatformJobRow
 from app.domain.models import CertificateRecord, ClusterHealthRecord, ClusterRecord, RunRecord
-from app.providers.aws.models import ClusterHealthSnapshot, DiscoveredCluster
+from app.providers.common.models import ClusterHealthSnapshot, DiscoveredCluster
 
 
 def _age(moment: datetime | None) -> str:
@@ -54,16 +54,16 @@ def to_cluster_record(cluster: EksClusterRow, health: EksClusterHealthRow | None
     return ClusterRecord(
         id=cluster.id,
         name=cluster.name,
-        platform="EKS",
+        platform="ACK" if cluster.provider == "Alibaba" else "EKS",
         version=cluster.kubernetes_version or "—",
         nodes=health.ready_node_count if health else 0,
-        provider="AWS",
+        provider=cluster.provider,  # type: ignore[arg-type]
         region=cluster.platform_region,  # type: ignore[arg-type]
         environment=cluster.environment,  # type: ignore[arg-type]
         account=cluster.account_alias,
         status=catalog_status(cluster, health),  # type: ignore[arg-type]
         appsLabel=apps_label(health),
-        source="aws",
+        source="alibaba" if cluster.provider == "Alibaba" else "aws",
         awsAccountId=cluster.aws_account_id,
         cloudRegion=cluster.cloud_region,
         endpointStatus=cluster.endpoint_status,
@@ -88,6 +88,8 @@ def to_health_record(cluster: EksClusterRow, health: EksClusterHealthRow) -> Clu
         pendingPodCount=health.pending_pod_count,
         unavailableDeploymentCount=health.unavailable_deployment_count,
         failedJobCount=health.failed_job_count,
+        statefulSetUnhealthyCount=health.stateful_set_unhealthy_count,
+        ingressUnhealthyCount=health.ingress_unhealthy_count,
         lastChecked=health.last_checked.isoformat(),
         detail=health.detail,
         status=catalog_status(cluster, health),  # type: ignore[arg-type]
@@ -95,14 +97,12 @@ def to_health_record(cluster: EksClusterRow, health: EksClusterHealthRow) -> Clu
 
 
 def _renewal_status(row: AcmCertificateRow) -> str:
-    days = row.days_remaining
-    if days is not None and days < 0:
-        return "Expired"
-    if days is not None and days <= 14:
-        return "Expiring"
+    from app.providers.common.certificates import classify_certificate_age
+
     if "PENDING" in (row.renewal_eligibility or "").upper():
         return "Renewing"
-    return "OK"
+    status, _classification = classify_certificate_age(row.days_remaining)
+    return status
 
 
 def to_certificate_record(row: AcmCertificateRow) -> CertificateRecord:
@@ -113,16 +113,16 @@ def to_certificate_record(row: AcmCertificateRow) -> CertificateRecord:
         id=row.id,
         name=row.domain_name,
         domain=row.domain_name,
-        provider="AWS",
+        provider=row.provider,  # type: ignore[arg-type]
         region=row.platform_region,  # type: ignore[arg-type]
         environment=(row.environment or "DEV"),  # type: ignore[arg-type]
-        cluster="acm",
-        namespace="acm",
-        issuer=row.issuer or "ACM",
+        cluster=row.cluster_name or ("acm" if row.provider == "AWS" else "cas"),
+        namespace=row.namespace or ("acm" if row.provider == "AWS" else "cas"),
+        issuer=row.issuer or ("ACM" if row.provider == "AWS" else "CAS"),
         expiresOn=expires,
         daysRemaining=row.days_remaining if row.days_remaining is not None else 0,
         renewalStatus=_renewal_status(row),  # type: ignore[arg-type]
-        source="aws",
+        source="alibaba" if row.provider == "Alibaba" else "aws",
         arn=row.arn,
         subjectAlternativeNames=sans,
         status=row.status,
@@ -136,17 +136,18 @@ def to_certificate_record(row: AcmCertificateRow) -> CertificateRecord:
 
 def to_job_record(row: PlatformJobRow) -> RunRecord:
     status_map = {"queued": "Running", "running": "Running", "succeeded": "Succeeded", "failed": "Failed"}
+    alibaba = row.provider == "Alibaba"
     return RunRecord(
         id=row.id,
         name=row.name,
         detail=row.detail,
         result=status_map.get(row.status, "Running"),  # type: ignore[arg-type]
         age=_age(row.finished_at or row.started_at or row.created_at),
-        provider="AWS",
+        provider="Alibaba" if alibaba else "AWS",
         region=row.platform_region,  # type: ignore[arg-type]
         environment=row.environment,  # type: ignore[arg-type]
-        cluster="aws-fleet",
-        source="aws",
+        cluster="alibaba-fleet" if alibaba else "aws-fleet",
+        source="alibaba" if alibaba else "aws",
         kind=row.kind,
         correlationId=row.correlation_id,
         jobStatus=row.status,
@@ -168,6 +169,9 @@ def discovered_from_row(row: EksClusterRow) -> DiscoveredCluster:
         platform_region=row.platform_region,
         account_alias=row.account_alias,
         environment_id=row.environment_id,
+        provider=row.provider,
+        cluster_type=row.cluster_type,
+        extra_json=row.extra_json or "{}",
     )
 
 
@@ -184,6 +188,8 @@ def snapshot_from_health(row: EksClusterHealthRow) -> ClusterHealthSnapshot:
         pending_pod_count=row.pending_pod_count,
         unavailable_deployment_count=row.unavailable_deployment_count,
         failed_job_count=row.failed_job_count,
+        stateful_set_unhealthy_count=row.stateful_set_unhealthy_count,
+        ingress_unhealthy_count=row.ingress_unhealthy_count,
         last_checked=row.last_checked,
         detail=row.detail,
     )
