@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1.routes import router as v1_router
 from app.core.config import settings
@@ -20,8 +21,8 @@ async def lifespan(_application: FastAPI):
 def create_app() -> FastAPI:
     application = FastAPI(
         title=settings.app_name,
-        version="0.5.0",
-        description="CloudOps Platform API. AWS AMER, EMEA, and APAC and Alibaba China use live adapters when scanned. PRD is read-only.",
+        version="0.6.0",
+        description="CloudOps Platform API. Credential metadata is stored in PostgreSQL; secret material stays in a secret backend. PRD mutations require credential:prod_update.",
         lifespan=lifespan,
     )
     application.add_middleware(CorrelationIdMiddleware)
@@ -34,6 +35,14 @@ def create_app() -> FastAPI:
         expose_headers=["X-Correlation-ID"],
     )
     application.include_router(v1_router, prefix="/api/v1")
+
+    @application.middleware("http")
+    async def https_only(request: Request, call_next):
+        if settings.require_https:
+            proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+            if proto != "https":
+                return JSONResponse({"detail": "HTTPS is required outside local development"}, status_code=400)
+        return await call_next(request)
 
     @application.get("/health")
     def health() -> dict[str, str]:

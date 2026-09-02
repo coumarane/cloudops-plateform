@@ -8,12 +8,12 @@ import {
 } from "./environment";
 import type { Environment, Provider, Region } from "./types";
 
-export const SECRET_ACTIONS = ["update", "rotate", "validate", "history"] as const;
+export const SECRET_ACTIONS = ["update", "replace", "validate", "history"] as const;
 export type SecretAction = (typeof SECRET_ACTIONS)[number];
 
 export const SECRET_ACTION_LABELS: Record<SecretAction, string> = {
   update: "Update",
-  rotate: "Rotate",
+  replace: "Replace",
   validate: "Validate",
   history: "History",
 };
@@ -21,6 +21,9 @@ export const SECRET_ACTION_LABELS: Record<SecretAction, string> = {
 export type SecretRotationStatus = "OK" | "Overdue" | "Due soon";
 
 export function parseSecretAction(value: string | null): SecretAction | null {
+  if (value === "rotate") {
+    return "replace";
+  }
   if (value && SECRET_ACTIONS.includes(value as SecretAction)) {
     return value as SecretAction;
   }
@@ -53,6 +56,7 @@ export function parseSecretsFilters(search: {
   environment?: string;
   secret?: string;
   action?: string;
+  status?: string;
 }) {
   return {
     provider: search.provider ? parseProvider(search.provider) : null,
@@ -61,5 +65,10 @@ export function parseSecretsFilters(search: {
     environment: search.environment ? parseEnvironment(search.environment) : null,
     secret: search.secret || null,
     action: parseSecretAction(search.action ?? null),
+    status: search.status || null,
   };
+}
+
+export function isLiveCredential(id: string): boolean {
+  return id.startsWith("cred-");
 }

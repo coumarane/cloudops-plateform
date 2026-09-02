@@ -156,6 +156,8 @@ def _secret(
         nextDue=next_due,
         lastValidated=last_validated,
         history=history,
+        maskedValue="••••••••••••",
+        source="mock",
     )
 
 

@@ -12,7 +12,9 @@ AlertSeverity = Literal["critical", "warning", "info"]
 SecretRotationStatus = Literal["OK", "Overdue", "Due soon"]
 RenewalStatus = Literal["OK", "Expiring", "Renewing", "Expired"]
 FailureKind = Literal["deployment", "github", "pipeline"]
-SecretAction = Literal["Update", "Rotate", "Validate"]
+SecretAction = Literal["Update", "Rotate", "Validate", "Replace"]
+CredentialStatus = Literal["HEALTHY", "ROTATION_DUE", "OVERDUE", "INVALID", "DISABLED"]
+CredentialType = Literal["iam_role", "sts_assume_role", "access_key", "application", "ram_role", "sts"]
 
 PROVIDERS: tuple[Provider, ...] = ("AWS", "Alibaba")
 REGIONS: tuple[Region, ...] = ("AMER", "EMEA", "APAC", "China")

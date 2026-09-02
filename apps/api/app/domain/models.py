@@ -282,6 +282,61 @@ class SecretRecord(StrictModel):
     nextDue: str
     lastValidated: str
     history: list[SecretHistoryEvent] = Field(default_factory=list)
+    credentialType: str | None = None
+    secretBackend: str | None = None
+    fingerprint: str | None = None
+    updatedBy: str | None = None
+    lifecycleStatus: str | None = None
+    source: Literal["mock", "live"] = "mock"
+    maskedValue: str = "••••••••••••"
+
+
+class CredentialRecord(StrictModel):
+    id: str
+    name: str
+    provider: Provider
+    region: Region
+    account: str
+    environment: Environment
+    accountId: str = ""
+    environmentId: str = ""
+    credentialType: str
+    secretBackend: str
+    secretReference: str
+    fingerprint: str
+    status: str
+    lastValidatedAt: str | None = None
+    lastRotatedAt: str | None = None
+    rotationDueAt: str | None = None
+    rotationPolicyDays: int = 90
+    createdAt: str
+    updatedAt: str
+    updatedBy: str
+    roleArn: str = ""
+    externalIdRef: str = ""
+    cloudRegion: str = ""
+    maskedValue: str = "••••••••••••"
+
+
+class CredentialValidationRecord(StrictModel):
+    id: str
+    credentialId: str
+    success: bool
+    status: str
+    latencyMs: int
+    errorCategory: str
+    providerAccount: str
+    correlationId: str
+    createdAt: str
+
+
+class CredentialHistoryEvent(StrictModel):
+    id: str
+    action: str
+    result: str
+    detail: str
+    actor: str
+    createdAt: str
 
 
 class ActivityItem(StrictModel):

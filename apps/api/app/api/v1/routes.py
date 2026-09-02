@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.v1.clusters import router as clusters_router
+from app.api.v1.credentials import router as credentials_router
 from app.api.v1.jobs import router as jobs_router
 from app.api.v1.listing import add_list_route, listed
 from app.api.v1.params import parse_environment, parse_provider, parse_region, parse_scope
@@ -34,6 +35,7 @@ add_list_route(router, "/audit-events", catalog_service.audit_events)
 
 router.include_router(clusters_router)
 router.include_router(jobs_router)
+router.include_router(credentials_router)
 
 
 @router.get("/environments/{provider}/{region}/{environment}")

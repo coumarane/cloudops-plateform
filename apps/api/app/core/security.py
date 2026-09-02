@@ -11,6 +11,7 @@ FORBIDDEN_KEYS = {
     "apikey",
     "api_key",
     "secret_value",
+    "secretvalue",
     "private_key",
     "pem",
     "kubeconfig",

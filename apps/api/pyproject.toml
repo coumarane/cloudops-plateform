@@ -1,7 +1,7 @@
 [project]
 name = "cloudops-api"
-version = "0.5.0"
-description = "CloudOps Platform API. AWS AMER/EMEA/APAC and Alibaba China use live adapters when scanned."
+version = "0.6.0"
+description = "CloudOps Platform API. Credential metadata only in PostgreSQL; secret material stays in a secret backend."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -20,6 +20,7 @@ dependencies = [
   "alibabacloud-cs20151215>=4.0.0",
   "alibabacloud-sts20150401>=1.1.0",
   "alibabacloud-cas20200407>=2.0.0",
+  "alibabacloud-kms20160120>=2.0.0",
   "cryptography>=43.0.0",
   "PyYAML>=6.0.0",
 ]

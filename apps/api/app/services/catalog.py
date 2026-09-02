@@ -74,7 +74,9 @@ class CatalogService:
         return filter_items(overlay_certificates(self._collect("list_certificates")), scope)
 
     def secrets(self, scope: Scope):
-        return filter_items(self._collect("list_secrets"), scope)
+        from app.services.credentials import overlay_secret_records
+
+        return filter_items(overlay_secret_records(self._collect("list_secrets")), scope)
 
     def health_checks(self, scope: Scope):
         return filter_items(self._collect("list_health_checks"), scope)
@@ -95,7 +97,9 @@ class CatalogService:
         return filter_items(self._collect("list_alerts"), scope)
 
     def audit_events(self, scope: Scope):
-        return filter_items(self._collect("list_audit_events"), scope)
+        from app.services.credentials import overlay_audit_events
+
+        return filter_items(overlay_audit_events(self._collect("list_audit_events")), scope)
 
     def admin_users(self):
         from app.data.inventory import MOCK_INVENTORY

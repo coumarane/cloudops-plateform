@@ -154,6 +154,7 @@ class PlatformJobRow(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     error_class: Mapped[str] = mapped_column(String(64), default="")
+    target_id: Mapped[str] = mapped_column(String(128), default="")
 
 
 class LiveScopeStateRow(Base):
@@ -167,3 +168,99 @@ class LiveScopeStateRow(Base):
     last_health_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_certificate_scan_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     discovery_active: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class CredentialRow(Base):
+    __tablename__ = "credentials"
+    __table_args__ = (
+        UniqueConstraint(
+            "provider",
+            "platform_region",
+            "account_alias",
+            "environment",
+            "name",
+            name="uq_credentials_scope_name",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    platform_region: Mapped[str] = mapped_column(String(32), nullable=False)
+    account_alias: Mapped[str] = mapped_column(String(128), nullable=False)
+    account_id: Mapped[str] = mapped_column(String(32), default="")
+    environment: Mapped[str] = mapped_column(String(32), nullable=False)
+    environment_id: Mapped[str] = mapped_column(String(128), default="")
+    credential_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    secret_backend: Mapped[str] = mapped_column(String(32), nullable=False)
+    secret_reference: Mapped[str] = mapped_column(String(512), default="")
+    fingerprint: Mapped[str] = mapped_column(String(64), default="")
+    status: Mapped[str] = mapped_column(String(32), default="HEALTHY")
+    rotation_policy_days: Mapped[int] = mapped_column(Integer, default=90)
+    last_validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_rotated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    rotation_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_by: Mapped[str] = mapped_column(String(128), default="")
+    role_arn: Mapped[str] = mapped_column(String(512), default="")
+    external_id_ref: Mapped[str] = mapped_column(String(256), default="")
+    cloud_region: Mapped[str] = mapped_column(String(64), default="")
+    extra_json: Mapped[str] = mapped_column(Text, default="{}")
+
+
+class CredentialVersionRow(Base):
+    __tablename__ = "credential_versions"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    credential_id: Mapped[str] = mapped_column(String(64), ForeignKey("credentials.id"), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    fingerprint: Mapped[str] = mapped_column(String(64), default="")
+    secret_reference: Mapped[str] = mapped_column(String(512), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_by: Mapped[str] = mapped_column(String(128), default="")
+
+
+class CredentialValidationRow(Base):
+    __tablename__ = "credential_validations"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    credential_id: Mapped[str] = mapped_column(String(64), ForeignKey("credentials.id"), nullable=False)
+    success: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    error_category: Mapped[str] = mapped_column(String(64), default="")
+    provider_account: Mapped[str] = mapped_column(String(64), default="")
+    correlation_id: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CredentialRotationEventRow(Base):
+    __tablename__ = "credential_rotation_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    credential_id: Mapped[str] = mapped_column(String(64), ForeignKey("credentials.id"), nullable=False)
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    result: Mapped[str] = mapped_column(String(32), nullable=False)
+    detail: Mapped[str] = mapped_column(Text, default="")
+    actor: Mapped[str] = mapped_column(String(128), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CredentialAuditRow(Base):
+    __tablename__ = "credential_audit_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    credential_id: Mapped[str] = mapped_column(String(64), default="")
+    credential_name: Mapped[str] = mapped_column(String(255), default="")
+    actor: Mapped[str] = mapped_column(String(128), nullable=False)
+    provider: Mapped[str] = mapped_column(String(32), default="")
+    platform_region: Mapped[str] = mapped_column(String(32), default="")
+    account_alias: Mapped[str] = mapped_column(String(128), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    result: Mapped[str] = mapped_column(String(32), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, default="")
+    change_ticket: Mapped[str] = mapped_column(String(128), default="")
+    correlation_id: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

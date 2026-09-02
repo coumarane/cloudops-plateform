@@ -28,8 +28,9 @@ export function ProductionWarningBanner({ environment }: { environment: Environm
           {prd ? "Production environment — PRD" : "Production environment"}
         </p>
         <p className="mt-1 text-sm text-ink">
-          Changes to secrets in {prd ? "PRD" : environment} are high-risk. Update, Rotate, and Validate
-          require explicit confirmation. Secret values are never displayed.
+          Changes to credentials in {prd ? "PRD" : environment} are high-risk. Update, Replace, and Validate
+          require explicit confirmation, a reason, and credential:prod_update. Secret values are never displayed
+          and cannot be retrieved.
         </p>
       </div>
     </div>
