@@ -153,6 +153,7 @@ export function ApplicationsTable({
           <tr className="border-b border-outline text-[11px] font-bold uppercase tracking-wide text-muted">
             <th className="p-3">Application</th>
             <th className="p-3">Namespace</th>
+            <th className="p-3">Source control</th>
             <th className="p-3">Pods (ready/desired)</th>
             <th className="p-3">Issue</th>
             <th className="p-3 text-right">Action</th>
@@ -163,6 +164,15 @@ export function ApplicationsTable({
             <tr key={app.name} className="border-b border-outline last:border-b-0">
               <td className="p-3 font-mono text-xs font-semibold text-ink">{app.name}</td>
               <td className="p-3 text-muted">{app.namespace}</td>
+              <td className="p-3 font-mono text-xs text-muted">
+                {app.repository ? (
+                  <Link href={app.workflowRunId ? `/github?run=${app.workflowRunId}` : app.repositoryId ? `/github?repo=${app.repositoryId}` : "/github"} className="hover:underline">
+                    {app.repository} {app.latestWorkflowStatus ? `(${app.latestWorkflowStatus})` : ""}
+                  </Link>
+                ) : (
+                  "—"
+                )}
+              </td>
               <td className="p-3 font-mono text-xs">{app.replicas}</td>
               <td className="p-3">
                 <span className={app.issue === "ImagePullBackOff" ? "text-xs text-critical" : "text-xs text-warning"}>

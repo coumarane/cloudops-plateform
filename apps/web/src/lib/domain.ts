@@ -105,6 +105,16 @@ export type ApplicationRecord = {
   environment: Environment;
   cluster: string;
   action?: string;
+  repositoryId?: string | null;
+  repository?: string | null;
+  branch?: string | null;
+  commitSha?: string | null;
+  workflow?: string | null;
+  latestWorkflowStatus?: string | null;
+  latestDeploymentStatus?: string | null;
+  sourceEnvironment?: string | null;
+  workflowRunId?: string | null;
+  deploymentId?: string | null;
 };
 
 export type HealthCheckRecord = {

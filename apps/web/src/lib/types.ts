@@ -95,6 +95,9 @@ export type KpiSummary = {
   secretsOverdue: number;
   failedDeploys: number;
   githubFailures: number;
+  githubWorkflowsRunning?: number;
+  githubWorkflowsFailed?: number;
+  githubWorkflowsSucceeded?: number;
   pipelineFailures: number;
   openAlerts: number;
 };

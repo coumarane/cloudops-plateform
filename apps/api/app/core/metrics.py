@@ -15,6 +15,12 @@ HELP = {
     "cloudops_certificates_expired_total": "Certificates classified as EXPIRED",
     "cloudops_certificate_scan_duration_seconds": "Certificate job duration in seconds",
     "cloudops_certificate_scan_failures_total": "Certificate scan failures isolated per provider/region/environment",
+    "cloudops_github_sync_total": "GitHub synchronization jobs (labels: status, job)",
+    "cloudops_github_sync_failures_total": "GitHub synchronization failures (labels: status, job)",
+    "cloudops_github_workflow_runs_total": "GitHub workflow runs observed (labels: status, environment_class)",
+    "cloudops_github_workflow_failures_total": "GitHub workflow failures (labels: status, environment_class)",
+    "cloudops_github_webhook_events_total": "GitHub webhook deliveries (labels: status)",
+    "cloudops_github_webhook_failures_total": "GitHub webhook processing failures (labels: status)",
 }
 
 

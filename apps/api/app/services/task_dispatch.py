@@ -34,6 +34,12 @@ from app.services.job_kinds import (
     KIND_CREDENTIAL_ROTATION_SCAN,
     KIND_CREDENTIAL_VALIDATE,
     KIND_DISCOVERY,
+    KIND_GITHUB_REPOSITORY_SYNC,
+    KIND_GITHUB_SECRET_SYNC,
+    KIND_GITHUB_VARIABLE_SYNC,
+    KIND_GITHUB_WEBHOOK,
+    KIND_GITHUB_WORKFLOW_RUN_SYNC,
+    KIND_GITHUB_WORKFLOW_SYNC,
     KIND_HEALTH,
     TASK_NAMES,
 )
@@ -72,6 +78,46 @@ def _run_inline(kind: str, job_id: str) -> None:
         run_alert_evaluation(job_id)
     elif kind == KIND_CERTIFICATE_VALIDATE:
         run_certificate_validate(job_id)
+    elif kind == KIND_GITHUB_REPOSITORY_SYNC:
+        from app.services.github_sync import run_repository_sync
+
+        run_repository_sync(job_id)
+    elif kind == KIND_GITHUB_WORKFLOW_SYNC:
+        from app.services.github_sync import run_workflow_sync
+
+        run_workflow_sync(job_id)
+    elif kind == KIND_GITHUB_WORKFLOW_RUN_SYNC:
+        from app.services.github_sync import run_workflow_run_sync
+
+        run_workflow_run_sync(job_id)
+    elif kind == KIND_GITHUB_VARIABLE_SYNC:
+        from app.services.github_sync import run_variable_sync
+
+        run_variable_sync(job_id)
+    elif kind == KIND_GITHUB_SECRET_SYNC:
+        from app.services.github_sync import run_secret_metadata_sync
+
+        run_secret_metadata_sync(job_id)
+    elif kind == KIND_GITHUB_WEBHOOK:
+        from app.services.github_webhooks import process_delivery
+        from app.db.session import SessionLocal
+        from app.db.models import PlatformJobRow
+
+        session = SessionLocal()
+        try:
+            job = session.get(PlatformJobRow, job_id)
+            target = job.target_id if job else job_id
+        finally:
+            session.close()
+        process_delivery(target)
+        session = SessionLocal()
+        try:
+            from app.db.repository import InventoryRepository
+
+            InventoryRepository(session).mark_job_finished(job_id, status="succeeded", detail="github-webhook-process")
+            session.commit()
+        finally:
+            session.close()
     else:
         raise ValueError(kind)
 

@@ -1,4 +1,4 @@
-import { getJson, getList, postJson, postJsonBody, type ListResponse, type ScopeQuery } from "./http";
+import { deleteJson, getJson, getList, postJson, postJsonBody, putJsonBody, type ListResponse, type ScopeQuery } from "./http";
 import type {
   AccountRecord,
   AdminIntegration,
@@ -20,6 +20,17 @@ import type {
   RunRecord,
   SecretRecord,
 } from "@/lib/domain";
+import type {
+  GithubOrganization,
+  GithubOverview,
+  GithubRepository,
+  GithubSecret,
+  GithubVariable,
+  GithubWorkflow,
+  GithubWorkflowJob,
+  GithubWorkflowRun,
+} from "@/lib/github";
+import { githubQuery } from "@/lib/github";
 
 export type { ListResponse, ScopeQuery };
 
@@ -90,6 +101,30 @@ export const cloudOpsApi = {
   triggerAlibabaCertificateDiscovery: (signal?: AbortSignal) => postJson<RunRecord>("/jobs/alibaba/certificate-discovery", signal),
   triggerAlibabaCertificateExpiryScan: (signal?: AbortSignal) => postJson<RunRecord>("/jobs/alibaba/certificate-expiry-scan", signal),
   githubRuns: (scope?: ScopeQuery, signal?: AbortSignal) => getList<RunRecord>("/github-runs", scope, signal),
+  scmOverview: (signal?: AbortSignal) => getJson<GithubOverview>("/scm/overview", undefined, signal),
+  scmOrganizations: (signal?: AbortSignal) => getList<GithubOrganization>("/scm/organizations", undefined, signal),
+  scmRepositories: (signal?: AbortSignal) => getList<GithubRepository>("/scm/repositories", undefined, signal),
+  scmRepository: (id: string, signal?: AbortSignal) => getJson<GithubRepository>(`/scm/repositories/${id}`, undefined, signal),
+  scmRepositoryWorkflows: (id: string, signal?: AbortSignal) =>
+    getList<GithubWorkflow>(`/scm/repositories/${id}/workflows`, undefined, signal),
+  scmWorkflows: (signal?: AbortSignal) => getList<GithubWorkflow>("/scm/workflows", undefined, signal),
+  scmWorkflow: (id: string, signal?: AbortSignal) => getJson<GithubWorkflow>(`/scm/workflows/${id}`, undefined, signal),
+  scmWorkflowRuns: (id: string, signal?: AbortSignal) => getList<GithubWorkflowRun>(`/scm/workflows/${id}/runs`, undefined, signal),
+  scmRun: (id: string, signal?: AbortSignal) => getJson<GithubWorkflowRun>(`/scm/workflow-runs/${id}`, undefined, signal),
+  scmRunJobs: (id: string, signal?: AbortSignal) => getList<GithubWorkflowJob>(`/scm/workflow-runs/${id}/jobs`, undefined, signal),
+  scmVariables: (query?: Record<string, string>, signal?: AbortSignal) =>
+    getJson<ListResponse<GithubVariable>>(`/scm/variables${githubQuery(query)}`, undefined, signal),
+  scmSecrets: (query?: Record<string, string>, signal?: AbortSignal) =>
+    getJson<ListResponse<GithubSecret>>(`/scm/secrets${githubQuery(query)}`, undefined, signal),
+  createGithubSecret: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<GithubSecret>("/scm/secrets", body, signal),
+  replaceGithubSecret: (id: string, body: Record<string, unknown>, signal?: AbortSignal) =>
+    putJsonBody<GithubSecret>(`/scm/secrets/${id}`, body, signal),
+  deleteGithubSecret: (id: string, body: Record<string, unknown>, signal?: AbortSignal) =>
+    deleteJson<{ deleted: boolean }>(`/scm/secrets/${id}`, body, signal),
+  createGithubVariable: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<GithubVariable>("/scm/variables", body, signal),
+  triggerGithubSync: (signal?: AbortSignal) => postJson<{ queued: boolean; jobs: RunRecord[] }>("/scm/sync", signal),
   alerts: (scope?: ScopeQuery, signal?: AbortSignal) => getList<OperationalAlert>("/alerts", scope, signal),
   auditEvents: (scope?: ScopeQuery, signal?: AbortSignal) => getList<AuditEvent>("/audit-events", scope, signal),
   dashboard: (scope?: ScopeQuery, signal?: AbortSignal) => getJson<DashboardSnapshot>("/dashboard", scope, signal),

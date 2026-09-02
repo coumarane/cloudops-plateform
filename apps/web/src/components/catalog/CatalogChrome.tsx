@@ -154,11 +154,14 @@ function chipTone(value: string): string {
   if (key === "degraded" || key === "warning" || key === "expiring" || key === "restart loop" || key === "rollout aborted") {
     return `${base} bg-warning/10 text-warning`;
   }
-  if (key === "healthy" || key === "passing" || key === "succeeded" || key === "ok" || key === "connected") {
+    if (key === "healthy" || key === "passing" || key === "succeeded" || key === "success" || key === "ok" || key === "connected") {
     return `${base} bg-healthy/10 text-healthy`;
   }
-  if (key === "info" || key === "running") {
+  if (key === "info" || key === "running" || key === "queued") {
     return `${base} bg-action/10 text-action`;
+  }
+  if (key === "cancelled" || key === "canceled" || key === "skipped" || key === "unknown") {
+    return `${base} bg-surface-low text-muted`;
   }
   if (key === "production") {
     return `${base} bg-prd text-white`;

@@ -13,6 +13,12 @@ KIND_CERTIFICATE_EXPIRY = "certificate-expiry-scan"
 KIND_CERTIFICATE_ENDPOINT = "certificate-endpoint-validation"
 KIND_CERTIFICATE_ALERTS = "certificate-alert-evaluation"
 KIND_CERTIFICATE_VALIDATE = "certificate-validate"
+KIND_GITHUB_REPOSITORY_SYNC = "github-repository-sync"
+KIND_GITHUB_WORKFLOW_SYNC = "github-workflow-sync"
+KIND_GITHUB_WORKFLOW_RUN_SYNC = "github-workflow-run-sync"
+KIND_GITHUB_VARIABLE_SYNC = "github-variable-sync"
+KIND_GITHUB_SECRET_SYNC = "github-secret-metadata-sync"
+KIND_GITHUB_WEBHOOK = "github-webhook-process"
 
 JOB_NAMES = {
     KIND_DISCOVERY: "AWS multi-account cluster discovery",
@@ -30,6 +36,12 @@ JOB_NAMES = {
     KIND_CERTIFICATE_ENDPOINT: "Certificate HTTPS endpoint validation",
     KIND_CERTIFICATE_ALERTS: "Certificate alert evaluation",
     KIND_CERTIFICATE_VALIDATE: "Certificate endpoint validation",
+    KIND_GITHUB_REPOSITORY_SYNC: "GitHub repository sync",
+    KIND_GITHUB_WORKFLOW_SYNC: "GitHub workflow sync",
+    KIND_GITHUB_WORKFLOW_RUN_SYNC: "GitHub workflow run sync",
+    KIND_GITHUB_VARIABLE_SYNC: "GitHub variable sync",
+    KIND_GITHUB_SECRET_SYNC: "GitHub secret metadata sync",
+    KIND_GITHUB_WEBHOOK: "GitHub webhook processing",
 }
 
 JOB_PROVIDERS = {
@@ -48,6 +60,12 @@ JOB_PROVIDERS = {
     KIND_CERTIFICATE_ENDPOINT: "AWS",
     KIND_CERTIFICATE_ALERTS: "AWS",
     KIND_CERTIFICATE_VALIDATE: "AWS",
+    KIND_GITHUB_REPOSITORY_SYNC: "AWS",
+    KIND_GITHUB_WORKFLOW_SYNC: "AWS",
+    KIND_GITHUB_WORKFLOW_RUN_SYNC: "AWS",
+    KIND_GITHUB_VARIABLE_SYNC: "AWS",
+    KIND_GITHUB_SECRET_SYNC: "AWS",
+    KIND_GITHUB_WEBHOOK: "AWS",
 }
 
 TASK_NAMES = {
@@ -66,4 +84,10 @@ TASK_NAMES = {
     KIND_CERTIFICATE_ENDPOINT: "tasks.certificate_endpoint.validate_endpoints",
     KIND_CERTIFICATE_ALERTS: "tasks.certificate_alerts.evaluate_alerts",
     KIND_CERTIFICATE_VALIDATE: "tasks.certificate_validate.validate_certificate",
+    KIND_GITHUB_REPOSITORY_SYNC: "tasks.github_repository_sync.sync_repositories",
+    KIND_GITHUB_WORKFLOW_SYNC: "tasks.github_workflow_sync.sync_workflows",
+    KIND_GITHUB_WORKFLOW_RUN_SYNC: "tasks.github_workflow_run_sync.sync_runs",
+    KIND_GITHUB_VARIABLE_SYNC: "tasks.github_variable_sync.sync_variables",
+    KIND_GITHUB_SECRET_SYNC: "tasks.github_secret_sync.sync_secrets",
+    KIND_GITHUB_WEBHOOK: "tasks.github_webhook.process_delivery",
 }

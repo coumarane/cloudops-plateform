@@ -128,6 +128,9 @@ class KpiSummary(StrictModel):
     secretsOverdue: int
     failedDeploys: int
     githubFailures: int
+    githubWorkflowsRunning: int = 0
+    githubWorkflowsFailed: int = 0
+    githubWorkflowsSucceeded: int = 0
     pipelineFailures: int
     openAlerts: int
 
@@ -208,6 +211,16 @@ class ApplicationRecord(StrictModel):
     environment: Environment
     cluster: str
     action: str = "Status"
+    repositoryId: str | None = None
+    repository: str | None = None
+    branch: str | None = None
+    commitSha: str | None = None
+    workflow: str | None = None
+    latestWorkflowStatus: str | None = None
+    latestDeploymentStatus: str | None = None
+    sourceEnvironment: str | None = None
+    workflowRunId: str | None = None
+    deploymentId: str | None = None
 
 
 class HealthCheckRecord(StrictModel):
@@ -233,10 +246,11 @@ class RunRecord(StrictModel):
     region: Region
     environment: Environment
     cluster: str
-    source: Literal["mock", "aws", "alibaba"] = "mock"
+    source: Literal["mock", "aws", "alibaba", "github"] = "mock"
     kind: str | None = None
     correlationId: str | None = None
     jobStatus: str | None = None
+    href: str | None = None
 
 
 class AuditEvent(StrictModel):

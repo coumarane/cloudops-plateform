@@ -49,8 +49,20 @@ export async function postJson<T>(path: string, signal?: AbortSignal): Promise<T
 }
 
 export async function postJsonBody<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+  return sendJson<T>("POST", path, body, signal);
+}
+
+export async function putJsonBody<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+  return sendJson<T>("PUT", path, body, signal);
+}
+
+export async function deleteJson<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+  return sendJson<T>("DELETE", path, body, signal);
+}
+
+async function sendJson<T>(method: string, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`${API_PREFIX}${path}`, {
-    method: "POST",
+    method,
     signal,
     headers: { Accept: "application/json", "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),

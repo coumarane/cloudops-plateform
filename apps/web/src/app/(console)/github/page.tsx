@@ -1,12 +1,26 @@
-import { GitHubCatalog } from "@/components/catalog/console-pages";
-import { CatalogRoute } from "../catalog-route";
+import { Suspense } from "react";
+import { GitHubConsole } from "@/components/github/GitHubConsole";
+import { parseGithubFilters } from "@/lib/github";
 
 export const dynamic = "force-dynamic";
 
-export default function GitHubPage({
+export default async function GitHubPage({
   searchParams,
 }: {
-  searchParams: Promise<{ provider?: string; region?: string; environment?: string; selected?: string }>;
+  searchParams: Promise<{
+    provider?: string;
+    region?: string;
+    environment?: string;
+    repo?: string;
+    workflow?: string;
+    run?: string;
+    tab?: string;
+  }>;
 }) {
-  return <CatalogRoute Catalog={GitHubCatalog} label="GitHub" searchParams={searchParams} />;
+  const initial = parseGithubFilters(await searchParams);
+  return (
+    <Suspense fallback={<p className="p-6 text-sm text-muted">Loading GitHub…</p>}>
+      <GitHubConsole initial={initial} />
+    </Suspense>
+  );
 }
