@@ -12,11 +12,14 @@ logger = get_logger(__name__)
 
 
 def _upsert_accounts(session: Session, accounts: tuple[AccountBinding, ...]) -> None:
+    seen_providers: set[str] = set()
     seen_regions: set[str] = set()
     for account in accounts:
-        provider = session.get(CloudProviderRow, account.provider)
-        if provider is None:
-            session.add(CloudProviderRow(id=account.provider, name=account.provider))
+        if account.provider not in seen_providers:
+            provider = session.get(CloudProviderRow, account.provider)
+            if provider is None:
+                session.add(CloudProviderRow(id=account.provider, name=account.provider))
+            seen_providers.add(account.provider)
 
         region_id = f"{account.provider.lower()}-{account.logical_region.lower()}"
         if region_id not in seen_regions:

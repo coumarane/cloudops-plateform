@@ -291,8 +291,8 @@ def test_alibaba_discovery_overlays_china_dev() -> None:
     aws = client.get("/api/v1/clusters", params={"provider": "aws", "region": "emea", "environment": "dev"}).json()["items"]
     assert any(item["name"] == "eu-west-1-dev-k8s" for item in aws)
     jobs = client.get("/api/v1/jobs", params={"provider": "alibaba"}).json()["items"]
-    assert any(item["kind"] == "alibaba-cluster-discovery" for item in jobs)
-    assert all(item["provider"] == "Alibaba" for item in jobs if item.get("kind", "").startswith("alibaba-"))
+    assert any(item.get("kind") == "alibaba-cluster-discovery" for item in jobs)
+    assert all(item["provider"] == "Alibaba" for item in jobs)
 
 
 def test_alibaba_partial_failure_does_not_stop_other_account() -> None:
