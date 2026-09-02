@@ -8,7 +8,7 @@ from app.db.session import SessionLocal
 from app.providers.aws.acm import AcmScanner
 from app.providers.aws.client import AwsClientFactory
 from app.providers.aws.eks import EksDiscovery
-from app.providers.aws.errors import AwsAuthError, AwsPermissionError, AwsTransientError, classify_aws_error
+from app.providers.aws.errors import AwsTransientError, classify_aws_error
 from app.providers.aws.k8s import ClusterHealthCollector
 from app.providers.aws.models import ClusterHealthSnapshot, DiscoveredCertificate, DiscoveredCluster
 from app.services.mappers import discovered_from_row

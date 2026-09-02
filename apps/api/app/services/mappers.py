@@ -145,7 +145,7 @@ def to_job_record(row: PlatformJobRow) -> RunRecord:
         provider="AWS",
         region=row.platform_region,  # type: ignore[arg-type]
         environment=row.environment,  # type: ignore[arg-type]
-        cluster="aws-emea-dev",
+        cluster="aws-fleet",
         source="aws",
         kind=row.kind,
         correlationId=row.correlation_id,
