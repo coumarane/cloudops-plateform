@@ -150,9 +150,9 @@ export function CertificateMonitoring({
           >
             <option value="all">All</option>
             <option value="healthy">Healthy</option>
-            <option value="warning">&lt; 60 days</option>
-            <option value="critical">&lt; 30 days</option>
-            <option value="urgent">&lt; 7 days</option>
+            <option value="warning">Warning (31–60d)</option>
+            <option value="critical">Critical (8–30d)</option>
+            <option value="urgent">Urgent (1–7d)</option>
             <option value="expired">Expired</option>
           </select>
         </label>

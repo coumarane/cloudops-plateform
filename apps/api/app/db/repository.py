@@ -59,7 +59,10 @@ class InventoryRepository:
 
     def live_certificate_scopes(self) -> set[tuple[str, str, str]]:
         rows = self.session.scalars(
-            select(CloudEnvironmentRow).where(CloudEnvironmentRow.last_certificate_scan_at.is_not(None))
+            select(CloudEnvironmentRow).where(
+                CloudEnvironmentRow.last_certificate_scan_at.is_not(None),
+                CloudEnvironmentRow.last_error == "",
+            )
         )
         return {(row.provider, row.platform_region, row.environment) for row in rows}
 

@@ -144,6 +144,39 @@ def overlay_jobs(items: list[RunRecord]) -> list[RunRecord]:
         session.close()
 
 
+def apply_environment_certificates(
+    record: EnvironmentRecord, certs: list[CertificateRecord]
+) -> EnvironmentRecord:
+    env_certs = [
+        EnvironmentCertificate(
+            name=item.domain,
+            daysToExpiry=item.daysRemaining if item.daysRemaining is not None else 0,
+            status=item.expiryStatus or item.status or classify_expiry(item.daysRemaining),
+            source=item.source,
+            issuer=item.issuer,
+        )
+        for item in certs
+    ]
+    statuses = [item.status for item in env_certs]
+    warning = sum(1 for status in statuses if status == WARNING)
+    critical = sum(1 for status in statuses if status in {CRITICAL, URGENT, EXPIRED})
+    if critical:
+        cert_status = "Critical"
+    elif warning:
+        cert_status = "Warning"
+    else:
+        cert_status = "Healthy"
+    identity = record.identity.model_copy(
+        update={
+            "certificateStatus": cert_status,
+            "certificateTotal": len(env_certs),
+            "certificateWarning": warning,
+            "certificateCritical": critical,
+        }
+    )
+    return record.model_copy(update={"identity": identity, "certificates": env_certs})
+
+
 def overlay_environment(record: EnvironmentRecord | None) -> EnvironmentRecord | None:
     if record is None:
         return record
@@ -168,55 +201,7 @@ def overlay_environment(record: EnvironmentRecord | None) -> EnvironmentRecord |
                 if not row.environment or row.environment == env_row.environment
             ]
             if certs:
-                updated.certificates = [
-                    EnvironmentCertificate(
-                        name=item.domain,
-                        daysToExpiry=item.daysRemaining,
-                        status=item.expiryStatus,
-                        source=item.source,
-                        issuer=item.issuer,
-                    )
-                    for item in certs
-                ]
-            statuses = [item.expiryStatus for item in certs]
-            warning = sum(1 for status in statuses if status == WARNING)
-            critical = sum(1 for status in statuses if status in {CRITICAL, URGENT, EXPIRED})
-            if critical:
-                cert_status = "Critical"
-            elif warning:
-                cert_status = "Warning"
-            else:
-                cert_status = "Healthy"
-            updated.identity = updated.identity.model_copy(
-                update={
-                    "certificateStatus": cert_status,
-                    "certificateTotal": len(certs),
-                    "certificateWarning": warning,
-                    "certificateCritical": critical,
-                }
-            )
-        if updated.identity.certificateStatus is None:
-            updated.certificates = [
-                item.model_copy(update={"status": item.status or classify_expiry(item.daysToExpiry)})
-                for item in updated.certificates
-            ]
-            statuses = [item.status for item in updated.certificates]
-            warning = sum(1 for status in statuses if status == WARNING)
-            critical = sum(1 for status in statuses if status in {CRITICAL, URGENT, EXPIRED})
-            if critical:
-                cert_status = "Critical"
-            elif warning:
-                cert_status = "Warning"
-            else:
-                cert_status = "Healthy"
-            updated.identity = updated.identity.model_copy(
-                update={
-                    "certificateStatus": cert_status,
-                    "certificateTotal": len(updated.certificates),
-                    "certificateWarning": warning,
-                    "certificateCritical": critical,
-                }
-            )
+                updated = apply_environment_certificates(updated, certs)
         return updated
     except Exception:
         logger.exception("Live environment overlay unavailable; using mock data")
@@ -277,45 +262,46 @@ def overlay_matrix(rows: list[MatrixRow]) -> list[MatrixRow]:
                         for item in certs
                         if not item.environment or item.environment == environment
                     ]
-                    expiring14 = [
-                        item
-                        for item in scoped
-                        if item.days_remaining is not None and 0 < item.days_remaining <= 14
-                    ]
-                    statuses = [(item.expiry_status or classify_expiry(item.days_remaining)) for item in scoped]
-                    next_cert = min(
-                        (
-                            item.days_remaining
+                    if scoped:
+                        expiring14 = [
+                            item
                             for item in scoped
-                            if item.days_remaining is not None and item.days_remaining >= 0
-                        ),
-                        default=current.nextCertExpiryDays,
-                    )
-                    next_cell = next_cell.model_copy(
-                        update={
-                            "certsExpiring14d": len(expiring14),
-                            "certsHealthy": sum(1 for status in statuses if status == HEALTHY),
-                            "certsExpiring60d": sum(
-                                1
+                            if item.days_remaining is not None and 0 < item.days_remaining <= 14
+                        ]
+                        statuses = [(item.expiry_status or classify_expiry(item.days_remaining)) for item in scoped]
+                        next_cert = min(
+                            (
+                                item.days_remaining
                                 for item in scoped
-                                if item.days_remaining is not None and 0 < item.days_remaining <= 60
+                                if item.days_remaining is not None and item.days_remaining >= 0
                             ),
-                            "certsExpiring30d": sum(
-                                1
-                                for item in scoped
-                                if item.days_remaining is not None and 0 < item.days_remaining <= 30
-                            ),
-                            "certsExpiring7d": sum(
-                                1
-                                for item in scoped
-                                if item.days_remaining is not None and 0 < item.days_remaining <= 7
-                            ),
-                            "certsExpired": sum(1 for status in statuses if status == EXPIRED),
-                            "nextCertExpiryDays": next_cert,
-                            "live": True,
-                        }
-                    )
-                    changed = True
+                            default=current.nextCertExpiryDays,
+                        )
+                        next_cell = next_cell.model_copy(
+                            update={
+                                "certsExpiring14d": len(expiring14),
+                                "certsHealthy": sum(1 for status in statuses if status == HEALTHY),
+                                "certsExpiring60d": sum(
+                                    1
+                                    for item in scoped
+                                    if item.days_remaining is not None and 0 < item.days_remaining <= 60
+                                ),
+                                "certsExpiring30d": sum(
+                                    1
+                                    for item in scoped
+                                    if item.days_remaining is not None and 0 < item.days_remaining <= 30
+                                ),
+                                "certsExpiring7d": sum(
+                                    1
+                                    for item in scoped
+                                    if item.days_remaining is not None and 0 < item.days_remaining <= 7
+                                ),
+                                "certsExpired": sum(1 for status in statuses if status == EXPIRED),
+                                "nextCertExpiryDays": next_cert,
+                                "live": True,
+                            }
+                        )
+                        changed = True
                 if env_row.last_error or env_row.readonly:
                     next_cell = next_cell.model_copy(
                         update={"lastError": env_row.last_error or None, "readonly": env_row.readonly}

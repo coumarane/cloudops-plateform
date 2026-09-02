@@ -214,7 +214,7 @@ export function CertificatesTable({ certificates }: { certificates: EnvironmentC
     return (
       <div className="p-8 text-center text-sm text-muted">
         <ShieldCheck className="mx-auto mb-2 h-6 w-6 text-outline" aria-hidden />
-        All certificates healthy.
+        No certificates in this environment.
       </div>
     );
   }
@@ -350,7 +350,9 @@ export function OverviewCertificates({ record }: { record: EnvironmentRecord }) 
         </Link>
       }
     >
-      <CertificatesTable certificates={record.certificates} />
+      <CertificatesTable
+        certificates={record.certificates.filter((item) => item.daysToExpiry <= 30)}
+      />
     </Panel>
   );
 }

@@ -335,6 +335,14 @@ def test_api_filters_and_scan_enqueue() -> None:
     assert scan.json()["kind"] == KIND_CERTIFICATE_DISCOVERY
 
 
+def test_environment_certificates_match_catalog() -> None:
+    env = client.get("/api/v1/environments/aws/emea/uat").json()
+    catalog = client.get("/api/v1/certificates", params={"provider": "aws", "region": "emea", "environment": "uat"}).json()
+    assert env["identity"]["certificateTotal"] == len(catalog["items"])
+    assert len(env["certificates"]) == len(catalog["items"])
+    assert env["identity"]["certificateStatus"] in {"Healthy", "Warning", "Critical"}
+
+
 def test_dashboard_certificate_kpis() -> None:
     body = client.get("/api/v1/dashboard").json()
     assert "certsHealthy" in body["kpis"]

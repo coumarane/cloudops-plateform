@@ -82,6 +82,9 @@ def test_environment_detail_emea_uat() -> None:
     assert body["identity"]["account"] == "aws-emea-nonprod"
     assert body["clusters"][0]["status"] == "Unreachable"
     assert len(body["applications"]) == 4
+    assert body["identity"]["certificateTotal"] >= 1
+    assert body["identity"]["certificateStatus"] in {"Healthy", "Warning", "Critical"}
+    assert len(body["certificates"]) == body["identity"]["certificateTotal"]
 
 
 def test_dashboard_prd_filter() -> None:

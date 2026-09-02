@@ -4,6 +4,7 @@ from app.domain.enums import ENVIRONMENTS, Environment
 from app.domain.models import CellMetrics, DashboardResponse, KpiSummary, MatrixRow, OperationalAlert, RecentFailure, Scope
 from app.providers.registry import registry
 from app.services.overlay import (
+    apply_environment_certificates,
     overlay_alerts,
     overlay_certificate_audit,
     overlay_certificates,
@@ -63,8 +64,11 @@ class CatalogService:
         return filter_items(overlay_environment_identities(self._collect("list_environments")), scope)
 
     def environment_detail(self, provider, region, environment):
-        record = registry.get(provider).get_environment(region, environment)
-        return overlay_environment(record)
+        record = overlay_environment(registry.get(provider).get_environment(region, environment))
+        if record is None:
+            return None
+        certs = self.certificates(Scope(provider=provider, region=region, environment=environment))
+        return apply_environment_certificates(record, certs)
 
     def clusters(self, scope: Scope):
         return filter_items(overlay_clusters(self._collect("list_clusters")), scope)
