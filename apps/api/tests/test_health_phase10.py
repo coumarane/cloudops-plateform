@@ -674,7 +674,7 @@ def test_live_health_scan_persists_inventory_not_summaries() -> None:
                 id="rh-http-keep",
                 resource_type="http_endpoint",
                 resource_name="payments-api",
-                cluster_id=cluster_id,
+                cluster_id="",
                 environment_id=env.id,
                 status=HEALTHY,
                 summary="HTTP 200",

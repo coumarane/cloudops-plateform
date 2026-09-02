@@ -315,22 +315,6 @@ def match_application(
     return ""
 
 
-KUBERNETES_RESOURCE_TYPES = frozenset(
-    {
-        "cluster",
-        "node",
-        "namespace",
-        "pod",
-        "deployment",
-        "statefulset",
-        "daemonset",
-        "job",
-        "service",
-        "ingress",
-    }
-)
-
-
 def persist_resources(
     session: Session,
     resources: list[NormalizedResource],
@@ -412,13 +396,7 @@ def ingest_cluster_inventory(
     error_category: str = "",
 ) -> None:
     now = utcnow()
-    persist_resources(
-        session,
-        resources,
-        cluster_id=cluster.id,
-        environment=environment,
-        prune_types=KUBERNETES_RESOURCE_TYPES,
-    )
+    persist_resources(session, resources, cluster_id=cluster.id, environment=environment)
     environment.last_attempted_scan_at = now
     environment.last_health_at = now
     if error_category:
