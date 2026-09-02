@@ -24,18 +24,21 @@ def _scope_key(row: CloudEnvironmentRow) -> tuple[str, str, str]:
 
 
 def _identity_from_row(identity: EnvironmentIdentity, row: CloudEnvironmentRow) -> EnvironmentIdentity:
-    return identity.model_copy(
-        update={
-            "account": row.account_alias,
-            "cloudRegion": row.cloud_region,
-            "readonly": row.readonly,
-            "source": "aws" if row.discovery_active else identity.source,
-            "lastSuccessfulScan": row.last_successful_scan_at.isoformat() if row.last_successful_scan_at else None,
-            "lastError": row.last_error or None,
-            "discoveryActive": row.discovery_active,
-            "awsAccountId": None,
-        }
-    )
+        source = identity.source
+        if row.discovery_active:
+            source = "alibaba" if row.provider == "Alibaba" else "aws"
+        return identity.model_copy(
+            update={
+                "account": row.account_alias,
+                "cloudRegion": row.cloud_region,
+                "readonly": row.readonly,
+                "source": source,
+                "lastSuccessfulScan": row.last_successful_scan_at.isoformat() if row.last_successful_scan_at else None,
+                "lastError": row.last_error or None,
+                "discoveryActive": row.discovery_active,
+                "awsAccountId": None,
+            }
+        )
 
 
 def overlay_environment_identities(items: list[EnvironmentIdentity]) -> list[EnvironmentIdentity]:
@@ -141,6 +144,7 @@ def overlay_environment(record: EnvironmentRecord | None) -> EnvironmentRecord |
             updated.clusters = [
                 to_cluster_record(cluster, repo.get_health(cluster.id))
                 for cluster in repo.present_clusters_for(env_row.platform_region, env_row.environment)
+                if cluster.provider == env_row.provider
             ]
         if env_row.last_certificate_scan_at is not None:
             certs = [

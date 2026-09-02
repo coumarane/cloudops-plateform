@@ -13,7 +13,7 @@ const CLOUD_REGIONS: Record<string, string> = {
 
 function accountName(provider: Provider, region: Region, environment: Environment): string {
   const classLabel = isProductionEnvironment(environment) ? "prod" : "nonprod";
-  return provider === "Alibaba" ? `${classLabel}-china` : `aws-${region.toLowerCase()}-${classLabel}`;
+  return provider === "Alibaba" ? `alibaba-china-${classLabel}` : `aws-${region.toLowerCase()}-${classLabel}`;
 }
 
 function clusterName(provider: Provider, region: Region, environment: Environment): string {

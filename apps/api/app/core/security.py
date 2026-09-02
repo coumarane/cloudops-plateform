@@ -19,6 +19,7 @@ FORBIDDEN_KEYS = {
     "session_token",
     "access_key_id",
     "aws_access_key_id",
+    "access_key_secret",
 }
 
 

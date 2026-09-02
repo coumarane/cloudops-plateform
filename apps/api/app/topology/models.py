@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 def environment_slug(environment: str) -> str:
@@ -28,8 +28,27 @@ class AccountBinding:
     cluster_environment_tag: str
     profile: str | None
     config_secret_arn: str | None
+    credential_ref: str | None = None
+    access_key_id_ref: str | None = None
+    access_key_secret_ref: str | None = None
 
     def connection_config(self):
+        if self.provider == "Alibaba":
+            from app.providers.alibaba.models import AlibabaConnectionConfig
+
+            return AlibabaConnectionConfig(
+                cloud_region=self.cloud_region,
+                account_id=self.account_id,
+                role_arn=self.role_arn,
+                session_name=self.session_name,
+                access_key_id_ref=self.access_key_id_ref,
+                access_key_secret_ref=self.access_key_secret_ref,
+                credential_ref=self.credential_ref,
+                platform_region=self.logical_region,
+                environment=self.environments[0] if self.environments else "",
+                account_alias=self.alias,
+                cluster_environment_tag=self.cluster_environment_tag,
+            )
         from app.providers.aws.models import AwsConnectionConfig
 
         return AwsConnectionConfig(
@@ -64,22 +83,7 @@ class EnvironmentBinding:
     readonly: bool
 
     def connection_config(self, account: AccountBinding):
-        config = account.connection_config()
-        from app.providers.aws.models import AwsConnectionConfig
-
-        return AwsConnectionConfig(
-            cloud_region=config.cloud_region,
-            account_id=config.account_id,
-            role_arn=config.role_arn,
-            external_id=config.external_id,
-            session_name=config.session_name,
-            profile=config.profile,
-            config_secret_arn=config.config_secret_arn,
-            platform_region=config.platform_region,
-            environment=self.environment,
-            account_alias=config.account_alias,
-            cluster_environment_tag=config.cluster_environment_tag,
-        )
+        return replace(account.connection_config(), environment=self.environment)
 
 
 @dataclass(frozen=True)

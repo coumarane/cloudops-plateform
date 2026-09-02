@@ -38,6 +38,10 @@ class CloudAccountRow(Base):
     readonly: Mapped[bool] = mapped_column(Boolean, default=False)
     session_name: Mapped[str] = mapped_column(String(128), default="")
     cluster_environment_tag: Mapped[str] = mapped_column(String(64), default="Environment")
+    credential_ref: Mapped[str] = mapped_column(String(256), default="")
+    credential_fingerprint: Mapped[str] = mapped_column(String(64), default="")
+    last_validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    validation_status: Mapped[str] = mapped_column(String(32), default="")
 
 
 class CloudEnvironmentRow(Base):
@@ -83,6 +87,8 @@ class EksClusterRow(Base):
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     present: Mapped[bool] = mapped_column(Boolean, default=True)
     environment_id: Mapped[str] = mapped_column(String(128), default="")
+    cluster_type: Mapped[str] = mapped_column(String(64), default="")
+    extra_json: Mapped[str] = mapped_column(Text, default="{}")
 
 
 class EksClusterHealthRow(Base):
@@ -99,6 +105,8 @@ class EksClusterHealthRow(Base):
     pending_pod_count: Mapped[int] = mapped_column(Integer, default=0)
     unavailable_deployment_count: Mapped[int] = mapped_column(Integer, default=0)
     failed_job_count: Mapped[int] = mapped_column(Integer, default=0)
+    stateful_set_unhealthy_count: Mapped[int] = mapped_column(Integer, default=0)
+    ingress_unhealthy_count: Mapped[int] = mapped_column(Integer, default=0)
     last_checked: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     detail: Mapped[str] = mapped_column(Text, default="")
 
@@ -125,6 +133,9 @@ class AcmCertificateRow(Base):
     account_alias: Mapped[str] = mapped_column(String(128), default="nonprod-emea")
     cloud_region: Mapped[str] = mapped_column(String(64), default="eu-west-1")
     present: Mapped[bool] = mapped_column(Boolean, default=True)
+    cluster_name: Mapped[str] = mapped_column(String(255), default="")
+    namespace: Mapped[str] = mapped_column(String(255), default="")
+    source: Mapped[str] = mapped_column(String(32), default="")
 
 
 class PlatformJobRow(Base):

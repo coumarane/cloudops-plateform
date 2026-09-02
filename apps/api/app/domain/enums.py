@@ -49,7 +49,7 @@ def cloud_region(provider: Provider, region: Region) -> str:
 def account_name(provider: Provider, region: Region, environment: Environment) -> str:
     klass = "prod" if is_production(environment) else "nonprod"
     if provider == "Alibaba":
-        return f"{klass}-china"
+        return f"alibaba-china-{klass}"
     return f"aws-{region.lower()}-{klass}"
 
 

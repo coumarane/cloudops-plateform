@@ -86,7 +86,7 @@ class CatalogService:
         return filter_items(self._collect("list_pipelines"), scope)
 
     def jobs(self, scope: Scope):
-        return overlay_jobs(filter_items(self._collect("list_jobs"), scope))
+        return filter_items(overlay_jobs(self._collect("list_jobs")), scope)
 
     def github_runs(self, scope: Scope):
         return filter_items(self._collect("list_github_runs"), scope)

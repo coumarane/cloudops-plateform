@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
+import { AlibabaScanActions } from "@/components/catalog/AlibabaScanActions";
 import { AwsScanActions } from "@/components/catalog/AwsScanActions";
 import { CatalogBody, CatalogPanel, Kpi, KpiGrid, StatusChip } from "@/components/catalog/CatalogChrome";
 import { ClusterHealthPanel } from "@/components/catalog/ClusterHealthPanel";
@@ -491,6 +492,7 @@ export function JobsCatalog({ initial }: { initial: CatalogFilters }) {
       {(rows, selected) => (
         <div className="space-y-4">
           <AwsScanActions onQueued={() => setRefreshKey((value) => value + 1)} />
+          <AlibabaScanActions onQueued={() => setRefreshKey((value) => value + 1)} />
           <CatalogPanel title="Job catalog" hint="Job result only. Secret values are never displayed.">
             <Table headers={["Job", "Kind", "Result", "Age", "Provider", "Region", "Environment", "Cluster"]}>
               {rows.map((row) => (

@@ -4,28 +4,27 @@ from sqlalchemy.orm import Session
 
 from app.core.logging import get_logger
 from app.db.models import CloudAccountRow, CloudEnvironmentRow, CloudProviderRow, LiveScopeStateRow, PlatformRegionRow
+from app.topology.alibaba import load_alibaba_topology
 from app.topology.loader import load_topology
-from app.topology.models import environment_scope_id
+from app.topology.models import AccountBinding, environment_scope_id
 
 logger = get_logger(__name__)
 
 
-def seed_topology(session: Session) -> None:
-    topology = load_topology()
-    provider = session.get(CloudProviderRow, "AWS")
-    if provider is None:
-        provider = CloudProviderRow(id="AWS", name="AWS")
-        session.add(provider)
-
+def _upsert_accounts(session: Session, accounts: tuple[AccountBinding, ...]) -> None:
     seen_regions: set[str] = set()
-    for account in topology.accounts:
-        region_id = f"aws-{account.logical_region.lower()}"
+    for account in accounts:
+        provider = session.get(CloudProviderRow, account.provider)
+        if provider is None:
+            session.add(CloudProviderRow(id=account.provider, name=account.provider))
+
+        region_id = f"{account.provider.lower()}-{account.logical_region.lower()}"
         if region_id not in seen_regions:
             region = session.get(PlatformRegionRow, region_id)
             if region is None:
-                region = PlatformRegionRow(id=region_id, provider="AWS", name=account.logical_region)
+                region = PlatformRegionRow(id=region_id, provider=account.provider, name=account.logical_region)
                 session.add(region)
-            region.provider = "AWS"
+            region.provider = account.provider
             region.name = account.logical_region
             region.cloud_region = account.cloud_region
             seen_regions.add(region_id)
@@ -45,6 +44,7 @@ def seed_topology(session: Session) -> None:
         row.readonly = account.readonly
         row.session_name = account.session_name
         row.cluster_environment_tag = account.cluster_environment_tag
+        row.credential_ref = account.credential_ref or ""
 
         for environment in account.environments:
             env_id = environment_scope_id(account.alias, environment)
@@ -61,9 +61,15 @@ def seed_topology(session: Session) -> None:
             env_row.readonly = account.readonly or environment == "PRD"
             env_row.enabled = True
 
+
+def seed_topology(session: Session) -> None:
+    aws = load_topology()
+    alibaba = load_alibaba_topology()
+    _upsert_accounts(session, aws.accounts)
+    _upsert_accounts(session, alibaba.accounts)
     _copy_legacy_emea_dev(session)
     session.flush()
-    logger.info("Seeded AWS topology accounts=%s", len(topology.accounts))
+    logger.info("Seeded topology aws=%s alibaba=%s", len(aws.accounts), len(alibaba.accounts))
 
 
 def _copy_legacy_emea_dev(session: Session) -> None:
