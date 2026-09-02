@@ -142,6 +142,20 @@ def add_timeline(
     href: str = "",
     when: datetime | None = None,
 ) -> None:
+    detail = sanitize_text(detail)[:512]
+    existing = session.scalar(
+        select(HealthTimelineEventRow)
+        .where(
+            HealthTimelineEventRow.application_id == application_id,
+            HealthTimelineEventRow.environment_id == environment_id,
+            HealthTimelineEventRow.event_type == event_type,
+            HealthTimelineEventRow.title == title,
+            HealthTimelineEventRow.detail == detail,
+        )
+        .order_by(HealthTimelineEventRow.created_at.desc())
+    )
+    if existing is not None:
+        return
     session.add(
         HealthTimelineEventRow(
             id=str(uuid4()),
@@ -149,7 +163,7 @@ def add_timeline(
             environment_id=environment_id,
             event_type=event_type,
             title=title,
-            detail=sanitize_text(detail)[:512],
+            detail=detail,
             href=href,
             created_at=when or utcnow(),
         )
@@ -650,7 +664,15 @@ def aggregate_application_row(session: Session, application_id: str, environment
         )
         session.add(row)
         session.flush()
-    row.application_name = row.application_name or application_id
+    named = next(
+        (
+            item.resource_name
+            for item in workloads + pods
+            if item.resource_name and not item.resource_name.startswith("_")
+        ),
+        "",
+    )
+    row.application_name = named or row.application_name or application_id
     row.provider = environment.provider
     row.region = environment.platform_region
     row.environment = environment.environment
@@ -681,9 +703,12 @@ def aggregate_application_row(session: Session, application_id: str, environment
         row.consecutive_healthy = 0
     row.updated_at = now
     correlation = correlate_changes(session, row)
-    if correlation.get("pipelineRuns") and result.status in {UNHEALTHY, CRITICAL, DEGRADED} and not row.likely_cause:
+    if correlation.get("pipelineRuns") and result.status in {UNHEALTHY, CRITICAL, DEGRADED}:
         run = correlation["pipelineRuns"][0]
-        row.likely_cause = f"Likely related to deployment {run.get('externalRunId') or run.get('id')} commit {(run.get('commitSha') or '')[:7]}"
+        ext = run.get("externalRunId") or run.get("id")
+        commit = (run.get("commitSha") or "")[:7]
+        if "deployment" in (row.likely_cause or "").lower() or not row.likely_cause:
+            row.likely_cause = f"Likely related to Deployment #{ext} commit {commit}".strip()
     if correlation.get("certificates") and result.status in {UNHEALTHY, CRITICAL}:
         row.likely_cause = "Likely related to an expired certificate"
     row.correlation_json = _json(correlation)
@@ -785,8 +810,12 @@ def scan_environment_clusters(session: Session, environment: CloudEnvironmentRow
                 environment=environment.environment,
             )
             ingest_cluster_inventory(session, environment=environment, cluster=synthetic, resources=payload)
+            if not environment.last_error:
+                environment.last_successful_scan_at = now
             return
         ingest_cluster_inventory(session, environment=environment, cluster=clusters[0], resources=payload)
+        if not environment.last_error:
+            environment.last_successful_scan_at = now
         return
     for cluster in clusters:
         snapshot_row = session.get(EksClusterHealthRow, cluster.id)

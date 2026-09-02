@@ -100,7 +100,8 @@ def aggregate_application(signals: HealthSignals) -> AggregationResult:
             evidence.append("insufficient data")
 
     likely = ""
-    if signals.deployment_status in {"Failed", "Running", "Succeeded"} and status in {UNHEALTHY, CRITICAL, DEGRADED}:
+    deployment_key = (signals.deployment_status or "").upper()
+    if deployment_key in {"FAILED", "RUNNING", "SUCCEEDED", "SUCCESS", "PARTIAL"} and status in {UNHEALTHY, CRITICAL, DEGRADED}:
         if "CrashLoopBackOff" in evidence or signals.crashloop:
             likely = "Likely related to a recent deployment"
     if signals.certificate_status in {"EXPIRED", CRITICAL} and status in {UNHEALTHY, CRITICAL}:
