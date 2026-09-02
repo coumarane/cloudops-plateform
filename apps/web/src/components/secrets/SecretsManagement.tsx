@@ -16,7 +16,7 @@ import {
   regionToSlug,
 } from "@/lib/environment";
 import { LAST_SYNCED_LABEL } from "@/lib/mock-data";
-import { parseSecretAction, type SecretAction } from "@/lib/secrets";
+import { parseSecretAction, parseSecretsFilters, type SecretAction } from "@/lib/secrets";
 import {
   filterManagedSecrets,
   listSecretAccounts,
@@ -28,17 +28,21 @@ import { ENVIRONMENTS, type Environment, type Provider, type Region } from "@/li
 
 type Notice = { tone: "ok" | "prd"; text: string };
 
-export function SecretsManagement() {
+export function SecretsManagement({
+  initial,
+}: {
+  initial: ReturnType<typeof parseSecretsFilters>;
+}) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  const provider = parseProvider(searchParams.get("provider") ?? "") ?? "all";
-  const region = parseRegion(searchParams.get("region") ?? "") ?? "all";
-  const account = searchParams.get("account") || "all";
-  const environment = parseEnvironment(searchParams.get("environment") ?? "") ?? "all";
-  const selectedId = searchParams.get("secret");
-  const selectedAction = parseSecretAction(searchParams.get("action"));
+  const provider = parseProvider(searchParams.get("provider") ?? "") ?? initial.provider ?? "all";
+  const region = parseRegion(searchParams.get("region") ?? "") ?? initial.region ?? "all";
+  const account = searchParams.get("account") || initial.account || "all";
+  const environment = parseEnvironment(searchParams.get("environment") ?? "") ?? initial.environment ?? "all";
+  const selectedId = searchParams.get("secret") || initial.secret;
+  const selectedAction = parseSecretAction(searchParams.get("action")) ?? initial.action;
 
   const regions = regionsForProvider(provider === "all" ? "all" : provider);
   const accounts = listSecretAccounts().filter((item) =>
