@@ -157,10 +157,10 @@ function chipTone(value: string): string {
     if (key === "healthy" || key === "passing" || key === "succeeded" || key === "success" || key === "ok" || key === "connected") {
     return `${base} bg-healthy/10 text-healthy`;
   }
-  if (key === "info" || key === "running" || key === "queued") {
+  if (key === "info" || key === "running" || key === "queued" || key === "waiting") {
     return `${base} bg-action/10 text-action`;
   }
-  if (key === "cancelled" || key === "canceled" || key === "skipped" || key === "unknown") {
+  if (key === "cancelled" || key === "canceled" || key === "skipped" || key === "unknown" || key === "partial") {
     return `${base} bg-surface-low text-muted`;
   }
   if (key === "production") {

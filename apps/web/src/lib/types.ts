@@ -99,5 +99,10 @@ export type KpiSummary = {
   githubWorkflowsFailed?: number;
   githubWorkflowsSucceeded?: number;
   pipelineFailures: number;
+  pipelineRunsToday?: number;
+  pipelinesRunning?: number;
+  pipelinesFailed?: number;
+  pipelinesFailedPrd?: number;
+  pipelineAverageDurationSeconds?: number;
   openAlerts: number;
 };

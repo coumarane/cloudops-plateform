@@ -45,6 +45,16 @@ from app.db.models import (
     GithubWorkflowRow,
     LiveScopeStateRow,
     NotificationEventRow,
+    PipelineAlertRow,
+    PipelineApplicationMappingRow,
+    PipelineAuditRow,
+    PipelineEnvironmentMappingRow,
+    PipelineJobRow,
+    PipelineProviderRow,
+    PipelineRow,
+    PipelineRunRow,
+    PipelineStageRow,
+    PipelineWebhookDeliveryRow,
     PlatformJobRow,
 )
 from app.db.session import SessionLocal
@@ -57,6 +67,16 @@ def reset_live_tables() -> None:
     reset_rate_limits()
     session = SessionLocal()
     for model in (
+        PipelineJobRow,
+        PipelineStageRow,
+        PipelineAlertRow,
+        PipelineAuditRow,
+        PipelineWebhookDeliveryRow,
+        PipelineEnvironmentMappingRow,
+        PipelineApplicationMappingRow,
+        PipelineRunRow,
+        PipelineRow,
+        PipelineProviderRow,
         GithubWorkflowJobRow,
         GithubAlertRow,
         GithubAuditRow,

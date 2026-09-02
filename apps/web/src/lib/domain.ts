@@ -115,6 +115,11 @@ export type ApplicationRecord = {
   sourceEnvironment?: string | null;
   workflowRunId?: string | null;
   deploymentId?: string | null;
+  pipelineId?: string | null;
+  pipelineName?: string | null;
+  pipelineProvider?: string | null;
+  latestPipelineRunId?: string | null;
+  latestPipelineStatus?: string | null;
 };
 
 export type HealthCheckRecord = {
@@ -303,6 +308,7 @@ export type ActivityItem = {
   title: string;
   detail: string;
   age: string;
+  href?: string | null;
 };
 
 export type EnvironmentRecord = {

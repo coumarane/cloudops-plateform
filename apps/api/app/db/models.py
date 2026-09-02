@@ -589,3 +589,183 @@ class GithubAlertRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PipelineProviderRow(Base):
+    __tablename__ = "pipeline_providers"
+    __table_args__ = (UniqueConstraint("key", name="uq_pipeline_providers_key"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    key: Mapped[str] = mapped_column(String(32), nullable=False)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    organization: Mapped[str] = mapped_column(String(128), default="")
+    project: Mapped[str] = mapped_column(String(128), default="")
+    base_url: Mapped[str] = mapped_column(String(255), default="")
+    auth_ref: Mapped[str] = mapped_column(String(512), default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    last_attempted_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_successful_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error: Mapped[str] = mapped_column(Text, default="")
+    last_error_class: Mapped[str] = mapped_column(String(64), default="")
+    metadata_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PipelineRow(Base):
+    __tablename__ = "pipelines"
+    __table_args__ = (UniqueConstraint("provider_id", "external_id", name="uq_pipelines_provider_external"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    provider_id: Mapped[str] = mapped_column(String(64), ForeignKey("pipeline_providers.id"), nullable=False)
+    external_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    repository_id: Mapped[str] = mapped_column(String(64), default="")
+    application_id: Mapped[str] = mapped_column(String(128), default="")
+    default_branch: Mapped[str] = mapped_column(String(128), default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    html_url: Mapped[str] = mapped_column(String(512), default="")
+    metadata_json: Mapped[str] = mapped_column(Text, default="{}")
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PipelineRunRow(Base):
+    __tablename__ = "pipeline_runs"
+    __table_args__ = (UniqueConstraint("pipeline_id", "external_run_id", name="uq_pipeline_runs_external"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    pipeline_id: Mapped[str] = mapped_column(String(64), ForeignKey("pipelines.id"), nullable=False)
+    external_run_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    branch: Mapped[str] = mapped_column(String(255), default="")
+    commit_sha: Mapped[str] = mapped_column(String(64), default="")
+    version: Mapped[str] = mapped_column(String(128), default="")
+    trigger: Mapped[str] = mapped_column(String(64), default="")
+    actor: Mapped[str] = mapped_column(String(128), default="")
+    status: Mapped[str] = mapped_column(String(32), default="UNKNOWN")
+    provider_status: Mapped[str] = mapped_column(String(64), default="")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    external_url: Mapped[str] = mapped_column(String(512), default="")
+    environment_id: Mapped[str] = mapped_column(String(128), default="")
+    deployment_id: Mapped[str] = mapped_column(String(128), default="")
+    application_id: Mapped[str] = mapped_column(String(128), default="")
+    repository_id: Mapped[str] = mapped_column(String(64), default="")
+    cluster_id: Mapped[str] = mapped_column(String(128), default="")
+    metadata_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PipelineStageRow(Base):
+    __tablename__ = "pipeline_stages"
+    __table_args__ = (UniqueConstraint("run_id", "external_id", name="uq_pipeline_stages_external"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    run_id: Mapped[str] = mapped_column(String(64), ForeignKey("pipeline_runs.id"), nullable=False)
+    external_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="UNKNOWN")
+    provider_status: Mapped[str] = mapped_column(String(64), default="")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    html_url: Mapped[str] = mapped_column(String(512), default="")
+
+
+class PipelineJobRow(Base):
+    __tablename__ = "pipeline_jobs"
+    __table_args__ = (UniqueConstraint("run_id", "external_id", name="uq_pipeline_jobs_external"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    run_id: Mapped[str] = mapped_column(String(64), ForeignKey("pipeline_runs.id"), nullable=False)
+    stage_id: Mapped[str] = mapped_column(String(64), default="")
+    external_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="UNKNOWN")
+    provider_status: Mapped[str] = mapped_column(String(64), default="")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    html_url: Mapped[str] = mapped_column(String(512), default="")
+
+
+class PipelineEnvironmentMappingRow(Base):
+    __tablename__ = "pipeline_environment_mapping"
+    __table_args__ = (
+        UniqueConstraint(
+            "pipeline_id",
+            "environment_id",
+            "branch_pattern",
+            "stage_name",
+            name="uq_pipeline_env_mapping",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    pipeline_id: Mapped[str] = mapped_column(String(64), ForeignKey("pipelines.id"), nullable=False)
+    environment_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    branch_pattern: Mapped[str] = mapped_column(String(128), default="*")
+    stage_name: Mapped[str] = mapped_column(String(128), default="")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    priority: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PipelineApplicationMappingRow(Base):
+    __tablename__ = "pipeline_application_mapping"
+    __table_args__ = (UniqueConstraint("pipeline_id", "application_id", name="uq_pipeline_app_mapping"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    pipeline_id: Mapped[str] = mapped_column(String(64), ForeignKey("pipelines.id"), nullable=False)
+    application_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PipelineWebhookDeliveryRow(Base):
+    __tablename__ = "pipeline_webhook_deliveries"
+    __table_args__ = (UniqueConstraint("delivery_id", name="uq_pipeline_webhook_delivery"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    delivery_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    provider_key: Mapped[str] = mapped_column(String(32), nullable=False)
+    event: Mapped[str] = mapped_column(String(64), default="")
+    payload_digest: Mapped[str] = mapped_column(String(64), default="")
+    payload_json: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(32), default="queued")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PipelineAuditRow(Base):
+    __tablename__ = "pipeline_audit_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    actor: Mapped[str] = mapped_column(String(128), nullable=False)
+    object_name: Mapped[str] = mapped_column(String(255), default="")
+    pipeline_id: Mapped[str] = mapped_column(String(64), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    result: Mapped[str] = mapped_column(String(32), default="succeeded")
+    detail: Mapped[str] = mapped_column(Text, default="")
+    correlation_id: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PipelineAlertRow(Base):
+    __tablename__ = "pipeline_alerts"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(48), nullable=False)
+    run_id: Mapped[str] = mapped_column(String(64), default="")
+    pipeline_id: Mapped[str] = mapped_column(String(64), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    severity: Mapped[str] = mapped_column(String(16), default="MEDIUM")
+    status: Mapped[str] = mapped_column(String(24), default="OPEN")
+    title: Mapped[str] = mapped_column(String(255), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

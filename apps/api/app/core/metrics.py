@@ -21,6 +21,11 @@ HELP = {
     "cloudops_github_workflow_failures_total": "GitHub workflow failures (labels: status, environment_class)",
     "cloudops_github_webhook_events_total": "GitHub webhook deliveries (labels: status)",
     "cloudops_github_webhook_failures_total": "GitHub webhook processing failures (labels: status)",
+    "cloudops_pipeline_runs_total": "Normalized pipeline runs (labels: provider, status, environment_class)",
+    "cloudops_pipeline_runs_failed_total": "Normalized pipeline failures (labels: provider, status, environment_class)",
+    "cloudops_pipeline_runs_running": "Currently running pipeline runs (labels: provider, status, environment_class)",
+    "cloudops_pipeline_sync_duration_seconds": "Pipeline synchronization duration in seconds",
+    "cloudops_pipeline_sync_failures_total": "Pipeline provider synchronization failures (labels: provider, status, environment_class)",
 }
 
 

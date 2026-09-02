@@ -16,6 +16,9 @@ from app.services.overlay import (
     overlay_github_failures,
     overlay_github_runs,
     overlay_jobs,
+    overlay_pipeline_audit,
+    overlay_pipeline_failures,
+    overlay_pipelines,
     overlay_matrix,
 )
 
@@ -97,7 +100,7 @@ class CatalogService:
         return filter_items(self._collect("list_deployments"), scope)
 
     def pipelines(self, scope: Scope):
-        return filter_items(self._collect("list_pipelines"), scope)
+        return filter_items(overlay_pipelines(self._collect("list_pipelines")), scope)
 
     def jobs(self, scope: Scope):
         return filter_items(overlay_jobs(self._collect("list_jobs")), scope)
@@ -111,7 +114,7 @@ class CatalogService:
     def audit_events(self, scope: Scope):
         from app.services.credentials import overlay_audit_events
 
-        return filter_items(overlay_github_audit(overlay_certificate_audit(overlay_audit_events(self._collect("list_audit_events")))), scope)
+        return filter_items(overlay_pipeline_audit(overlay_github_audit(overlay_certificate_audit(overlay_audit_events(self._collect("list_audit_events"))))), scope)
 
     def admin_users(self):
         from app.data.inventory import MOCK_INVENTORY
@@ -147,6 +150,11 @@ def _empty_kpis() -> KpiSummary:
         githubWorkflowsFailed=0,
         githubWorkflowsSucceeded=0,
         pipelineFailures=0,
+        pipelineRunsToday=0,
+        pipelinesRunning=0,
+        pipelinesFailed=0,
+        pipelinesFailedPrd=0,
+        pipelineAverageDurationSeconds=0,
         openAlerts=0,
     )
 
@@ -194,7 +202,7 @@ def dashboard_snapshot(scope: Scope, last_synced: str) -> DashboardResponse:
     alerts = filter_items(overlay_alerts(MOCK_INVENTORY.alerts), scope)
     # Dashboard feed uses the four primary operational alerts, not the extra APAC deploy card.
     dashboard_alerts = [item for item in alerts if item.id != "alert-apac-prd-deploy"]
-    failures = filter_items(overlay_github_failures(MOCK_INVENTORY.failures), scope)
+    failures = filter_items(overlay_pipeline_failures(overlay_github_failures(MOCK_INVENTORY.failures)), scope)
     kpis = summarize_kpis(live_matrix, scope)
     certs = catalog_service.certificates(scope)
     kpis = kpis.model_copy(
@@ -231,6 +239,29 @@ def dashboard_snapshot(scope: Scope, last_synced: str) -> DashboardResponse:
                     "githubWorkflowsFailed": overview["failedWorkflows"],
                     "githubWorkflowsSucceeded": overview["succeededWorkflows"],
                     "githubFailures": overview["failedWorkflowsLast24h"] or overview["failedWorkflows"],
+                }
+            )
+    except Exception:
+        pass
+    finally:
+        if session is not None:
+            session.close()
+    session = None
+    try:
+        from app.db.session import SessionLocal
+        from app.services.pipeline_presenters import overview_dump as pipeline_overview_dump
+
+        session = SessionLocal()
+        overview = pipeline_overview_dump(session)
+        if overview["pipelineRunsToday"] or overview["runningPipelines"] or overview["failedPipelines"]:
+            kpis = kpis.model_copy(
+                update={
+                    "pipelineRunsToday": overview["pipelineRunsToday"],
+                    "pipelinesRunning": overview["runningPipelines"],
+                    "pipelinesFailed": overview["failedPipelines"],
+                    "pipelinesFailedPrd": overview["failedPrdPipelines"],
+                    "pipelineAverageDurationSeconds": overview["averageDeploymentDurationSeconds"],
+                    "pipelineFailures": overview["failedPipelines"],
                 }
             )
     except Exception:

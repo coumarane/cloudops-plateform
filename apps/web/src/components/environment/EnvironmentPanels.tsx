@@ -154,6 +154,7 @@ export function ApplicationsTable({
             <th className="p-3">Application</th>
             <th className="p-3">Namespace</th>
             <th className="p-3">Source control</th>
+            <th className="p-3">Pipeline</th>
             <th className="p-3">Pods (ready/desired)</th>
             <th className="p-3">Issue</th>
             <th className="p-3 text-right">Action</th>
@@ -168,6 +169,15 @@ export function ApplicationsTable({
                 {app.repository ? (
                   <Link href={app.workflowRunId ? `/github?run=${app.workflowRunId}` : app.repositoryId ? `/github?repo=${app.repositoryId}` : "/github"} className="hover:underline">
                     {app.repository} {app.latestWorkflowStatus ? `(${app.latestWorkflowStatus})` : ""}
+                  </Link>
+                ) : (
+                  "—"
+                )}
+              </td>
+              <td className="p-3 font-mono text-xs text-muted">
+                {app.pipelineId ? (
+                  <Link href={app.latestPipelineRunId ? `/pipelines?run=${app.latestPipelineRunId}` : `/pipelines?pipeline=${app.pipelineId}`} className="hover:underline">
+                    {app.pipelineName || "pipeline"} {app.latestPipelineStatus ? `(${app.latestPipelineStatus})` : ""}
                   </Link>
                 ) : (
                   "—"
@@ -262,7 +272,13 @@ export function ActivityList({ items, empty }: { items: EnvironmentActivity[]; e
     <ul className="divide-y divide-outline">
       {items.map((item) => (
         <li key={`${item.title}-${item.age}`} className="p-3">
-          <p className="text-sm font-semibold text-ink">{item.title}</p>
+          {item.href ? (
+            <Link href={item.href} className="text-sm font-semibold text-action hover:underline">
+              {item.title}
+            </Link>
+          ) : (
+            <p className="text-sm font-semibold text-ink">{item.title}</p>
+          )}
           <p className="mt-0.5 font-mono text-[11px] text-muted">{item.detail}</p>
           <p className="mt-1 text-[11px] text-muted">{item.age}</p>
         </li>

@@ -29,6 +29,13 @@ PERMISSIONS = {
     "github_secret:prod_update",
     "github_mapping:read",
     "github_mapping:update",
+    "pipeline:read",
+    "pipeline:sync",
+    "pipeline_mapping:read",
+    "pipeline_mapping:update",
+    "pipeline:run",
+    "pipeline:cancel",
+    "pipeline:retry",
 }
 
 ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
@@ -55,6 +62,10 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "github_secret:delete",
             "github_mapping:read",
             "github_mapping:update",
+            "pipeline:read",
+            "pipeline:sync",
+            "pipeline_mapping:read",
+            "pipeline_mapping:update",
         }
     ),
     "SecurityAuditor": frozenset(
@@ -66,6 +77,8 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "github_variable:read",
             "github_secret:read_metadata",
             "github_mapping:read",
+            "pipeline:read",
+            "pipeline_mapping:read",
         }
     ),
     "Developer": frozenset(
@@ -76,9 +89,21 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "github_variable:read",
             "github_variable:update",
             "github_secret:read_metadata",
+            "pipeline:read",
         }
     ),
-    "ReadOnly": frozenset({"credential:read", "certificate:read", "github:read", "github_variable:read", "github_secret:read_metadata", "github_mapping:read"}),
+    "ReadOnly": frozenset(
+        {
+            "credential:read",
+            "certificate:read",
+            "github:read",
+            "github_variable:read",
+            "github_secret:read_metadata",
+            "github_mapping:read",
+            "pipeline:read",
+            "pipeline_mapping:read",
+        }
+    ),
 }
 
 _ROLE_ALIASES = {

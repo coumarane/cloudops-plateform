@@ -261,6 +261,12 @@ def upsert_run(session: Session, repository: GithubRepositoryRow, workflow: Gith
         evaluate_run_alert(session, repository, workflow, row)
     else:
         evaluate_run_alert(session, repository, workflow, row)
+    try:
+        from app.services.pipeline_sync import project_github_run
+
+        project_github_run(session, row)
+    except Exception:
+        logger.info("Pipeline projection skipped for GitHub run=%s", row.id)
     return row
 
 

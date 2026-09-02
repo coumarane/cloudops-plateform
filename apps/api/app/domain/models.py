@@ -132,6 +132,11 @@ class KpiSummary(StrictModel):
     githubWorkflowsFailed: int = 0
     githubWorkflowsSucceeded: int = 0
     pipelineFailures: int
+    pipelineRunsToday: int = 0
+    pipelinesRunning: int = 0
+    pipelinesFailed: int = 0
+    pipelinesFailedPrd: int = 0
+    pipelineAverageDurationSeconds: int = 0
     openAlerts: int
 
 
@@ -221,6 +226,11 @@ class ApplicationRecord(StrictModel):
     sourceEnvironment: str | None = None
     workflowRunId: str | None = None
     deploymentId: str | None = None
+    pipelineId: str | None = None
+    pipelineName: str | None = None
+    pipelineProvider: str | None = None
+    latestPipelineRunId: str | None = None
+    latestPipelineStatus: str | None = None
 
 
 class HealthCheckRecord(StrictModel):
@@ -383,6 +393,7 @@ class ActivityItem(StrictModel):
     title: str
     detail: str
     age: str
+    href: str | None = None
 
 
 class CertificateHistoryEvent(StrictModel):

@@ -31,6 +31,8 @@ import type {
   GithubWorkflowRun,
 } from "@/lib/github";
 import { githubQuery } from "@/lib/github";
+import type { Pipeline, PipelineOverview, PipelineRun, PipelineStage, PipelineJob } from "@/lib/pipelines";
+import { pipelineQuery } from "@/lib/pipelines";
 
 export type { ListResponse, ScopeQuery };
 
@@ -90,7 +92,16 @@ export const cloudOpsApi = {
   healthChecks: (scope?: ScopeQuery, signal?: AbortSignal) =>
     getList<HealthCheckRecord>("/health-checks", scope, signal),
   deployments: (scope?: ScopeQuery, signal?: AbortSignal) => getList<RunRecord>("/deployments", scope, signal),
-  pipelines: (scope?: ScopeQuery, signal?: AbortSignal) => getList<RunRecord>("/pipelines", scope, signal),
+  pipelines: (scope?: ScopeQuery, signal?: AbortSignal) => getList<RunRecord>("/pipeline-runs", scope, signal),
+  pipelineOverview: (signal?: AbortSignal) => getJson<PipelineOverview>("/pipelines/overview", undefined, signal),
+  pipelineDefinitions: (query?: Record<string, string>, signal?: AbortSignal) =>
+    getJson<{ items: Pipeline[]; lastSynced: string }>(`/pipelines${pipelineQuery(query)}`, undefined, signal),
+  pipelineDefinition: (id: string, signal?: AbortSignal) => getJson<Pipeline>(`/pipelines/${id}`, undefined, signal),
+  pipelineRunsFor: (id: string, signal?: AbortSignal) => getList<PipelineRun>(`/pipelines/${id}/runs`, undefined, signal),
+  pipelineRun: (id: string, signal?: AbortSignal) => getJson<PipelineRun>(`/pipeline-runs/${id}`, undefined, signal),
+  pipelineRunStages: (id: string, signal?: AbortSignal) => getList<PipelineStage>(`/pipeline-runs/${id}/stages`, undefined, signal),
+  pipelineRunJobs: (id: string, signal?: AbortSignal) => getList<PipelineJob>(`/pipeline-runs/${id}/jobs`, undefined, signal),
+  triggerPipelineSync: (signal?: AbortSignal) => postJson<{ queued: boolean; jobs: RunRecord[] }>("/pipelines/sync", signal),
   jobs: (scope?: ScopeQuery, signal?: AbortSignal) => getList<RunRecord>("/jobs", scope, signal),
   triggerClusterDiscovery: (signal?: AbortSignal) => postJson<RunRecord>("/jobs/aws/cluster-discovery", signal),
   triggerHealthScan: (signal?: AbortSignal) => postJson<RunRecord>("/jobs/aws/health-scan", signal),
