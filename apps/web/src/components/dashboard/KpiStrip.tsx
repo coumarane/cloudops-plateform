@@ -74,7 +74,7 @@ export function KpiStrip({ summary }: { summary: KpiSummary }) {
         <Card label="Failed deploys" tone={summary.failedDeploys > 0 ? "critical" : undefined}>
           <p className="text-lg font-semibold text-critical">{summary.failedDeploys}</p>
         </Card>
-        <Card label="GitHub fails" tone={summary.githubFailures > 0 ? "critical" : undefined}>
+        <Card label="GitHub fails" tone={summary.githubFailures > 0 ? "critical" : undefined} href="/github">
           <p className="text-lg font-semibold text-critical">{summary.githubFailures}</p>
         </Card>
         <Card label="Pipeline fails" tone={summary.pipelineFailures > 0 ? "critical" : undefined}>
@@ -105,6 +105,17 @@ export function KpiStrip({ summary }: { summary: KpiSummary }) {
         </Card>
         <Card label="Expired" tone={expired > 0 ? "critical" : undefined} href="/certificates?status=expired">
           <p className="text-lg font-semibold text-critical">{expired}</p>
+        </Card>
+      </section>
+      <section aria-label="GitHub Workflows" className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        <Card label="GitHub running" href="/github">
+          <p className="text-lg font-semibold text-action">{summary.githubWorkflowsRunning ?? 0}</p>
+        </Card>
+        <Card label="GitHub failed" tone={(summary.githubWorkflowsFailed ?? 0) > 0 ? "critical" : undefined} href="/github">
+          <p className="text-lg font-semibold text-critical">{summary.githubWorkflowsFailed ?? 0}</p>
+        </Card>
+        <Card label="GitHub success" href="/github">
+          <p className="text-lg font-semibold text-healthy">{summary.githubWorkflowsSucceeded ?? 0}</p>
         </Card>
       </section>
     </div>

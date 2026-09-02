@@ -21,8 +21,8 @@ async def lifespan(_application: FastAPI):
 def create_app() -> FastAPI:
     application = FastAPI(
         title=settings.app_name,
-        version="0.7.0",
-        description="CloudOps Platform API. Certificate monitoring classifies expiry in the backend. Credential metadata is stored in PostgreSQL; secret material stays in a secret backend. Private keys are never stored.",
+        version="0.8.0",
+        description="CloudOps Platform API. GitHub Actions visibility and certificate monitoring. Credential and GitHub App private keys stay in a secret backend. Secret values are never stored in PostgreSQL.",
         lifespan=lifespan,
     )
     application.add_middleware(CorrelationIdMiddleware)
@@ -30,7 +30,7 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["*"],
         expose_headers=["X-Correlation-ID"],
     )

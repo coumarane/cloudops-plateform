@@ -160,6 +160,9 @@ export function summarizeKpis(rows: MatrixRow[], filters: DashboardFilters): Kpi
     secretsOverdue: 0,
     failedDeploys: 0,
     githubFailures: 0,
+    githubWorkflowsRunning: 0,
+    githubWorkflowsFailed: 0,
+    githubWorkflowsSucceeded: 0,
     pipelineFailures: 0,
     openAlerts: 0,
   };

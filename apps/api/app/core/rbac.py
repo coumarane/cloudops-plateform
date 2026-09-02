@@ -18,6 +18,17 @@ PERMISSIONS = {
     "certificate:scan",
     "certificate:validate",
     "certificate:ack",
+    "github:read",
+    "github:sync",
+    "github_variable:read",
+    "github_variable:update",
+    "github_secret:read_metadata",
+    "github_secret:create",
+    "github_secret:update",
+    "github_secret:delete",
+    "github_secret:prod_update",
+    "github_mapping:read",
+    "github_mapping:update",
 }
 
 ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
@@ -34,11 +45,40 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "certificate:scan",
             "certificate:validate",
             "certificate:ack",
+            "github:read",
+            "github:sync",
+            "github_variable:read",
+            "github_variable:update",
+            "github_secret:read_metadata",
+            "github_secret:create",
+            "github_secret:update",
+            "github_secret:delete",
+            "github_mapping:read",
+            "github_mapping:update",
         }
     ),
-    "SecurityAuditor": frozenset({"credential:read", "credential:read_history", "certificate:read"}),
-    "Developer": frozenset({"credential:read", "certificate:read"}),
-    "ReadOnly": frozenset({"credential:read", "certificate:read"}),
+    "SecurityAuditor": frozenset(
+        {
+            "credential:read",
+            "credential:read_history",
+            "certificate:read",
+            "github:read",
+            "github_variable:read",
+            "github_secret:read_metadata",
+            "github_mapping:read",
+        }
+    ),
+    "Developer": frozenset(
+        {
+            "credential:read",
+            "certificate:read",
+            "github:read",
+            "github_variable:read",
+            "github_variable:update",
+            "github_secret:read_metadata",
+        }
+    ),
+    "ReadOnly": frozenset({"credential:read", "certificate:read", "github:read", "github_variable:read", "github_secret:read_metadata", "github_mapping:read"}),
 }
 
 _ROLE_ALIASES = {

@@ -31,6 +31,12 @@ celery_app = Celery(
         "tasks.certificate_endpoint",
         "tasks.certificate_alerts",
         "tasks.certificate_validate",
+        "tasks.github_repository_sync",
+        "tasks.github_workflow_sync",
+        "tasks.github_workflow_run_sync",
+        "tasks.github_variable_sync",
+        "tasks.github_secret_sync",
+        "tasks.github_webhook",
     ),
 )
 celery_app.conf.update(
@@ -61,6 +67,26 @@ celery_app.conf.update(
         "certificate-alert-evaluation": {
             "task": "tasks.certificate_alerts.periodic_scan",
             "schedule": settings.certificate_alert_interval_seconds,
+        },
+        "github-repository-sync": {
+            "task": "tasks.github_repository_sync.periodic_scan",
+            "schedule": settings.github_repository_sync_interval_seconds,
+        },
+        "github-workflow-sync": {
+            "task": "tasks.github_workflow_sync.periodic_scan",
+            "schedule": settings.github_workflow_sync_interval_seconds,
+        },
+        "github-workflow-run-sync": {
+            "task": "tasks.github_workflow_run_sync.periodic_scan",
+            "schedule": settings.github_workflow_run_sync_interval_seconds,
+        },
+        "github-variable-sync": {
+            "task": "tasks.github_variable_sync.periodic_scan",
+            "schedule": settings.github_variable_sync_interval_seconds,
+        },
+        "github-secret-metadata-sync": {
+            "task": "tasks.github_secret_sync.periodic_scan",
+            "schedule": settings.github_secret_sync_interval_seconds,
         },
     },
 )

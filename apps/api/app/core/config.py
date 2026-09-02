@@ -56,7 +56,24 @@ class Settings(BaseSettings):
     certificate_alert_severity_urgent: str = "CRITICAL"
     certificate_alert_severity_expired: str = "CRITICAL"
     certificate_notification_provider: str = "log"
-    slack_webhook_url: str = ""
+    github_app_id: str = ""
+    github_installation_id: str = ""
+    github_private_key_ref: str = ""
+    github_organization: str = ""
+    github_api_url: str = "https://api.github.com"
+    github_webhook_secret: str = ""
+    github_webhook_secret_ref: str = ""
+    github_repository_sync_interval_seconds: int = 6 * 60 * 60
+    github_workflow_sync_interval_seconds: int = 60 * 60
+    github_workflow_run_sync_interval_seconds: int = 5 * 60
+    github_variable_sync_interval_seconds: int = 60 * 60
+    github_secret_sync_interval_seconds: int = 60 * 60
+    github_alert_dev: str = ""
+    github_alert_int_tst: str = ""
+    github_alert_uat: str = "MEDIUM"
+    github_alert_npd: str = "HIGH"
+    github_alert_prd: str = "CRITICAL"
+    github_variable_sensitive_default: bool = False
 
 
 settings = Settings()

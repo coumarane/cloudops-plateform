@@ -368,3 +368,224 @@ class CertificateAuditRow(Base):
     detail: Mapped[str] = mapped_column(Text, default="")
     correlation_id: Mapped[str] = mapped_column(String(64), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class GithubIntegrationRow(Base):
+    __tablename__ = "github_integrations"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    app_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    installation_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    organization: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    api_url: Mapped[str] = mapped_column(String(255), nullable=False, default="https://api.github.com")
+    private_key_ref: Mapped[str] = mapped_column(String(512), nullable=False)
+    webhook_secret_ref: Mapped[str] = mapped_column(String(512), default="")
+    status: Mapped[str] = mapped_column(String(32), default="pending")
+    last_validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_synchronized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error: Mapped[str] = mapped_column(Text, default="")
+    last_error_class: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class GithubOrganizationRow(Base):
+    __tablename__ = "github_organizations"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    integration_id: Mapped[str] = mapped_column(String(64), ForeignKey("github_integrations.id"), nullable=False)
+    github_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    login: Mapped[str] = mapped_column(String(128), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), default="")
+    avatar_url: Mapped[str] = mapped_column(String(512), default="")
+    html_url: Mapped[str] = mapped_column(String(512), default="")
+    status: Mapped[str] = mapped_column(String(32), default="ok")
+    last_synchronized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class GithubRepositoryRow(Base):
+    __tablename__ = "github_repositories"
+    __table_args__ = (UniqueConstraint("github_id", name="uq_github_repositories_github_id"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    organization_id: Mapped[str] = mapped_column(String(64), ForeignKey("github_organizations.id"), nullable=False)
+    github_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    organization: Mapped[str] = mapped_column(String(128), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, default="")
+    default_branch: Mapped[str] = mapped_column(String(128), default="main")
+    visibility: Mapped[str] = mapped_column(String(32), default="private")
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    html_url: Mapped[str] = mapped_column(String(512), default="")
+    pushed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_synchronized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class GithubApplicationRepositoryRow(Base):
+    __tablename__ = "github_application_repositories"
+    __table_args__ = (UniqueConstraint("repository_id", "application_id", name="uq_github_app_repo"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    repository_id: Mapped[str] = mapped_column(String(64), ForeignKey("github_repositories.id"), nullable=False)
+    application_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class GithubEnvironmentMappingRow(Base):
+    __tablename__ = "github_environment_mapping"
+    __table_args__ = (
+        UniqueConstraint("github_repository_id", "github_environment", name="uq_github_env_mapping"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    github_repository_id: Mapped[str] = mapped_column(String(64), ForeignKey("github_repositories.id"), nullable=False)
+    github_environment: Mapped[str] = mapped_column(String(128), nullable=False)
+    cloudops_environment_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class GithubWorkflowRow(Base):
+    __tablename__ = "github_workflows"
+    __table_args__ = (UniqueConstraint("github_id", name="uq_github_workflows_github_id"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    repository_id: Mapped[str] = mapped_column(String(64), ForeignKey("github_repositories.id"), nullable=False)
+    github_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    path: Mapped[str] = mapped_column(String(512), default="")
+    state: Mapped[str] = mapped_column(String(32), default="active")
+    html_url: Mapped[str] = mapped_column(String(512), default="")
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_synchronized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class GithubWorkflowRunRow(Base):
+    __tablename__ = "github_workflow_runs"
+    __table_args__ = (UniqueConstraint("github_id", name="uq_github_workflow_runs_github_id"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    workflow_id: Mapped[str] = mapped_column(String(64), ForeignKey("github_workflows.id"), nullable=False)
+    repository_id: Mapped[str] = mapped_column(String(64), ForeignKey("github_repositories.id"), nullable=False)
+    github_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    branch: Mapped[str] = mapped_column(String(255), default="")
+    commit_sha: Mapped[str] = mapped_column(String(64), default="")
+    event: Mapped[str] = mapped_column(String(64), default="")
+    actor: Mapped[str] = mapped_column(String(128), default="")
+    github_status: Mapped[str] = mapped_column(String(32), default="")
+    github_conclusion: Mapped[str] = mapped_column(String(32), default="")
+    status: Mapped[str] = mapped_column(String(32), default="UNKNOWN")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    run_attempt: Mapped[int] = mapped_column(Integer, default=1)
+    html_url: Mapped[str] = mapped_column(String(512), default="")
+    github_environment: Mapped[str] = mapped_column(String(128), default="")
+    cloudops_environment_id: Mapped[str] = mapped_column(String(128), default="")
+    application_id: Mapped[str] = mapped_column(String(128), default="")
+    deployment_id: Mapped[str] = mapped_column(String(128), default="")
+    cluster_id: Mapped[str] = mapped_column(String(128), default="")
+
+
+class GithubWorkflowJobRow(Base):
+    __tablename__ = "github_workflow_jobs"
+    __table_args__ = (UniqueConstraint("github_id", name="uq_github_workflow_jobs_github_id"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    run_id: Mapped[str] = mapped_column(String(64), ForeignKey("github_workflow_runs.id"), nullable=False)
+    github_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    github_status: Mapped[str] = mapped_column(String(32), default="")
+    github_conclusion: Mapped[str] = mapped_column(String(32), default="")
+    status: Mapped[str] = mapped_column(String(32), default="UNKNOWN")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    runner_name: Mapped[str] = mapped_column(String(128), default="")
+    runner_type: Mapped[str] = mapped_column(String(128), default="")
+    html_url: Mapped[str] = mapped_column(String(512), default="")
+
+
+class GithubVariableRow(Base):
+    __tablename__ = "github_variables"
+    __table_args__ = (
+        UniqueConstraint("repository_id", "name", "scope", "github_environment", name="uq_github_variables"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    repository_id: Mapped[str] = mapped_column(String(64), ForeignKey("github_repositories.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    scope: Mapped[str] = mapped_column(String(32), nullable=False, default="repository")
+    github_environment: Mapped[str] = mapped_column(String(128), default="")
+    organization: Mapped[str] = mapped_column(String(128), default="")
+    value_masked: Mapped[str] = mapped_column(String(64), default="••••••••••••")
+    sensitive: Mapped[bool] = mapped_column(Boolean, default=False)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cloudops_environment_id: Mapped[str] = mapped_column(String(128), default="")
+
+
+class GithubSecretRow(Base):
+    __tablename__ = "github_secrets"
+    __table_args__ = (
+        UniqueConstraint("repository_id", "name", "scope", "github_environment", name="uq_github_secrets"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    repository_id: Mapped[str] = mapped_column(String(64), ForeignKey("github_repositories.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    scope: Mapped[str] = mapped_column(String(32), nullable=False, default="repository")
+    github_environment: Mapped[str] = mapped_column(String(128), default="")
+    organization: Mapped[str] = mapped_column(String(128), default="")
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cloudops_environment_id: Mapped[str] = mapped_column(String(128), default="")
+
+
+class GithubWebhookDeliveryRow(Base):
+    __tablename__ = "github_webhook_deliveries"
+    __table_args__ = (UniqueConstraint("delivery_id", name="uq_github_webhook_delivery"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    delivery_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    event: Mapped[str] = mapped_column(String(64), nullable=False)
+    action: Mapped[str] = mapped_column(String(64), default="")
+    payload_digest: Mapped[str] = mapped_column(String(64), default="")
+    payload_json: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(32), default="queued")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class GithubAuditRow(Base):
+    __tablename__ = "github_audit_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    actor: Mapped[str] = mapped_column(String(128), nullable=False)
+    object_name: Mapped[str] = mapped_column(String(255), default="")
+    repository_id: Mapped[str] = mapped_column(String(64), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    result: Mapped[str] = mapped_column(String(32), default="succeeded")
+    detail: Mapped[str] = mapped_column(Text, default="")
+    correlation_id: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class GithubAlertRow(Base):
+    __tablename__ = "github_alerts"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(48), nullable=False)
+    run_id: Mapped[str] = mapped_column(String(64), default="")
+    repository_id: Mapped[str] = mapped_column(String(64), default="")
+    workflow_id: Mapped[str] = mapped_column(String(64), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    severity: Mapped[str] = mapped_column(String(16), default="MEDIUM")
+    status: Mapped[str] = mapped_column(String(24), default="OPEN")
+    title: Mapped[str] = mapped_column(String(255), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
