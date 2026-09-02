@@ -2,7 +2,7 @@
 
 FastAPI service for the CloudOps console.
 
-Phase 5 uses live adapters for **AWS AMER/EMEA/APAC** and **Alibaba China**. Topology is config/database-driven. PRD is read-only. Discovery and monitoring only.
+Phase 6 stores credential **metadata** in PostgreSQL and secret material in a secret backend (`local` for development only). Topology remains config/database-driven. PRD inventory is read-only. NPD/PRD credential writes require `credential:prod_update`.
 
 ```bash
 cd apps/api
@@ -36,6 +36,12 @@ Prefer IAM role assumption. Do not put access keys in PostgreSQL.
 | `CLOUDOPS_DATABASE_URL` | SQLAlchemy URL (PostgreSQL in production) |
 | `CLOUDOPS_REDIS_URL` | Celery broker |
 | `CLOUDOPS_CELERY_EAGER` | `true` runs jobs in-process for local use |
+| `CLOUDOPS_SECRET_BACKEND` | `local` (dev/tests), `aws`, or `alibaba` |
+| `CLOUDOPS_ALLOW_LOCAL_SECRETS` | Must be `false` in production |
+| `CLOUDOPS_REQUIRE_AUTH` | Require `X-CloudOps-User` |
+| `CLOUDOPS_REQUIRE_HTTPS` | Reject non-HTTPS when `X-Forwarded-Proto` is not https |
+
+Secret values, tokens, private keys, PEM, kubeconfig, AWS access keys, and Alibaba AccessKey Secrets are never returned. Credential lifecycle: [docs/credentials.md](../../docs/credentials.md).
 
 ## Alibaba China connection
 

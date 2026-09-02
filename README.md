@@ -2,7 +2,7 @@
 
 Enterprise multi-cloud operations portal for AWS EKS and Alibaba ACK.
 
-## Local run (Phase 5)
+## Local run (Phase 6)
 
 Start PostgreSQL and Redis if you are not using the SQLite / eager-Celery defaults, then FastAPI and Next.js.
 
@@ -26,8 +26,9 @@ Optional worker (when `CLOUDOPS_CELERY_EAGER=false`):
 ```bash
 cd apps/worker
 PYTHONPATH=../api:. python3 -m celery -A celery_app worker --loglevel=info
+PYTHONPATH=../api:. python3 -m celery -A celery_app beat --loglevel=info
 ```
 
-Live AWS data is used for **AMER, EMEA, and APAC** after a successful scan of that account. Live Alibaba data is used for **China** after a successful ACK scan. Unscanned cells keep mock catalog data. PRD is read-only.
+Live AWS data is used for **AMER, EMEA, and APAC** after a successful scan of that account. Live Alibaba data is used for **China** after a successful ACK scan. Unscanned cells keep mock catalog data. PRD is read-only for cluster inventory. Credential replace on NPD/PRD requires `credential:prod_update`.
 
-Secret values are never returned by the API or rendered in the console. See [docs/aws-emea-dev-iam.md](docs/aws-emea-dev-iam.md) and [docs/alibaba-china-ram.md](docs/alibaba-china-ram.md).
+Secret values are never returned by the API or rendered in the console. See [docs/credentials.md](docs/credentials.md), [docs/aws-emea-dev-iam.md](docs/aws-emea-dev-iam.md) and [docs/alibaba-china-ram.md](docs/alibaba-china-ram.md).

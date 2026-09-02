@@ -33,5 +33,16 @@ class Settings(BaseSettings):
     alibaba_scan_concurrency: int = 2
     alibaba_cloud_region: str = "cn-hangzhou"
 
+    secret_backend: str = "local"
+    allow_local_secrets: bool = True
+    require_auth: bool = False
+    default_role: str = "PlatformAdmin"
+    default_user: str = "ops@cloudops.local"
+    max_secret_bytes: int = 65536
+    credential_validate_rate_per_minute: int = 10
+    credential_mutate_rate_per_minute: int = 5
+    rotation_due_soon_days: int = 14
+    require_https: bool = False
+
 
 settings = Settings()

@@ -167,7 +167,7 @@ export type AdminIntegration = {
 export type SecretHistoryEvent = {
   at: string;
   actor: string;
-  action: "Update" | "Rotate" | "Validate";
+  action: "Update" | "Rotate" | "Validate" | "Replace";
   result: "Succeeded" | "Failed" | "Cancelled";
   detail: string;
 };
@@ -185,6 +185,49 @@ export type SecretRecord = {
   nextDue: string;
   lastValidated: string;
   history: SecretHistoryEvent[];
+  credentialType?: string | null;
+  secretBackend?: string | null;
+  fingerprint?: string | null;
+  updatedBy?: string | null;
+  lifecycleStatus?: string | null;
+  source?: "mock" | "live";
+  maskedValue?: string;
+};
+
+export type CredentialRecord = {
+  id: string;
+  name: string;
+  provider: Provider;
+  region: Region;
+  account: string;
+  environment: Environment;
+  accountId?: string;
+  environmentId?: string;
+  credentialType: string;
+  secretBackend: string;
+  secretReference: string;
+  fingerprint: string;
+  status: string;
+  lastValidatedAt?: string | null;
+  lastRotatedAt?: string | null;
+  rotationDueAt?: string | null;
+  rotationPolicyDays?: number;
+  createdAt: string;
+  updatedAt: string;
+  updatedBy: string;
+  roleArn?: string;
+  externalIdRef?: string;
+  cloudRegion?: string;
+  maskedValue?: string;
+};
+
+export type CredentialHistoryEvent = {
+  id: string;
+  action: string;
+  result: string;
+  detail: string;
+  actor: string;
+  createdAt: string;
 };
 
 export type CertificateRecord = {

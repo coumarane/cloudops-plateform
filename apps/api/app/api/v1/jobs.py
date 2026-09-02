@@ -8,6 +8,7 @@ from app.services.job_kinds import (
     KIND_ALIBABA_HEALTH,
     KIND_ALIBABA_VALIDATION,
     KIND_CERTIFICATES,
+    KIND_CREDENTIAL_ROTATION_SCAN,
     KIND_DISCOVERY,
     KIND_HEALTH,
 )
@@ -66,3 +67,8 @@ def trigger_alibaba_certificates() -> dict:
 @router.post("/jobs/alibaba/certificate-expiry-scan")
 def trigger_alibaba_cert_expiry() -> dict:
     return _queued(KIND_ALIBABA_CERT_EXPIRY)
+
+
+@router.post("/jobs/credentials/rotation-status-scan")
+def trigger_credential_rotation_scan() -> dict:
+    return _queued(KIND_CREDENTIAL_ROTATION_SCAN)

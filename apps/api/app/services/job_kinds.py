@@ -6,6 +6,8 @@ KIND_ALIBABA_DISCOVERY = "alibaba-cluster-discovery"
 KIND_ALIBABA_HEALTH = "alibaba-health-scan"
 KIND_ALIBABA_CERTIFICATES = "alibaba-certificate-discovery"
 KIND_ALIBABA_CERT_EXPIRY = "alibaba-certificate-expiry-scan"
+KIND_CREDENTIAL_VALIDATE = "credential-validate"
+KIND_CREDENTIAL_ROTATION_SCAN = "credential-rotation-status-scan"
 
 JOB_NAMES = {
     KIND_DISCOVERY: "AWS multi-account cluster discovery",
@@ -16,6 +18,8 @@ JOB_NAMES = {
     KIND_ALIBABA_HEALTH: "Alibaba China ACK health scan",
     KIND_ALIBABA_CERTIFICATES: "Alibaba China certificate discovery",
     KIND_ALIBABA_CERT_EXPIRY: "Alibaba China certificate expiry scan",
+    KIND_CREDENTIAL_VALIDATE: "Credential identity validation",
+    KIND_CREDENTIAL_ROTATION_SCAN: "Credential rotation status scan",
 }
 
 JOB_PROVIDERS = {
@@ -27,6 +31,8 @@ JOB_PROVIDERS = {
     KIND_ALIBABA_HEALTH: "Alibaba",
     KIND_ALIBABA_CERTIFICATES: "Alibaba",
     KIND_ALIBABA_CERT_EXPIRY: "Alibaba",
+    KIND_CREDENTIAL_VALIDATE: "AWS",
+    KIND_CREDENTIAL_ROTATION_SCAN: "AWS",
 }
 
 TASK_NAMES = {
@@ -38,4 +44,6 @@ TASK_NAMES = {
     KIND_ALIBABA_HEALTH: "tasks.alibaba_cluster_health.scan_health",
     KIND_ALIBABA_CERTIFICATES: "tasks.alibaba_certificate_scan.scan_certificates",
     KIND_ALIBABA_CERT_EXPIRY: "tasks.alibaba_certificate_expiry.scan_expiry",
+    KIND_CREDENTIAL_VALIDATE: "tasks.credential_validate.validate_credential",
+    KIND_CREDENTIAL_ROTATION_SCAN: "tasks.credential_rotation_scan.scan_rotation_status",
 }

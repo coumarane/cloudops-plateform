@@ -33,22 +33,40 @@ export async function getJson<T>(path: string, scope?: ScopeQuery, signal?: Abor
     cache: "no-store",
   });
   if (!response.ok) {
-    throw new ApiError(`CloudOps API request failed (${response.status})`, response.status);
+    throw await toApiError(response);
   }
   return (await response.json()) as T;
 }
 
 export async function postJson<T>(path: string, signal?: AbortSignal): Promise<T> {
+  return postJsonBody<T>(path, undefined, signal);
+}
+
+export async function postJsonBody<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`${API_PREFIX}${path}`, {
     method: "POST",
     signal,
     headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
     cache: "no-store",
   });
   if (!response.ok) {
-    throw new ApiError(`CloudOps API request failed (${response.status})`, response.status);
+    throw await toApiError(response);
   }
   return (await response.json()) as T;
+}
+
+async function toApiError(response: Response): Promise<ApiError> {
+  let detail = `CloudOps API request failed (${response.status})`;
+  try {
+    const payload = (await response.json()) as { detail?: unknown };
+    if (typeof payload.detail === "string" && payload.detail) {
+      detail = payload.detail;
+    }
+  } catch {
+    // Response body is not JSON; keep the status message.
+  }
+  return new ApiError(detail, response.status);
 }
 
 export async function getList<T>(path: string, scope?: ScopeQuery, signal?: AbortSignal): Promise<ListResponse<T>> {

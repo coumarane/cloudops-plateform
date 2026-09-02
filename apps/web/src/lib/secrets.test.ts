@@ -55,12 +55,13 @@ describe("secrets management", () => {
         account: "prod-amer",
         environment: "PRD",
         secret: "sec-amer-prd-app",
-        action: "rotate",
+        action: "replace",
       }),
     ).toBe(
-      "/secrets?provider=aws&region=amer&account=prod-amer&environment=prd&secret=sec-amer-prd-app&action=rotate",
+      "/secrets?provider=aws&region=amer&account=prod-amer&environment=prd&secret=sec-amer-prd-app&action=replace",
     );
-    expect(parseSecretAction("rotate")).toBe("rotate");
+    expect(parseSecretAction("replace")).toBe("replace");
+    expect(parseSecretAction("rotate")).toBe("replace");
     expect(parseSecretAction("reveal")).toBeNull();
   });
 

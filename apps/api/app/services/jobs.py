@@ -11,16 +11,31 @@ from app.services.task_dispatch import submit_job
 logger = get_logger(__name__)
 
 
-def enqueue_job(kind: str) -> PlatformJobRow:
+def enqueue_job(
+    kind: str,
+    *,
+    target_id: str = "",
+    provider: str | None = None,
+    platform_region: str | None = None,
+    environment: str | None = None,
+) -> PlatformJobRow:
     correlation_id = current_correlation_id()
     session = SessionLocal()
     try:
         repo = InventoryRepository(session)
-        existing = repo.find_running_job(kind)
+        existing = repo.find_running_job(kind, target_id=target_id)
         if existing:
             session.commit()
             return existing
-        job = repo.create_job(kind, JOB_NAMES[kind], correlation_id, provider=JOB_PROVIDERS.get(kind, "AWS"))
+        job = repo.create_job(
+            kind,
+            JOB_NAMES[kind],
+            correlation_id,
+            provider=provider or JOB_PROVIDERS.get(kind, "AWS"),
+            target_id=target_id,
+            platform_region=platform_region,
+            environment=environment,
+        )
         session.commit()
         session.refresh(job)
         try:

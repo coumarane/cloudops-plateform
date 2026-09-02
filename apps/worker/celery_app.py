@@ -24,6 +24,8 @@ celery_app = Celery(
         "tasks.alibaba_cluster_health",
         "tasks.alibaba_certificate_scan",
         "tasks.alibaba_certificate_expiry",
+        "tasks.credential_validate",
+        "tasks.credential_rotation_scan",
     ),
 )
 celery_app.conf.update(
@@ -34,4 +36,10 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
+    beat_schedule={
+        "credential-rotation-status-scan": {
+            "task": "tasks.credential_rotation_scan.periodic_scan",
+            "schedule": 6 * 60 * 60,
+        }
+    },
 )

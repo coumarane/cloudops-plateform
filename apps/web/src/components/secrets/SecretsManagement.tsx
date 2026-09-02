@@ -17,8 +17,9 @@ import {
 } from "@/lib/environment";
 import { QueryState } from "@/components/status/QueryState";
 import { cloudOpsApi } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/errors";
 import { useResource } from "@/lib/api/use-resource";
-import { parseSecretAction, parseSecretsFilters, type SecretAction } from "@/lib/secrets";
+import { isLiveCredential, parseSecretAction, parseSecretsFilters, type SecretAction } from "@/lib/secrets";
 import { listSecretAccounts, summarizeSecrets, type ManagedSecret } from "@/lib/secrets-data";
 import { ENVIRONMENTS } from "@/lib/types";
 
@@ -39,6 +40,7 @@ export function SecretsManagement({
   const environment = parseEnvironment(searchParams.get("environment") ?? "") ?? initial.environment ?? "all";
   const selectedId = searchParams.get("secret") || initial.secret;
   const selectedAction = parseSecretAction(searchParams.get("action")) ?? initial.action;
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const regions = regionsForProvider(provider === "all" ? "all" : provider);
   const accountsState = useResource(
@@ -56,7 +58,7 @@ export function SecretsManagement({
         },
         signal,
       ),
-    [provider, region, account, environment],
+    [provider, region, account, environment, refreshKey],
   );
   const secrets = state.status === "success" ? state.data.items : [];
   const accounts =
@@ -94,14 +96,61 @@ export function SecretsManagement({
     setFilter({ secret: null, action: null });
   }
 
-  function confirmAction(secret: ManagedSecret, action: Exclude<SecretAction, "history">) {
+  async function confirmAction(
+    secret: ManagedSecret,
+    action: Exclude<SecretAction, "history">,
+    input: {
+      secretValue?: string;
+      confirmed: boolean;
+      reason: string;
+      changeTicket: string;
+      rotationPolicyDays?: number;
+    },
+  ) {
     const prd = secret.environment === "PRD";
+    const live = isLiveCredential(secret.id);
+    const confirmation = {
+      confirmed: input.confirmed,
+      reason: input.reason,
+      changeTicket: input.changeTicket,
+    };
+    if (action === "validate") {
+      if (!live) {
+        throw new ApiError("Catalog rows cannot be validated until they are registered as credentials.", 400);
+      }
+      await cloudOpsApi.validateCredential(secret.id);
+    } else if (action === "update") {
+      if (!live) {
+        throw new ApiError("Catalog rows cannot be updated until they are registered as credentials.", 400);
+      }
+      await cloudOpsApi.updateCredential(secret.id, {
+        rotationPolicyDays: input.rotationPolicyDays,
+        ...confirmation,
+      });
+    } else if (live) {
+      await cloudOpsApi.replaceCredential(secret.id, {
+        secretValue: input.secretValue,
+        ...confirmation,
+      });
+    } else {
+      await cloudOpsApi.createCredential({
+        name: secret.name,
+        provider: secret.provider,
+        region: secret.region,
+        account: secret.account,
+        environment: secret.environment,
+        credentialType: secret.credentialType || "application",
+        secretValue: input.secretValue,
+        ...confirmation,
+      });
+    }
     setNotice({
       tone: prd ? "prd" : "ok",
       text: prd
         ? `${actionLabel(action)} requested in PRD for ${secret.name}. Secret values were not retrieved.`
         : `${actionLabel(action)} requested for ${secret.name}. Secret values were not retrieved.`,
     });
+    setRefreshKey((value) => value + 1);
     closeAction();
   }
 
@@ -109,7 +158,7 @@ export function SecretsManagement({
     <>
       <PageHeader
         title="Secrets Management"
-        subtitle="Provider → Region → Account → Environment. Secret values are never displayed."
+        subtitle="Provider → Region → Account → Environment → Credential. Secret values are never displayed and cannot be retrieved."
         meta={state.status === "success" ? `Last synced: ${state.data.lastSynced}` : "Last synced: —"}
       />
       <div className="flex flex-wrap items-center gap-4 border-b border-outline bg-canvas px-6 py-2 text-[11px] font-bold uppercase tracking-wide text-muted">
@@ -199,14 +248,14 @@ export function SecretsManagement({
                   <Kpi label="Secrets in scope" value={summary.inScope} />
                   <Kpi label="Rotation overdue" value={summary.overdue} tone={summary.overdue > 0 ? "warning" : undefined} />
                   <Kpi label="Due within 14d" value={summary.dueSoon} tone={summary.dueSoon > 0 ? "warning" : undefined} />
-                  <Kpi label="Validation failures" value={0} />
+                  <Kpi label="Validation failures" value={summary.invalid} tone={summary.invalid > 0 ? "warning" : undefined} />
                   <Kpi label="PRD secrets" value={summary.prd} tone={summary.prd > 0 ? "prd" : undefined} />
                 </section>
                 <section className="rounded border border-outline bg-white">
                   <div className="border-b border-outline bg-surface-low px-4 py-3">
                     <h2 className="text-[15px] font-semibold text-ink">Secrets catalog</h2>
                     <p className="mt-1 text-xs text-muted">
-                      Rotation state and due dates only. Secret values are never displayed.
+                      Metadata, fingerprints, and rotation state only. Secret values are never displayed and cannot be retrieved.
                     </p>
                   </div>
                   <SecretsTable secrets={secrets} onAction={openAction} />
@@ -215,7 +264,7 @@ export function SecretsManagement({
             )}
           </QueryState>
           <p className="border-t border-outline pt-4 text-center font-mono text-xs text-muted">
-            Secret values are never displayed in this console.
+            Secret values are never displayed in this console and cannot be retrieved after they are stored.
           </p>
         </div>
       </main>
@@ -224,7 +273,7 @@ export function SecretsManagement({
           secret={selected}
           action={selectedAction}
           onClose={closeAction}
-          onConfirm={confirmAction}
+          onConfirm={(input) => confirmAction(selected, selectedAction === "history" ? "update" : selectedAction, input)}
         />
       ) : null}
     </>
@@ -245,7 +294,6 @@ function Kpi({ label, value, tone }: { label: string; value: number; tone?: "war
 
 function actionLabel(action: Exclude<SecretAction, "history">): string {
   if (action === "update") return "Update";
-  if (action === "rotate") return "Rotate";
+  if (action === "replace") return "Replace";
   return "Validate";
 }
-

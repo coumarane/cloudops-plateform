@@ -286,13 +286,27 @@ class InventoryRepository:
             )
         )
 
-    def find_running_job(self, kind: str) -> PlatformJobRow | None:
+    def find_running_job(self, kind: str, *, target_id: str = "") -> PlatformJobRow | None:
         return self.session.scalar(
-            select(PlatformJobRow).where(PlatformJobRow.kind == kind, PlatformJobRow.status.in_(("queued", "running")))
+            select(PlatformJobRow).where(
+                PlatformJobRow.kind == kind,
+                PlatformJobRow.status.in_(("queued", "running")),
+                PlatformJobRow.target_id == target_id,
+            )
         )
 
-    def create_job(self, kind: str, name: str, correlation_id: str, *, provider: str = "AWS") -> PlatformJobRow:
-        existing = self.find_running_job(kind)
+    def create_job(
+        self,
+        kind: str,
+        name: str,
+        correlation_id: str,
+        *,
+        provider: str = "AWS",
+        target_id: str = "",
+        platform_region: str | None = None,
+        environment: str | None = None,
+    ) -> PlatformJobRow:
+        existing = self.find_running_job(kind, target_id=target_id)
         if existing:
             return existing
         row = PlatformJobRow(
@@ -303,9 +317,10 @@ class InventoryRepository:
             detail="Queued",
             correlation_id=correlation_id,
             provider=provider,
-            platform_region="China" if provider == "Alibaba" else "AMER",
-            environment="DEV",
+            platform_region=platform_region or ("China" if provider == "Alibaba" else "AMER"),
+            environment=environment or "DEV",
             created_at=utcnow(),
+            target_id=target_id,
         )
         self.session.add(row)
         self.session.flush()

@@ -25,10 +25,11 @@ export function filterManagedSecrets(
 export function summarizeSecrets(secrets: ManagedSecret[]) {
   return {
     inScope: secrets.length,
-    overdue: secrets.filter((secret) => secret.status === "Overdue").length,
-    dueSoon: secrets.filter((secret) => secret.status === "Due soon").length,
+    overdue: secrets.filter((secret) => secret.status === "Overdue" || secret.lifecycleStatus === "OVERDUE").length,
+    dueSoon: secrets.filter((secret) => secret.status === "Due soon" || secret.lifecycleStatus === "ROTATION_DUE").length,
     production: secrets.filter((secret) => isProductionEnvironment(secret.environment)).length,
     prd: secrets.filter((secret) => secret.environment === "PRD").length,
+    invalid: secrets.filter((secret) => secret.lifecycleStatus === "INVALID").length,
   };
 }
 

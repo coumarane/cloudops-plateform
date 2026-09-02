@@ -11,6 +11,7 @@ from app.services.alibaba_sync import (
     run_health_scan as run_alibaba_health,
 )
 from app.services.aws_sync import run_certificate_scan, run_cluster_discovery, run_health_scan
+from app.services.credential_jobs import run_credential_validation, run_rotation_status_scan
 from app.services.job_kinds import (
     KIND_ALIBABA_CERT_EXPIRY,
     KIND_ALIBABA_CERTIFICATES,
@@ -18,6 +19,8 @@ from app.services.job_kinds import (
     KIND_ALIBABA_HEALTH,
     KIND_ALIBABA_VALIDATION,
     KIND_CERTIFICATES,
+    KIND_CREDENTIAL_ROTATION_SCAN,
+    KIND_CREDENTIAL_VALIDATE,
     KIND_DISCOVERY,
     KIND_HEALTH,
     TASK_NAMES,
@@ -43,6 +46,10 @@ def _run_inline(kind: str, job_id: str) -> None:
         run_alibaba_certificates(job_id)
     elif kind == KIND_ALIBABA_CERT_EXPIRY:
         run_alibaba_cert_expiry(job_id)
+    elif kind == KIND_CREDENTIAL_VALIDATE:
+        run_credential_validation(job_id)
+    elif kind == KIND_CREDENTIAL_ROTATION_SCAN:
+        run_rotation_status_scan(job_id)
     else:
         raise ValueError(kind)
 

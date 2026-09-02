@@ -12,9 +12,13 @@ _SECRET_PATTERNS = (
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"LTAI[A-Za-z0-9]{12,}"),
     re.compile(r"(?i)(aws_secret_access_key|secret_access_key|session_token|private_key|access_key_secret)\s*[:=]\s*\S+"),
+    re.compile(r"(?i)(accesskeyid|access_key_id|aws_access_key_id)\s*[:=]\s*\S+"),
+    re.compile(r"(?i)(accesskeysecret|secretaccesskey)\s*[:=]\s*\S+"),
+    re.compile(r'(?i)"(secretaccesskey|accesskeysecret|sessiontoken|password|secretvalue|aws_secret_access_key)"\s*:\s*"[^"]*"'),
     re.compile(r"(?i)k8s-aws-v1\.[A-Za-z0-9_\-=]+"),
     re.compile(r"(?i)bearer\s+[A-Za-z0-9\-._~+/]+=*"),
     re.compile(r"(?i)(password|token|apikey|api_key|secret[_-]?value)\s*[:=]\s*\S+"),
+    re.compile(r"(?i)authorization:\s*\S+"),
 )
 
 
@@ -45,10 +49,12 @@ def _is_sensitive_key(key: str) -> bool:
             "token",
             "access_key",
             "access_key_secret",
+            "accesskeysecret",
             "session",
             "private_key",
             "kubeconfig",
             "pem",
+            "authorization",
         )
     )
 

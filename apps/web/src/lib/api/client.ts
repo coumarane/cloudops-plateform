@@ -1,4 +1,4 @@
-import { getJson, getList, postJson, type ListResponse, type ScopeQuery } from "./http";
+import { getJson, getList, postJson, postJsonBody, type ListResponse, type ScopeQuery } from "./http";
 import type {
   AccountRecord,
   AdminIntegration,
@@ -8,6 +8,8 @@ import type {
   CertificateRecord,
   ClusterHealthRecord,
   ClusterRecord,
+  CredentialHistoryEvent,
+  CredentialRecord,
   DashboardSnapshot,
   EnvironmentIdentity,
   EnvironmentRecord,
@@ -41,6 +43,27 @@ export const cloudOpsApi = {
   certificates: (scope?: ScopeQuery, signal?: AbortSignal) =>
     getList<CertificateRecord>("/certificates", scope, signal),
   secrets: (scope?: ScopeQuery, signal?: AbortSignal) => getList<SecretRecord>("/secrets", scope, signal),
+  credentials: (scope?: ScopeQuery, signal?: AbortSignal) => getList<CredentialRecord>("/credentials", scope, signal),
+  credential: (id: string, signal?: AbortSignal) => getJson<CredentialRecord>(`/credentials/${id}`, undefined, signal),
+  createCredential: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<CredentialRecord>("/credentials", body, signal),
+  updateCredential: (id: string, body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<CredentialRecord>(`/credentials/${id}`, body, signal),
+  replaceCredential: (id: string, body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<CredentialRecord>(`/credentials/${id}/replace`, body, signal),
+  validateCredential: (id: string, signal?: AbortSignal) =>
+    postJson<{ queued: boolean; jobId: string; credentialId: string; status: string; detail: string }>(
+      `/credentials/${id}/validate`,
+      signal,
+    ),
+  credentialHistory: (id: string, signal?: AbortSignal) =>
+    getList<CredentialHistoryEvent>(`/credentials/${id}/history`, undefined, signal),
+  credentialValidations: (id: string, signal?: AbortSignal) =>
+    getList<{ id: string; success: boolean; status: string; providerAccount: string; createdAt: string }>(
+      `/credentials/${id}/validations`,
+      undefined,
+      signal,
+    ),
   healthChecks: (scope?: ScopeQuery, signal?: AbortSignal) =>
     getList<HealthCheckRecord>("/health-checks", scope, signal),
   deployments: (scope?: ScopeQuery, signal?: AbortSignal) => getList<RunRecord>("/deployments", scope, signal),
