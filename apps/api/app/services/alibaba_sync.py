@@ -8,6 +8,7 @@ from app.providers.alibaba.certificates import normalize_tls_secret
 from app.providers.alibaba.client import AlibabaClientFactory
 from app.providers.alibaba.exceptions import AlibabaTransientError, classify_alibaba_error
 from app.providers.alibaba.k8s import kubeconfig_auth_material
+from app.providers.common.k8s_certs import apply_ingress_usage, ingress_secret_hosts
 from app.providers.common.models import ClusterHealthSnapshot, DiscoveredCertificate, DiscoveredCluster
 from app.services.aws_sync import _clusters_by_account, _finish_fleet_job, _mark_job_running, _run_bounded
 from app.services.mappers import discovered_from_row
@@ -84,18 +85,26 @@ def _tls_certificates(factory: AlibabaClientFactory, config, cluster: Discovered
     core = client.CoreV1Api(client.ApiClient(configuration))
     secrets = core.list_secret_for_all_namespaces().items
     found: list[DiscoveredCertificate] = []
+    ingress_hosts: dict[tuple[str, str], list[str]] = {}
+    try:
+        networking = client.NetworkingV1Api(client.ApiClient(configuration))
+        ingress_hosts = ingress_secret_hosts(networking.list_ingress_for_all_namespaces().items)
+    except Exception:
+        ingress_hosts = {}
     for secret in secrets:
         payload = {
             "metadata": {"name": secret.metadata.name, "namespace": secret.metadata.namespace},
-            "data": secret.data or {},
+            "data": dict(secret.data or {}),
             "type": secret.type,
         }
+        payload["data"].pop("tls.key", None)
         if payload["type"] != "kubernetes.io/tls":
             continue
         parsed = normalize_tls_secret(payload, config, cluster_name=cluster.name)
         if parsed is not None:
             parsed.environment = cluster.environment
             found.append(parsed)
+    apply_ingress_usage(found, ingress_hosts)
     return found
 
 
@@ -176,5 +185,15 @@ def run_certificate_scan(job_id: str) -> int:
     return _finish_fleet_job(job_id, kind="certificates", results=results, persist=_store_certificates)
 
 
+def scan_alibaba_certificates() -> int:
+    from app.services.aws_sync import persist_certificate_results
+
+    topology = load_alibaba_topology()
+    results = _run_bounded(list(topology.accounts), certificates_account, topology.scan_concurrency)
+    return persist_certificate_results(results)
+
+
 def run_certificate_expiry_scan(job_id: str) -> int:
-    return run_certificate_scan(job_id)
+    from app.services.certificate_monitor import run_expiry_scan
+
+    return run_expiry_scan(job_id)

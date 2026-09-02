@@ -4,6 +4,9 @@ from app.domain.enums import ENVIRONMENTS, Environment
 from app.domain.models import CellMetrics, DashboardResponse, KpiSummary, MatrixRow, OperationalAlert, RecentFailure, Scope
 from app.providers.registry import registry
 from app.services.overlay import (
+    apply_environment_certificates,
+    overlay_alerts,
+    overlay_certificate_audit,
     overlay_certificates,
     overlay_clusters,
     overlay_environment,
@@ -61,8 +64,11 @@ class CatalogService:
         return filter_items(overlay_environment_identities(self._collect("list_environments")), scope)
 
     def environment_detail(self, provider, region, environment):
-        record = registry.get(provider).get_environment(region, environment)
-        return overlay_environment(record)
+        record = overlay_environment(registry.get(provider).get_environment(region, environment))
+        if record is None:
+            return None
+        certs = self.certificates(Scope(provider=provider, region=region, environment=environment))
+        return apply_environment_certificates(record, certs)
 
     def clusters(self, scope: Scope):
         return filter_items(overlay_clusters(self._collect("list_clusters")), scope)
@@ -71,7 +77,9 @@ class CatalogService:
         return filter_items(self._collect("list_applications"), scope)
 
     def certificates(self, scope: Scope):
-        return filter_items(overlay_certificates(self._collect("list_certificates")), scope)
+        from app.services.mappers import annotate_certificate
+
+        return [annotate_certificate(item) for item in filter_items(overlay_certificates(self._collect("list_certificates")), scope)]
 
     def secrets(self, scope: Scope):
         from app.services.credentials import overlay_secret_records
@@ -94,12 +102,12 @@ class CatalogService:
         return filter_items(self._collect("list_github_runs"), scope)
 
     def alerts(self, scope: Scope):
-        return filter_items(self._collect("list_alerts"), scope)
+        return filter_items(overlay_alerts(self._collect("list_alerts")), scope)
 
     def audit_events(self, scope: Scope):
         from app.services.credentials import overlay_audit_events
 
-        return filter_items(overlay_audit_events(self._collect("list_audit_events")), scope)
+        return filter_items(overlay_certificate_audit(overlay_audit_events(self._collect("list_audit_events"))), scope)
 
     def admin_users(self):
         from app.data.inventory import MOCK_INVENTORY
@@ -123,6 +131,11 @@ def _empty_kpis() -> KpiSummary:
         appsHealthy=0,
         appsDegraded=0,
         certsExpiring14d=0,
+        certsHealthy=0,
+        certsExpiring60d=0,
+        certsExpiring30d=0,
+        certsExpiring7d=0,
+        certsExpired=0,
         secretsOverdue=0,
         failedDeploys=0,
         githubFailures=0,
@@ -147,6 +160,11 @@ def summarize_kpis(rows: list[MatrixRow], scope: Scope) -> KpiSummary:
             summary.appsHealthy += cell.appsHealthy
             summary.appsDegraded += cell.appsDegraded
             summary.certsExpiring14d += cell.certsExpiring14d
+            summary.certsHealthy += cell.certsHealthy
+            summary.certsExpiring60d += cell.certsExpiring60d
+            summary.certsExpiring30d += cell.certsExpiring30d
+            summary.certsExpiring7d += cell.certsExpiring7d
+            summary.certsExpired += cell.certsExpired
             summary.secretsOverdue += cell.secretsOverdue
             summary.failedDeploys += cell.failedDeploys
             summary.githubFailures += cell.githubFailures
@@ -166,13 +184,30 @@ def dashboard_snapshot(scope: Scope, last_synced: str) -> DashboardResponse:
         if (not scope.provider or row.provider == scope.provider)
         and (not scope.region or row.region == scope.region)
     ]
-    alerts = filter_items(MOCK_INVENTORY.alerts, scope)
+    alerts = filter_items(overlay_alerts(MOCK_INVENTORY.alerts), scope)
     # Dashboard feed uses the four primary operational alerts, not the extra APAC deploy card.
     dashboard_alerts = [item for item in alerts if item.id != "alert-apac-prd-deploy"]
     failures = filter_items(MOCK_INVENTORY.failures, scope)
+    kpis = summarize_kpis(live_matrix, scope)
+    certs = catalog_service.certificates(scope)
+    kpis = kpis.model_copy(
+        update={
+            "certsHealthy": sum(1 for item in certs if item.expiryStatus == "HEALTHY"),
+            "certsExpiring60d": sum(
+                1 for item in certs if item.daysRemaining is not None and 0 < item.daysRemaining <= 60
+            ),
+            "certsExpiring30d": sum(
+                1 for item in certs if item.daysRemaining is not None and 0 < item.daysRemaining <= 30
+            ),
+            "certsExpiring7d": sum(
+                1 for item in certs if item.daysRemaining is not None and 0 < item.daysRemaining <= 7
+            ),
+            "certsExpired": sum(1 for item in certs if item.expiryStatus == "EXPIRED" or item.daysRemaining <= 0),
+        }
+    )
     return DashboardResponse(
         lastSynced=last_synced,
-        kpis=summarize_kpis(live_matrix, scope),
+        kpis=kpis,
         matrix=matrix,
         alerts=dashboard_alerts,
         failures=failures,

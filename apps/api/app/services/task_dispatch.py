@@ -11,6 +11,13 @@ from app.services.alibaba_sync import (
     run_health_scan as run_alibaba_health,
 )
 from app.services.aws_sync import run_certificate_scan, run_cluster_discovery, run_health_scan
+from app.services.certificate_jobs import run_certificate_discovery
+from app.services.certificate_monitor import (
+    run_alert_evaluation,
+    run_certificate_validate,
+    run_endpoint_validation,
+    run_expiry_scan,
+)
 from app.services.credential_jobs import run_credential_validation, run_rotation_status_scan
 from app.services.job_kinds import (
     KIND_ALIBABA_CERT_EXPIRY,
@@ -18,6 +25,11 @@ from app.services.job_kinds import (
     KIND_ALIBABA_DISCOVERY,
     KIND_ALIBABA_HEALTH,
     KIND_ALIBABA_VALIDATION,
+    KIND_CERTIFICATE_ALERTS,
+    KIND_CERTIFICATE_DISCOVERY,
+    KIND_CERTIFICATE_ENDPOINT,
+    KIND_CERTIFICATE_EXPIRY,
+    KIND_CERTIFICATE_VALIDATE,
     KIND_CERTIFICATES,
     KIND_CREDENTIAL_ROTATION_SCAN,
     KIND_CREDENTIAL_VALIDATE,
@@ -50,6 +62,16 @@ def _run_inline(kind: str, job_id: str) -> None:
         run_credential_validation(job_id)
     elif kind == KIND_CREDENTIAL_ROTATION_SCAN:
         run_rotation_status_scan(job_id)
+    elif kind == KIND_CERTIFICATE_DISCOVERY:
+        run_certificate_discovery(job_id)
+    elif kind == KIND_CERTIFICATE_EXPIRY:
+        run_expiry_scan(job_id)
+    elif kind == KIND_CERTIFICATE_ENDPOINT:
+        run_endpoint_validation(job_id)
+    elif kind == KIND_CERTIFICATE_ALERTS:
+        run_alert_evaluation(job_id)
+    elif kind == KIND_CERTIFICATE_VALIDATE:
+        run_certificate_validate(job_id)
     else:
         raise ValueError(kind)
 

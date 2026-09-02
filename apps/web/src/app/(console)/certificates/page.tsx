@@ -12,6 +12,9 @@ export default async function CertificatesPage({
     region?: string;
     environment?: string;
     certificate?: string;
+    status?: string;
+    expires_within_days?: string;
+    sort?: string;
   }>;
 }) {
   const initial = parseCertificatesFilters(await searchParams);

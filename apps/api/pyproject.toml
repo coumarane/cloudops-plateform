@@ -1,7 +1,7 @@
 [project]
 name = "cloudops-api"
-version = "0.6.0"
-description = "CloudOps Platform API. Credential metadata only in PostgreSQL; secret material stays in a secret backend."
+version = "0.7.0"
+description = "CloudOps Platform API. Certificate monitoring and credential metadata in PostgreSQL; secret material stays in a secret backend."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

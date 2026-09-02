@@ -166,11 +166,11 @@ def test_ack_discovery_normalizes_mocked_sdk_dicts() -> None:
 
 
 def test_certificate_classification_buckets() -> None:
-    assert classify_certificate_age(90) == ("OK", "Healthy")
-    assert classify_certificate_age(45) == ("Expiring", "Warning")
-    assert classify_certificate_age(20) == ("Expiring", "Critical")
-    assert classify_certificate_age(3) == ("Expiring", "Urgent")
-    assert classify_certificate_age(-1) == ("Expired", "Expired")
+    assert classify_certificate_age(90) == ("OK", "HEALTHY")
+    assert classify_certificate_age(45) == ("Expiring", "WARNING")
+    assert classify_certificate_age(20) == ("Expiring", "CRITICAL")
+    assert classify_certificate_age(3) == ("Expiring", "URGENT")
+    assert classify_certificate_age(-1) == ("Expired", "EXPIRED")
     cert = normalize_cas_certificate(
         {
             "certificate_id": "cert-1",

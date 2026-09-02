@@ -64,6 +64,7 @@ class CloudEnvironmentRow(Base):
     last_error: Mapped[str] = mapped_column(Text, default="")
     last_error_class: Mapped[str] = mapped_column(String(64), default="")
     last_error_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_attempted_scan_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class EksClusterRow(Base):
@@ -136,6 +137,20 @@ class AcmCertificateRow(Base):
     cluster_name: Mapped[str] = mapped_column(String(255), default="")
     namespace: Mapped[str] = mapped_column(String(255), default="")
     source: Mapped[str] = mapped_column(String(32), default="")
+    serial_number: Mapped[str] = mapped_column(String(128), default="")
+    auto_renew: Mapped[bool] = mapped_column(Boolean, default=False)
+    discovery_status: Mapped[str] = mapped_column(String(32), default="ok")
+    first_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cluster_id: Mapped[str] = mapped_column(String(128), default="")
+    application_id: Mapped[str] = mapped_column(String(128), default="")
+    expiry_status: Mapped[str] = mapped_column(String(32), default="")
+    hostname: Mapped[str] = mapped_column(String(255), default="")
+    handshake_ok: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    handshake_latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    last_error: Mapped[str] = mapped_column(Text, default="")
+    last_error_class: Mapped[str] = mapped_column(String(64), default="")
+    last_attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class PlatformJobRow(Base):
@@ -262,5 +277,94 @@ class CredentialAuditRow(Base):
     result: Mapped[str] = mapped_column(String(32), nullable=False)
     reason: Mapped[str] = mapped_column(Text, default="")
     change_ticket: Mapped[str] = mapped_column(String(128), default="")
+    correlation_id: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CertificateHistoryRow(Base):
+    __tablename__ = "certificate_history_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    certificate_id: Mapped[str] = mapped_column(String(128), ForeignKey("acm_certificates.id"), nullable=False, index=True)
+    event: Mapped[str] = mapped_column(String(48), nullable=False, index=True)
+    detail: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CertificateAlertRow(Base):
+    __tablename__ = "certificate_alerts"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    certificate_id: Mapped[str] = mapped_column(String(128), ForeignKey("acm_certificates.id"), nullable=False, index=True)
+    kind: Mapped[str] = mapped_column(String(48), nullable=False, index=True)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(24), default="OPEN", index=True)
+    domain: Mapped[str] = mapped_column(String(255), default="")
+    provider: Mapped[str] = mapped_column(String(32), default="AWS")
+    region: Mapped[str] = mapped_column(String(32), default="")
+    account: Mapped[str] = mapped_column(String(128), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    cluster: Mapped[str] = mapped_column(String(255), default="")
+    application: Mapped[str] = mapped_column(String(128), default="")
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    days_remaining: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    acknowledged_by: Mapped[str] = mapped_column(String(128), default="")
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class CertificateValidationRow(Base):
+    __tablename__ = "certificate_validations"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    certificate_id: Mapped[str] = mapped_column(String(128), ForeignKey("acm_certificates.id"), nullable=False, index=True)
+    hostname: Mapped[str] = mapped_column(String(255), default="")
+    handshake_ok: Mapped[bool] = mapped_column(Boolean, default=False)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    issuer: Mapped[str] = mapped_column(String(255), default="")
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    error: Mapped[str] = mapped_column(Text, default="")
+    checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CertificateEndpointRow(Base):
+    __tablename__ = "certificate_endpoints"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    url: Mapped[str] = mapped_column(String(512), unique=True, nullable=False)
+    hostname: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String(32), default="")
+    region: Mapped[str] = mapped_column(String(32), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    account_alias: Mapped[str] = mapped_column(String(128), default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class NotificationEventRow(Base):
+    __tablename__ = "notification_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    certificate_id: Mapped[str] = mapped_column(String(128), default="", index=True)
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    channel: Mapped[str] = mapped_column(String(32), default="log")
+    payload: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class CertificateAuditRow(Base):
+    __tablename__ = "certificate_audit_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    certificate_id: Mapped[str] = mapped_column(String(128), default="")
+    actor: Mapped[str] = mapped_column(String(128), nullable=False)
+    provider: Mapped[str] = mapped_column(String(32), default="")
+    platform_region: Mapped[str] = mapped_column(String(32), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    result: Mapped[str] = mapped_column(String(32), default="succeeded")
+    detail: Mapped[str] = mapped_column(Text, default="")
     correlation_id: Mapped[str] = mapped_column(String(64), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

@@ -75,6 +75,10 @@ class EnvironmentIdentity(StrictModel):
     lastError: str | None = None
     discoveryActive: bool = False
     awsAccountId: str | None = None
+    certificateStatus: str | None = None
+    certificateTotal: int | None = None
+    certificateWarning: int | None = None
+    certificateCritical: int | None = None
 
 
 class CellMetrics(StrictModel):
@@ -84,6 +88,11 @@ class CellMetrics(StrictModel):
     appsHealthy: int = 0
     appsDegraded: int = 0
     certsExpiring14d: int = 0
+    certsHealthy: int = 0
+    certsExpiring60d: int = 0
+    certsExpiring30d: int = 0
+    certsExpiring7d: int = 0
+    certsExpired: int = 0
     nextCertExpiryDays: int | None = None
     secretsOverdue: int = 0
     secretsDueSoon: int = 0
@@ -111,6 +120,11 @@ class KpiSummary(StrictModel):
     appsHealthy: int
     appsDegraded: int
     certsExpiring14d: int
+    certsHealthy: int = 0
+    certsExpiring60d: int = 0
+    certsExpiring30d: int = 0
+    certsExpiring7d: int = 0
+    certsExpired: int = 0
     secretsOverdue: int
     failedDeploys: int
     githubFailures: int
@@ -250,7 +264,7 @@ class CertificateRecord(StrictModel):
     expiresOn: str
     daysRemaining: int
     renewalStatus: RenewalStatus
-    source: Literal["mock", "aws", "alibaba"] = "mock"
+    source: str = "mock"
     arn: str | None = None
     subjectAlternativeNames: list[str] = Field(default_factory=list)
     status: str | None = None
@@ -259,6 +273,18 @@ class CertificateRecord(StrictModel):
     inUseBy: list[str] = Field(default_factory=list)
     renewalEligibility: str | None = None
     lastChecked: str | None = None
+    account: str = ""
+    expiryStatus: str = ""
+    alertStatus: str | None = None
+    serialNumber: str | None = None
+    autoRenew: bool = False
+    discoveryStatus: str | None = None
+    lastSeenAt: str | None = None
+    firstSeenAt: str | None = None
+    clusterId: str | None = None
+    applicationId: str | None = None
+    handshakeOk: bool | None = None
+    handshakeLatencyMs: int | None = None
 
 
 class SecretHistoryEvent(StrictModel):
@@ -345,9 +371,50 @@ class ActivityItem(StrictModel):
     age: str
 
 
+class CertificateHistoryEvent(StrictModel):
+    id: str
+    event: str
+    detail: str
+    createdAt: str
+
+
+class CertificateAlertRecord(StrictModel):
+    id: str
+    certificateId: str
+    kind: str
+    severity: str
+    status: str
+    domain: str
+    provider: str
+    region: str
+    account: str
+    environment: str
+    cluster: str
+    expiresAt: str | None = None
+    daysRemaining: int | None = None
+    createdAt: str
+    lastEvaluatedAt: str
+    acknowledgedAt: str | None = None
+    resolvedAt: str | None = None
+
+
+class CertificateValidationEvent(StrictModel):
+    id: str
+    hostname: str
+    handshakeOk: bool
+    latencyMs: int
+    issuer: str
+    expiresAt: str | None = None
+    error: str
+    checkedAt: str
+
+
 class EnvironmentCertificate(StrictModel):
     name: str
     daysToExpiry: int
+    status: str = ""
+    source: str = ""
+    issuer: str = ""
 
 
 class EnvironmentSecret(StrictModel):

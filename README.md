@@ -2,7 +2,7 @@
 
 Enterprise multi-cloud operations portal for AWS EKS and Alibaba ACK.
 
-## Local run (Phase 6)
+## Local run (Phase 7)
 
 Start PostgreSQL and Redis if you are not using the SQLite / eager-Celery defaults, then FastAPI and Next.js.
 
@@ -31,4 +31,6 @@ PYTHONPATH=../api:. python3 -m celery -A celery_app beat --loglevel=info
 
 Live AWS data is used for **AMER, EMEA, and APAC** after a successful scan of that account. Live Alibaba data is used for **China** after a successful ACK scan. Unscanned cells keep mock catalog data. PRD is read-only for cluster inventory. Credential replace on NPD/PRD requires `credential:prod_update`.
 
-Secret values are never returned by the API or rendered in the console. See [docs/credentials.md](docs/credentials.md), [docs/aws-emea-dev-iam.md](docs/aws-emea-dev-iam.md) and [docs/alibaba-china-ram.md](docs/alibaba-china-ram.md).
+Certificate expiry classification is computed in the API. Dashboard cards link to `/certificates?expires_within_days=7` (and related filters). Private keys are never stored or returned.
+
+Secret values are never returned by the API or rendered in the console. See [docs/certificate-monitoring.md](docs/certificate-monitoring.md), [docs/credentials.md](docs/credentials.md), [docs/aws-emea-dev-iam.md](docs/aws-emea-dev-iam.md) and [docs/alibaba-china-ram.md](docs/alibaba-china-ram.md).

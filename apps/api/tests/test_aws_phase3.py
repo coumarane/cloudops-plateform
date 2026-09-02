@@ -119,7 +119,7 @@ def test_health_and_certificate_scan_endpoints() -> None:
     with patch("app.services.aws_sync.AcmScanner", side_effect=_acm):
         client.post("/api/v1/jobs/aws/certificate-scan")
     certs = client.get("/api/v1/certificates", params={"provider": "aws", "region": "emea", "environment": "dev"}).json()["items"]
-    assert any(item["domain"] == "dev.emea.example.com" and item["source"] == "aws" for item in certs)
+    assert any(item["domain"] == "dev.emea.example.com" and item["source"] in {"aws", "acm"} for item in certs)
     assert all("pem" not in item for item in certs)
 
 

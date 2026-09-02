@@ -69,7 +69,90 @@ def health_account(account: AccountBinding, clusters: list[tuple[str, Discovered
 
 def certificates_account(account: AccountBinding) -> list[DiscoveredCertificate]:
     factory = AwsClientFactory(config=account.connection_config())
-    return AcmScanner(factory, account.connection_config()).list_certificates()
+    discovered = AcmScanner(factory, account.connection_config()).list_certificates()
+    try:
+        discovered.extend(_eks_tls_certificates(account, factory))
+    except Exception as error:
+        logger.warning("EKS TLS certificate scan skipped account=%s error=%s", account.alias, classify_aws_error(error))
+    return discovered
+
+
+def _eks_tls_certificates(account: AccountBinding, factory: AwsClientFactory) -> list[DiscoveredCertificate]:
+    from app.providers.aws.eks import EksDiscovery
+    from app.providers.aws.k8s import eks_bearer_token
+    from app.providers.common.k8s_certs import apply_ingress_usage, discovered_from_tls_secret, ingress_secret_hosts
+
+    session = SessionLocal()
+    try:
+        rows = [
+            row
+            for row in InventoryRepository(session).present_clusters()
+            if row.account_alias == account.alias and row.provider == "AWS"
+        ]
+        clusters = [discovered_from_row(row) for row in rows]
+        cluster_ids = {row.name: row.id for row in rows}
+    finally:
+        session.close()
+    if not clusters:
+        return []
+    discovery = EksDiscovery(factory, account.connection_config())
+    found: list[DiscoveredCertificate] = []
+    for cluster in clusters:
+        try:
+            raw = discovery.describe_raw(cluster.name)
+            cluster.endpoint = raw.get("endpoint") or cluster.endpoint
+            token = eks_bearer_token(factory, cluster.name, cluster.cloud_region)
+            from kubernetes import client
+
+            configuration = client.Configuration()
+            configuration.host = cluster.endpoint
+            configuration.verify_ssl = False
+            configuration.api_key = {"authorization": f"Bearer {token}"}
+            api_client = client.ApiClient(configuration)
+            core = client.CoreV1Api(api_client)
+            secrets = core.list_secret_for_all_namespaces().items
+            ingress_hosts: dict[tuple[str, str], list[str]] = {}
+            try:
+                networking = client.NetworkingV1Api(api_client)
+                ingress_hosts = ingress_secret_hosts(networking.list_ingress_for_all_namespaces().items)
+            except Exception:
+                ingress_hosts = {}
+            cluster_certs: list[DiscoveredCertificate] = []
+            for secret in secrets:
+                if getattr(secret, "type", "") != "kubernetes.io/tls":
+                    continue
+                payload = {
+                    "metadata": {
+                        "name": secret.metadata.name,
+                        "namespace": secret.metadata.namespace,
+                    },
+                    "data": dict(secret.data or {}),
+                }
+                payload["data"].pop("tls.key", None)
+                namespace = str(secret.metadata.namespace or "default")
+                name = str(secret.metadata.name)
+                arn = (
+                    f"arn:aws:eks:{cluster.cloud_region}:{cluster.aws_account_id}:secret/"
+                    f"{cluster.name}/{namespace}/{name}"
+                )
+                parsed = discovered_from_tls_secret(
+                    payload,
+                    arn=arn,
+                    provider="AWS",
+                    platform_region=cluster.platform_region,
+                    account_alias=cluster.account_alias,
+                    cloud_region=cluster.cloud_region,
+                    cluster_name=cluster.name,
+                    cluster_id=cluster_ids.get(cluster.name, ""),
+                    environment=cluster.environment,
+                )
+                if parsed is not None:
+                    cluster_certs.append(parsed)
+            apply_ingress_usage(cluster_certs, ingress_hosts)
+            found.extend(cluster_certs)
+        except Exception as error:
+            logger.warning("EKS TLS listing skipped cluster=%s error=%s", cluster.name, classify_aws_error(error))
+    return found
 
 
 def _store_discovery(account: AccountBinding, clusters: list[DiscoveredCluster], repo: InventoryRepository) -> int:
@@ -145,8 +228,20 @@ def _finish_fleet_job(
         failed: list[tuple[AccountBinding, Exception]] = []
         total = 0
         for account, value, error in results:
+            for environment in account.environments:
+                repo.mark_scope_attempted(environment_scope_id(account.alias, environment))
             if error is not None:
                 failed.append((account, classify_job_error(error)))
+                from app.core.metrics import inc as metrics_inc
+
+                metrics_inc(
+                    "cloudops_certificate_scan_failures_total",
+                    {
+                        "provider": account.provider.lower(),
+                        "region": account.logical_region.lower(),
+                        "environment": (account.environments[0] if account.environments else "dev").lower(),
+                    },
+                )
                 continue
             total += int(persist(account, value, repo) or 0)
             succeeded.append(account)
@@ -197,6 +292,45 @@ def run_health_scan(job_id: str) -> int:
 
     results = _run_bounded(list(topology.accounts), collect, topology.scan_concurrency)
     return _finish_fleet_job(job_id, kind="health", results=results, persist=_store_health)
+
+
+def persist_certificate_results(results: list[tuple[AccountBinding, object, Exception | None]]) -> int:
+    session = SessionLocal()
+    repo = InventoryRepository(session)
+    try:
+        total = 0
+        for account, value, error in results:
+            for environment in account.environments:
+                repo.mark_scope_attempted(environment_scope_id(account.alias, environment))
+            if error is not None:
+                mapped = classify_job_error(error)
+                logger.warning("Account %s failed during certificates error=%s", account.alias, mapped)
+                from app.core.metrics import inc as metrics_inc
+
+                metrics_inc(
+                    "cloudops_certificate_scan_failures_total",
+                    {
+                        "provider": account.provider.lower(),
+                        "region": account.logical_region.lower(),
+                    },
+                )
+                for environment in account.environments:
+                    repo.mark_scope_error(environment_scope_id(account.alias, environment), mapped)
+                continue
+            total += int(_store_certificates(account, value, repo) or 0)
+        session.commit()
+        return total
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def scan_aws_certificates() -> int:
+    topology = load_topology()
+    results = _run_bounded(list(topology.accounts), certificates_account, topology.scan_concurrency)
+    return persist_certificate_results(results)
 
 
 def run_certificate_scan(job_id: str) -> int:

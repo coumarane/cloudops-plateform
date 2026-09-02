@@ -97,18 +97,28 @@ def to_health_record(cluster: EksClusterRow, health: EksClusterHealthRow) -> Clu
 
 
 def _renewal_status(row: AcmCertificateRow) -> str:
-    from app.providers.common.certificates import classify_certificate_age
+    from app.providers.common.certificates import catalog_renewal_status
 
     if "PENDING" in (row.renewal_eligibility or "").upper():
-        return "Renewing"
-    status, _classification = classify_certificate_age(row.days_remaining)
-    return status
+        return catalog_renewal_status(row.days_remaining, pending=True)
+    return catalog_renewal_status(row.days_remaining)
 
 
-def to_certificate_record(row: AcmCertificateRow) -> CertificateRecord:
+def _source_label(row: AcmCertificateRow) -> str:
+    if row.source:
+        return row.source
+    if row.provider == "Alibaba":
+        return "cas"
+    return "acm"
+
+
+def to_certificate_record(row: AcmCertificateRow, *, alert_status: str | None = None) -> CertificateRecord:
+    from app.providers.common.certificates import classify_expiry
+
     sans = json.loads(row.subject_alternative_names or "[]")
     in_use = json.loads(row.in_use_by or "[]")
     expires = row.not_after.date().isoformat() if row.not_after else ""
+    expiry = row.expiry_status or classify_expiry(row.days_remaining)
     return CertificateRecord(
         id=row.id,
         name=row.domain_name,
@@ -122,7 +132,7 @@ def to_certificate_record(row: AcmCertificateRow) -> CertificateRecord:
         expiresOn=expires,
         daysRemaining=row.days_remaining if row.days_remaining is not None else 0,
         renewalStatus=_renewal_status(row),  # type: ignore[arg-type]
-        source="alibaba" if row.provider == "Alibaba" else "aws",
+        source=_source_label(row),
         arn=row.arn,
         subjectAlternativeNames=sans,
         status=row.status,
@@ -130,8 +140,28 @@ def to_certificate_record(row: AcmCertificateRow) -> CertificateRecord:
         notAfter=row.not_after.isoformat() if row.not_after else None,
         inUseBy=in_use,
         renewalEligibility=row.renewal_eligibility,
-        lastChecked=row.last_checked.isoformat(),
+        lastChecked=row.last_checked.isoformat() if row.last_checked else None,
+        account=row.account_alias,
+        expiryStatus=expiry,
+        alertStatus=alert_status,
+        serialNumber=row.serial_number or None,
+        autoRenew=row.auto_renew,
+        discoveryStatus=row.discovery_status or None,
+        lastSeenAt=row.last_seen_at.isoformat() if row.last_seen_at else None,
+        firstSeenAt=row.first_seen_at.isoformat() if row.first_seen_at else None,
+        clusterId=row.cluster_id or None,
+        applicationId=row.application_id or None,
+        handshakeOk=row.handshake_ok,
+        handshakeLatencyMs=row.handshake_latency_ms or None,
     )
+
+
+def annotate_certificate(record: CertificateRecord) -> CertificateRecord:
+    from app.providers.common.certificates import classify_expiry
+
+    if record.expiryStatus:
+        return record
+    return record.model_copy(update={"expiryStatus": classify_expiry(record.daysRemaining)})
 
 
 def to_job_record(row: PlatformJobRow) -> RunRecord:

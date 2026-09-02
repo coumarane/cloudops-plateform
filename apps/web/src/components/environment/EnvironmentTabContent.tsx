@@ -173,7 +173,9 @@ export function EnvironmentTabContent({
         }
       >
         <p className="border-b border-outline px-4 py-2 text-xs text-muted">
-          Expiration metadata only. Private keys are never displayed.
+          {identity.certificateTotal != null
+            ? `${identity.certificateTotal} total · ${identity.certificateWarning ?? 0} warning · ${identity.certificateCritical ?? 0} critical. Expiration metadata only. Private keys are never displayed.`
+            : "Expiration metadata only. Private keys are never displayed."}
         </p>
         <CertificatesTable certificates={record.certificates} />
       </Panel>

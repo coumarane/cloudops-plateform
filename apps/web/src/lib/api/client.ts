@@ -42,6 +42,18 @@ export const cloudOpsApi = {
     getList<ApplicationRecord>("/applications", scope, signal),
   certificates: (scope?: ScopeQuery, signal?: AbortSignal) =>
     getList<CertificateRecord>("/certificates", scope, signal),
+  certificate: (id: string, signal?: AbortSignal) =>
+    getJson<CertificateRecord>(`/certificates/${id}`, undefined, signal),
+  certificateHistory: (id: string, signal?: AbortSignal) =>
+    getList<{ id: string; event: string; detail: string; createdAt: string }>(`/certificates/${id}/history`, undefined, signal),
+  certificateAlerts: (id: string, signal?: AbortSignal) =>
+    getList<{ id: string; kind: string; severity: string; status: string; domain: string }>(
+      `/certificates/${id}/alerts`,
+      undefined,
+      signal,
+    ),
+  triggerCertificateDiscovery: (signal?: AbortSignal) => postJson<RunRecord>("/certificates/scan", signal),
+  validateCertificate: (id: string, signal?: AbortSignal) => postJson<RunRecord>(`/certificates/${id}/validate`, signal),
   secrets: (scope?: ScopeQuery, signal?: AbortSignal) => getList<SecretRecord>("/secrets", scope, signal),
   credentials: (scope?: ScopeQuery, signal?: AbortSignal) => getList<CredentialRecord>("/credentials", scope, signal),
   credential: (id: string, signal?: AbortSignal) => getJson<CredentialRecord>(`/credentials/${id}`, undefined, signal),

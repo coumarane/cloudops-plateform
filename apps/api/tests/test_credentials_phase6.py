@@ -336,7 +336,7 @@ def test_rbac_read_only_cannot_create() -> None:
     assert developer.status_code == 403
     assert ROLE_PERMISSIONS["PlatformAdmin"] == ROLE_PERMISSIONS["PlatformAdmin"]
     assert "credential:prod_update" not in ROLE_PERMISSIONS["DevOpsEngineer"]
-    assert ROLE_PERMISSIONS["Developer"] == frozenset({"credential:read"})
+    assert ROLE_PERMISSIONS["Developer"] == frozenset({"credential:read", "certificate:read"})
 
 
 def test_production_replace_requires_permission_confirmation_and_reason() -> None:
