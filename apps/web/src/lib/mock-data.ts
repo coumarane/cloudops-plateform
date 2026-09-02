@@ -1,4 +1,5 @@
 import { assertNoSecretValues, emptyMetrics } from "./dashboard";
+import { environmentHref } from "./environment";
 import { ENVIRONMENTS, type CellMetrics, type MatrixRow, type OperationalAlert, type RecentFailure } from "./types";
 
 function cell(overrides: Partial<CellMetrics> = {}): CellMetrics {
@@ -73,7 +74,7 @@ export const OPERATIONAL_ALERTS: OperationalAlert[] = [
     region: "EMEA",
     environment: "UAT",
     age: "10m ago",
-    href: "/clusters",
+    href: environmentHref("AWS", "EMEA", "UAT", "clusters"),
   },
   {
     id: "alert-amer-prd-cert",
@@ -84,7 +85,7 @@ export const OPERATIONAL_ALERTS: OperationalAlert[] = [
     region: "AMER",
     environment: "PRD",
     age: "1h ago",
-    href: "/certificates",
+    href: environmentHref("AWS", "AMER", "PRD", "certificates"),
   },
   {
     id: "alert-china-uat-memory",
@@ -95,7 +96,7 @@ export const OPERATIONAL_ALERTS: OperationalAlert[] = [
     region: "China",
     environment: "UAT",
     age: "2h ago",
-    href: "/health-checks",
+    href: environmentHref("Alibaba", "China", "UAT", "health"),
   },
   {
     id: "alert-china-uat-restarts",
@@ -106,7 +107,7 @@ export const OPERATIONAL_ALERTS: OperationalAlert[] = [
     region: "China",
     environment: "UAT",
     age: "3h ago",
-    href: "/applications",
+    href: environmentHref("Alibaba", "China", "UAT", "applications"),
   },
 ];
 
@@ -119,7 +120,7 @@ export const RECENT_FAILURES: RecentFailure[] = [
     region: "APAC",
     environment: "PRD",
     age: "15m ago",
-    href: "/deployments",
+    href: environmentHref("AWS", "APAC", "PRD", "deployments"),
   },
   {
     id: "fail-amer-int-github",
@@ -129,7 +130,7 @@ export const RECENT_FAILURES: RecentFailure[] = [
     region: "AMER",
     environment: "INT/TST",
     age: "1h ago",
-    href: "/github",
+    href: environmentHref("AWS", "AMER", "INT/TST", "github"),
   },
   {
     id: "fail-emea-npd-pipeline",
@@ -139,7 +140,7 @@ export const RECENT_FAILURES: RecentFailure[] = [
     region: "EMEA",
     environment: "NPD",
     age: "2h ago",
-    href: "/pipelines",
+    href: environmentHref("AWS", "EMEA", "NPD", "pipelines"),
   },
 ];
 

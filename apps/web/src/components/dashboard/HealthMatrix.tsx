@@ -1,4 +1,7 @@
+import Link from "next/link";
 import { RefreshCw } from "lucide-react";
+import { StatusCell } from "@/components/status/StatusCell";
+import { environmentHref } from "@/lib/environment";
 import {
   ENVIRONMENTS,
   NON_PRODUCTION_ENVIRONMENTS,
@@ -7,7 +10,6 @@ import {
   type MatrixRow,
   type Provider,
 } from "@/lib/types";
-import { StatusCell } from "@/components/status/StatusCell";
 
 const PROVIDER_GROUPS: { provider: Provider; label: string }[] = [
   { provider: "AWS", label: "AWS | EKS | AMER · EMEA · APAC" },
@@ -113,10 +115,16 @@ function ProviderGroup({
               key={environment}
               className={environment === "NPD" ? "border-l border-outline p-2 text-center" : "p-2 text-center"}
             >
-              <StatusCell
-                cell={row.cells[environment]}
-                dimmed={environmentFilter !== "all" && environmentFilter !== environment}
-              />
+              <Link
+                href={environmentHref(row.provider, row.region, environment)}
+                className="inline-flex"
+                aria-label={`${row.provider} ${row.region} ${environment} environment details`}
+              >
+                <StatusCell
+                  cell={row.cells[environment]}
+                  dimmed={environmentFilter !== "all" && environmentFilter !== environment}
+                />
+              </Link>
             </td>
           ))}
         </tr>

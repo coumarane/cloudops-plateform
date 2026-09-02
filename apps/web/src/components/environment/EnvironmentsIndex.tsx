@@ -1,0 +1,121 @@
+import Link from "next/link";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { StatusCell } from "@/components/status/StatusCell";
+import { environmentHref } from "@/lib/environment";
+import { LAST_SYNCED_LABEL, MATRIX_ROWS } from "@/lib/mock-data";
+import {
+  ENVIRONMENTS,
+  NON_PRODUCTION_ENVIRONMENTS,
+  PRODUCTION_ENVIRONMENTS,
+  type Environment,
+  type MatrixRow,
+  type Provider,
+} from "@/lib/types";
+
+const PROVIDER_GROUPS: { provider: Provider; label: string }[] = [
+  { provider: "AWS", label: "AWS | EKS | AMER · EMEA · APAC" },
+  { provider: "Alibaba", label: "Alibaba | ACK | China" },
+];
+
+export function EnvironmentsIndex() {
+  return (
+    <>
+      <PageHeader
+        title="Environments"
+        subtitle="Select a provider, region, and environment to open operational details"
+        meta={`Last synced: ${LAST_SYNCED_LABEL}`}
+      />
+      <main className="flex-1 overflow-y-auto p-6">
+        <div className="mx-auto max-w-[1600px] space-y-6">
+          <section className="rounded border border-outline bg-white">
+            <div className="border-b border-outline p-4">
+              <h2 className="text-lg font-semibold text-ink">Environment catalog</h2>
+            </div>
+            <div className="overflow-x-auto p-4">
+              <table className="w-full border-collapse text-left text-[13px]">
+                <thead>
+                  <tr>
+                    <th className="p-2" />
+                    <th
+                      className="p-2 text-center text-[11px] font-bold uppercase tracking-wide text-muted"
+                      colSpan={NON_PRODUCTION_ENVIRONMENTS.length}
+                    >
+                      Non-production
+                    </th>
+                    <th
+                      className="p-2 text-center text-[11px] font-bold uppercase tracking-wide text-prd"
+                      colSpan={PRODUCTION_ENVIRONMENTS.length}
+                    >
+                      <div className="border-t-4 border-prd pt-1">Production</div>
+                    </th>
+                  </tr>
+                  <tr className="border-b border-outline">
+                    <th className="p-2 text-[11px] font-bold uppercase tracking-wide text-muted">Region</th>
+                    {ENVIRONMENTS.map((environment) => (
+                      <th
+                        key={environment}
+                        className={
+                          environment === "PRD"
+                            ? "p-2 text-center text-[11px] font-bold uppercase tracking-wide text-prd"
+                            : "p-2 text-center text-[11px] font-bold uppercase tracking-wide text-muted"
+                        }
+                      >
+                        {environment}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {PROVIDER_GROUPS.map((group) => (
+                    <ProviderGroup
+                      key={group.provider}
+                      label={group.label}
+                      rows={MATRIX_ROWS.filter((row) => row.provider === group.provider)}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <p className="border-t border-outline pt-4 text-center font-mono text-xs text-muted">
+            Secret values are never displayed in this console.
+          </p>
+        </div>
+      </main>
+    </>
+  );
+}
+
+function ProviderGroup({ label, rows }: { label: string; rows: MatrixRow[] }) {
+  return (
+    <>
+      <tr>
+        <td className="bg-surface-low p-2 text-xs font-bold uppercase tracking-wide text-ink" colSpan={6}>
+          {label}
+        </td>
+      </tr>
+      {rows.map((row, index) => (
+        <tr
+          key={`${row.provider}-${row.region}`}
+          className={index === rows.length - 1 ? "" : "border-b border-outline"}
+        >
+          <td className="p-2 font-mono text-xs text-ink">{row.region}</td>
+          {ENVIRONMENTS.map((environment: Environment) => (
+            <td
+              key={environment}
+              className={environment === "NPD" ? "border-l border-outline p-2 text-center" : "p-2 text-center"}
+            >
+              <Link
+                href={environmentHref(row.provider, row.region, environment)}
+                className="inline-flex flex-col items-center gap-1 hover:underline"
+                aria-label={`${row.provider} ${row.region} ${environment} details`}
+              >
+                <StatusCell cell={row.cells[environment]} />
+              </Link>
+            </td>
+          ))}
+        </tr>
+      ))}
+    </>
+  );
+}

@@ -41,6 +41,13 @@ const ICONS: Record<NavItem["icon"], LucideIcon> = {
   administration: Settings,
 };
 
+function isNavActive(pathname: string, href: string): boolean {
+  if (href === "/") {
+    return pathname === "/";
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
@@ -53,7 +60,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <nav className="flex-1 space-y-1 overflow-y-auto px-4" aria-label="Primary">
         {NAV_ITEMS.map((item) => {
           const Icon = ICONS[item.icon];
-          const active = pathname === item.href;
+          const active = isNavActive(pathname, item.href);
           return (
             <Link
               key={item.href}

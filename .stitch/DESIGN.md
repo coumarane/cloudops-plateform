@@ -39,3 +39,11 @@ Corporate, utilitarian, high-density operations cockpit for SREs and platform en
 - Global dashboard groups AWS (AMER, EMEA, APAC) and Alibaba (China)
 - Environment columns always: DEV, INT/TST, UAT, NPD, PRD
 - Non-production vs production column groups are visually separated
+
+## 6. Environment Details
+
+Screen ID `6d06bf5d9bd64ba1bc6e6b8048487364` (AWS EMEA UAT) is the source design for `/environments/{provider}/{region}/{environment}`.
+
+Required tabs, in order: Overview, Clusters, Applications, Secrets, Certificates, Deployments, Pipelines, GitHub, Health, Audit.
+
+The identity header must stamp NON-PRODUCTION or PRODUCTION. Production environments use the production red chrome. Secret values are never shown; rotation status and object names only.

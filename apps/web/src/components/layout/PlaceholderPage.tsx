@@ -11,8 +11,8 @@ export function PlaceholderPage({ section }: { section: string }) {
       <main className="flex-1 p-6">
         <div className="rounded border border-outline bg-white p-6">
           <p className="text-sm text-muted">
-            The Global Operations Dashboard is the first implemented screen. {title} will reuse the
-            same CloudOps layout, environment model, and production/non-production treatment.
+            Overview and Environment Details are implemented. {title} will reuse the same CloudOps
+            layout, environment model, and production/non-production treatment.
           </p>
         </div>
       </main>
