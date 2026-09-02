@@ -7,6 +7,7 @@ Implemented screens, converted from the CloudOps Platform Stitch project into re
 - Global Operations Dashboard (`/`)
 - Environments catalog (`/environments`)
 - Environment Details (`/environments/{provider}/{region}/{environment}`), including INT/TST as `int-tst`
+- Secrets Management (`/secrets`) with Provider → Region → Account → Environment filters
 
 Other navigation routes remain placeholders.
 
@@ -18,4 +19,4 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The console is desktop-first. Below the `md` breakpoint the sidebar collapses behind an Open navigation control.
 
-Secret values are never rendered. Mock data only includes rotation status and object names.
+Secret values are never rendered. Mock data only includes rotation status, due dates, and object names. PRD Update / Rotate / Validate requires an explicit production confirmation.

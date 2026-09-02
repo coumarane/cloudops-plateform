@@ -47,3 +47,11 @@ Screen ID `6d06bf5d9bd64ba1bc6e6b8048487364` (AWS EMEA UAT) is the source design
 Required tabs, in order: Overview, Clusters, Applications, Secrets, Certificates, Deployments, Pipelines, GitHub, Health, Audit.
 
 The identity header must stamp NON-PRODUCTION or PRODUCTION. Production environments use the production red chrome. Secret values are never shown; rotation status and object names only.
+
+## 7. Secrets Management
+
+Screen ID `5a498af96dc742bfbb21a9d4b13659ca` (AWS AMER PRD) is the source design for `/secrets`.
+
+Row actions: Update, Rotate, Validate, Rotation History. Secret values are never shown or accepted.
+
+PRD mutations show a strong production warning and require explicit confirmation.
