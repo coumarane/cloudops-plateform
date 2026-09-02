@@ -10,7 +10,7 @@ from app.providers.aws.client import AwsClientFactory
 from app.providers.aws.eks import EksDiscovery
 from app.providers.aws.errors import AwsAuthError, AwsPermissionError, AwsTransientError, classify_aws_error
 from app.providers.aws.k8s import ClusterHealthCollector
-from app.providers.aws.models import DiscoveredCluster
+from app.providers.aws.models import ClusterHealthSnapshot, DiscoveredCertificate, DiscoveredCluster
 from app.services.mappers import discovered_from_row
 from app.topology.loader import load_topology
 from app.topology.models import AccountBinding, environment_scope_id
@@ -34,121 +34,120 @@ def _run_bounded(items: list, fn, max_workers: int) -> list[tuple[object, object
     return results
 
 
-def discover_account(account: AccountBinding) -> int:
+def discover_account(account: AccountBinding) -> list[DiscoveredCluster]:
     factory = AwsClientFactory(config=account.connection_config())
-    clusters = EksDiscovery(factory, account.connection_config()).list_clusters(account.environments)
-    session = SessionLocal()
-    repo = InventoryRepository(session)
-    try:
-        grouped: dict[str, list[DiscoveredCluster]] = {environment: [] for environment in account.environments}
-        for cluster in clusters:
-            grouped.setdefault(cluster.environment, []).append(cluster)
-        for environment in account.environments:
-            env_id = environment_scope_id(account.alias, environment)
-            repo.replace_clusters_for_scope(
-                grouped.get(environment, []),
-                platform_region=account.logical_region,
-                environment=environment,
-            )
-            repo.mark_scope_success(env_id, "discovery")
-        session.commit()
-        logger.info("Account discovery stored alias=%s count=%s", account.alias, len(clusters))
-        return len(clusters)
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
+    return EksDiscovery(factory, account.connection_config()).list_clusters(account.environments)
 
 
-def health_account(account: AccountBinding) -> int:
-    session = SessionLocal()
-    repo = InventoryRepository(session)
-    try:
-        rows = [
-            row
-            for row in repo.present_clusters()
-            if row.account_alias == account.alias and row.cloud_region == account.cloud_region
-        ]
-        if not rows:
-            for environment in account.environments:
-                repo.mark_scope_success(environment_scope_id(account.alias, environment), "health")
-            session.commit()
-            return 0
-        factory = AwsClientFactory(config=account.connection_config())
-        discovery = EksDiscovery(factory, account.connection_config())
-        collector = ClusterHealthCollector(factory)
-        count = 0
-        for row in rows:
-            cluster: DiscoveredCluster = discovered_from_row(row)
-            try:
-                raw = discovery.describe_raw(row.name)
-                cluster.endpoint = raw.get("endpoint")
-                ca_data = (raw.get("certificateAuthority") or {}).get("data")
-                snapshot = collector.collect(cluster, ca_data)
-            except Exception as error:
-                mapped = classify_aws_error(error)
-                if isinstance(mapped, AwsTransientError):
-                    raise
-                logger.warning("Health scan skipped cluster=%s error=%s", row.name, mapped)
-                continue
-            repo.upsert_health(row.id, snapshot)
-            count += 1
-        for environment in account.environments:
-            repo.mark_scope_success(environment_scope_id(account.alias, environment), "health")
-        session.commit()
-        return count
-    except Exception:
-        session.rollback()
-        raise
-    finally:
-        session.close()
-
-
-def certificates_account(account: AccountBinding) -> int:
+def health_account(account: AccountBinding, clusters: list[tuple[str, DiscoveredCluster]]) -> list[tuple[str, ClusterHealthSnapshot]]:
+    if not clusters:
+        return []
     factory = AwsClientFactory(config=account.connection_config())
-    certificates = AcmScanner(factory, account.connection_config()).list_certificates()
-    session = SessionLocal()
-    repo = InventoryRepository(session)
-    try:
-        repo.replace_certificates_for_account(
-            certificates,
-            account_alias=account.alias,
+    discovery = EksDiscovery(factory, account.connection_config())
+    collector = ClusterHealthCollector(factory)
+    snapshots: list[tuple[str, ClusterHealthSnapshot]] = []
+    for cluster_id, cluster in clusters:
+        try:
+            raw = discovery.describe_raw(cluster.name)
+            cluster.endpoint = raw.get("endpoint")
+            ca_data = (raw.get("certificateAuthority") or {}).get("data")
+            snapshots.append((cluster_id, collector.collect(cluster, ca_data)))
+        except Exception as error:
+            mapped = classify_aws_error(error)
+            if isinstance(mapped, AwsTransientError):
+                raise
+            logger.warning("Health scan skipped cluster=%s error=%s", cluster.name, mapped)
+    return snapshots
+
+
+def certificates_account(account: AccountBinding) -> list[DiscoveredCertificate]:
+    factory = AwsClientFactory(config=account.connection_config())
+    return AcmScanner(factory, account.connection_config()).list_certificates()
+
+
+def _store_discovery(account: AccountBinding, clusters: list[DiscoveredCluster], repo: InventoryRepository) -> int:
+    grouped: dict[str, list[DiscoveredCluster]] = {environment: [] for environment in account.environments}
+    for cluster in clusters:
+        grouped.setdefault(cluster.environment, []).append(cluster)
+    for environment in account.environments:
+        repo.replace_clusters_for_scope(
+            grouped.get(environment, []),
             platform_region=account.logical_region,
+            environment=environment,
         )
+        repo.mark_scope_success(environment_scope_id(account.alias, environment), "discovery")
+    logger.info("Account discovery stored alias=%s count=%s", account.alias, len(clusters))
+    return len(clusters)
+
+
+def _store_health(
+    account: AccountBinding, snapshots: list[tuple[str, ClusterHealthSnapshot]], repo: InventoryRepository
+) -> int:
+    for cluster_id, snapshot in snapshots:
+        repo.upsert_health(cluster_id, snapshot)
+    for environment in account.environments:
+        repo.mark_scope_success(environment_scope_id(account.alias, environment), "health")
+    return len(snapshots)
+
+
+def _store_certificates(
+    account: AccountBinding, certificates: list[DiscoveredCertificate], repo: InventoryRepository
+) -> int:
+    repo.replace_certificates_for_account(
+        certificates,
+        account_alias=account.alias,
+        platform_region=account.logical_region,
+    )
+    return len(certificates)
+
+
+def _mark_job_running(job_id: str) -> None:
+    session = SessionLocal()
+    try:
+        InventoryRepository(session).mark_job_running(job_id)
         session.commit()
-        return len(certificates)
-    except Exception:
-        session.rollback()
-        raise
     finally:
         session.close()
 
 
-def _record_account_errors(account: AccountBinding, error: Exception) -> None:
+def _clusters_by_account(accounts: list[AccountBinding]) -> dict[str, list[tuple[str, DiscoveredCluster]]]:
+    cloud_by_alias = {account.alias: account.cloud_region for account in accounts}
+    grouped: dict[str, list[tuple[str, DiscoveredCluster]]] = {account.alias: [] for account in accounts}
     session = SessionLocal()
     try:
-        repo = InventoryRepository(session)
-        for environment in account.environments:
-            repo.mark_scope_error(environment_scope_id(account.alias, environment), error)
-        session.commit()
+        for row in InventoryRepository(session).present_clusters():
+            if row.account_alias in grouped and row.cloud_region == cloud_by_alias[row.account_alias]:
+                grouped[row.account_alias].append((row.id, discovered_from_row(row)))
+        return grouped
     finally:
         session.close()
 
 
-def _finish_fleet_job(job_id: str, *, kind: str, results: list[tuple[AccountBinding, object, Exception | None]]) -> int:
-    succeeded = [(account, value) for account, value, error in results if error is None]
-    failed = [(account, error) for account, _value, error in results if error is not None]
-    total = sum(int(value or 0) for _account, value in succeeded)
-    for account, error in failed:
-        mapped = classify_aws_error(error)
-        logger.warning("Account %s failed during %s error=%s", account.alias, kind, mapped)
-        _record_account_errors(account, mapped)
+def _finish_fleet_job(
+    job_id: str,
+    *,
+    kind: str,
+    results: list[tuple[AccountBinding, object, Exception | None]],
+    persist,
+) -> int:
     session = SessionLocal()
+    repo = InventoryRepository(session)
     try:
-        repo = InventoryRepository(session)
+        succeeded: list[AccountBinding] = []
+        failed: list[tuple[AccountBinding, Exception]] = []
+        total = 0
+        for account, value, error in results:
+            if error is not None:
+                failed.append((account, classify_aws_error(error)))
+                continue
+            total += int(persist(account, value, repo) or 0)
+            succeeded.append(account)
+        for account, mapped in failed:
+            logger.warning("Account %s failed during %s error=%s", account.alias, kind, mapped)
+            for environment in account.environments:
+                repo.mark_scope_error(environment_scope_id(account.alias, environment), mapped)
         if not succeeded and failed:
-            first = classify_aws_error(failed[0][1])
+            first = failed[0][1]
             repo.mark_job_finished(
                 job_id,
                 status="failed",
@@ -156,54 +155,44 @@ def _finish_fleet_job(job_id: str, *, kind: str, results: list[tuple[AccountBind
                 error_class=first.__class__.__name__,
             )
             session.commit()
-            if isinstance(first, AwsTransientError):
-                raise first
-            if isinstance(first, (AwsAuthError, AwsPermissionError)):
-                raise first
-            raise first
-        failed_aliases = ", ".join(account.alias for account, _error in failed) or "none"
-        detail = (
-            f"{kind}: {len(succeeded)}/{len(results)} accounts succeeded "
-            f"({total} records). Failed: {failed_aliases}"
-        )
-        repo.mark_job_finished(job_id, status="succeeded", detail=detail)
-        session.commit()
-        return total
+        else:
+            failed_aliases = ", ".join(account.alias for account, _error in failed) or "none"
+            detail = (
+                f"{kind}: {len(succeeded)}/{len(results)} accounts succeeded "
+                f"({total} records). Failed: {failed_aliases}"
+            )
+            repo.mark_job_finished(job_id, status="succeeded", detail=detail)
+            session.commit()
+            return total
+    except Exception:
+        session.rollback()
+        raise
     finally:
         session.close()
+    raise first
 
 
 def run_cluster_discovery(job_id: str) -> int:
     topology = load_topology()
-    session = SessionLocal()
-    try:
-        InventoryRepository(session).mark_job_running(job_id)
-        session.commit()
-    finally:
-        session.close()
+    _mark_job_running(job_id)
     results = _run_bounded(list(topology.accounts), discover_account, topology.scan_concurrency)
-    return _finish_fleet_job(job_id, kind="discovery", results=results)
+    return _finish_fleet_job(job_id, kind="discovery", results=results, persist=_store_discovery)
 
 
 def run_health_scan(job_id: str) -> int:
     topology = load_topology()
-    session = SessionLocal()
-    try:
-        InventoryRepository(session).mark_job_running(job_id)
-        session.commit()
-    finally:
-        session.close()
-    results = _run_bounded(list(topology.accounts), health_account, topology.scan_concurrency)
-    return _finish_fleet_job(job_id, kind="health", results=results)
+    _mark_job_running(job_id)
+    clusters = _clusters_by_account(list(topology.accounts))
+
+    def collect(account: AccountBinding):
+        return health_account(account, clusters.get(account.alias, []))
+
+    results = _run_bounded(list(topology.accounts), collect, topology.scan_concurrency)
+    return _finish_fleet_job(job_id, kind="health", results=results, persist=_store_health)
 
 
 def run_certificate_scan(job_id: str) -> int:
     topology = load_topology()
-    session = SessionLocal()
-    try:
-        InventoryRepository(session).mark_job_running(job_id)
-        session.commit()
-    finally:
-        session.close()
+    _mark_job_running(job_id)
     results = _run_bounded(list(topology.accounts), certificates_account, topology.scan_concurrency)
-    return _finish_fleet_job(job_id, kind="certificates", results=results)
+    return _finish_fleet_job(job_id, kind="certificates", results=results, persist=_store_certificates)
