@@ -12,6 +12,13 @@
       "html": "designs/global-operations-dashboard.html",
       "screenshot": "designs/global-operations-dashboard.png",
       "previousScreenId": "230f1852370a45bd8218801277fe7f34"
+    },
+    {
+      "screenId": "6d06bf5d9bd64ba1bc6e6b8048487364",
+      "title": "Environment Details: AWS EMEA UAT",
+      "deviceType": "DESKTOP",
+      "html": "designs/environment-details.html",
+      "screenshot": "designs/environment-details.png"
     }
   ],
   "designSystem": {
@@ -24,5 +31,5 @@
     "roundness": "ROUND_FOUR",
     "customColor": "#0f172a"
   },
-  "notes": "Global Operations Dashboard is implemented in apps/web from this Stitch screen. Secret values are never displayed."
+  "notes": "Global Operations Dashboard and Environment Details are implemented in apps/web from these Stitch screens. Secret values are never displayed."
 }

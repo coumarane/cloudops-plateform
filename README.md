@@ -4,9 +4,12 @@ Enterprise multi-cloud operations portal for AWS EKS and Alibaba ACK.
 
 ## Current scope
 
-The first implemented screen is the **Global Operations Dashboard** in `apps/web`.
+Implemented screens in `apps/web`:
 
-It shows AWS AMER / EMEA / APAC and Alibaba China across DEV, INT/TST, UAT, NPD, and PRD, with production visually separated from non-production. Secret values are never displayed.
+- **Global Operations Dashboard** (`/`) — AWS AMER / EMEA / APAC and Alibaba China across DEV, INT/TST, UAT, NPD, and PRD
+- **Environment Details** (`/environments/...`) — per-environment cockpit with Overview, Clusters, Applications, Secrets, Certificates, Deployments, Pipelines, GitHub, Health, and Audit tabs
+
+Production is visually separated from non-production. Secret values are never displayed.
 
 ## Web app
 
