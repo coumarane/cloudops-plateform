@@ -16,6 +16,7 @@ from app.services.overlay import (
     overlay_github_failures,
     overlay_github_runs,
     overlay_jobs,
+    overlay_health_checks,
     overlay_pipeline_audit,
     overlay_pipeline_failures,
     overlay_pipelines,
@@ -94,7 +95,7 @@ class CatalogService:
         return filter_items(overlay_secret_records(self._collect("list_secrets")), scope)
 
     def health_checks(self, scope: Scope):
-        return filter_items(self._collect("list_health_checks"), scope)
+        return filter_items(overlay_health_checks(self._collect("list_health_checks")), scope)
 
     def deployments(self, scope: Scope):
         return filter_items(self._collect("list_deployments"), scope)
@@ -174,6 +175,8 @@ def summarize_kpis(rows: list[MatrixRow], scope: Scope) -> KpiSummary:
             summary.clustersUnreachable += cell.clustersUnreachable
             summary.appsHealthy += cell.appsHealthy
             summary.appsDegraded += cell.appsDegraded
+            summary.appsUnhealthy += cell.appsUnhealthy
+            summary.appsCritical += cell.appsCritical
             summary.certsExpiring14d += cell.certsExpiring14d
             summary.certsHealthy += cell.certsHealthy
             summary.certsExpiring60d += cell.certsExpiring60d
@@ -185,6 +188,7 @@ def summarize_kpis(rows: list[MatrixRow], scope: Scope) -> KpiSummary:
             summary.githubFailures += cell.githubFailures
             summary.pipelineFailures += cell.pipelineFailures
             summary.openAlerts += cell.openAlerts
+            summary.openIncidents += cell.openIncidents
     return summary
 
 
@@ -262,6 +266,29 @@ def dashboard_snapshot(scope: Scope, last_synced: str) -> DashboardResponse:
                     "pipelinesFailedPrd": overview["failedPrdPipelines"],
                     "pipelineAverageDurationSeconds": overview["averageDeploymentDurationSeconds"],
                     "pipelineFailures": overview["failedPipelines"],
+                }
+            )
+    except Exception:
+        pass
+    finally:
+        if session is not None:
+            session.close()
+    session = None
+    try:
+        from app.db.session import SessionLocal
+        from app.services.health_presenters import overview_dump as health_overview_dump
+
+        session = SessionLocal()
+        overview = health_overview_dump(session)
+        if overview["applications"] or overview["openIncidents"]:
+            kpis = kpis.model_copy(
+                update={
+                    "appsHealthy": overview["healthyApplications"],
+                    "appsDegraded": overview["degradedApplications"],
+                    "appsUnhealthy": overview["unhealthyApplications"],
+                    "appsCritical": overview["criticalApplications"],
+                    "openIncidents": overview["openIncidents"],
+                    "unhealthyClusters": overview["unhealthyClusters"],
                 }
             )
     except Exception:

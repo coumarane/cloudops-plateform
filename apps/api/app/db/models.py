@@ -769,3 +769,213 @@ class PipelineAlertRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class HealthCheckDefinitionRow(Base):
+    __tablename__ = "health_check_definition"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    check_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    interval_seconds: Mapped[int] = mapped_column(Integer, default=120)
+    timeout_seconds: Mapped[int] = mapped_column(Integer, default=5)
+    retries: Mapped[int] = mapped_column(Integer, default=1)
+    severity: Mapped[str] = mapped_column(String(16), default="HIGH")
+    environment_id: Mapped[str] = mapped_column(String(128), default="")
+    application_id: Mapped[str] = mapped_column(String(128), default="")
+    cluster_id: Mapped[str] = mapped_column(String(128), default="")
+    url: Mapped[str] = mapped_column(String(512), default="")
+    method: Mapped[str] = mapped_column(String(16), default="GET")
+    expected_status: Mapped[str] = mapped_column(String(64), default="200-299")
+    expected_pattern: Mapped[str] = mapped_column(String(255), default="")
+    metadata_json: Mapped[str] = mapped_column(Text, default="{}")
+    last_attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_successful_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error_category: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class HealthCheckResultRow(Base):
+    __tablename__ = "health_check_result"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    definition_id: Mapped[str] = mapped_column(String(64), default="", index=True)
+    resource_id: Mapped[str] = mapped_column(String(64), default="")
+    application_id: Mapped[str] = mapped_column(String(128), default="", index=True)
+    environment_id: Mapped[str] = mapped_column(String(128), default="", index=True)
+    cluster_id: Mapped[str] = mapped_column(String(128), default="")
+    check_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    summary: Mapped[str] = mapped_column(String(512), default="")
+    error_category: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+
+
+class ResourceHealthRow(Base):
+    __tablename__ = "resource_health"
+    __table_args__ = (
+        UniqueConstraint("cluster_id", "resource_type", "namespace", "resource_name", name="uq_resource_health_ref"),
+    )
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    resource_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    resource_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    namespace: Mapped[str] = mapped_column(String(128), default="")
+    cluster_id: Mapped[str] = mapped_column(String(128), default="", index=True)
+    environment_id: Mapped[str] = mapped_column(String(128), default="", index=True)
+    application_id: Mapped[str] = mapped_column(String(128), default="")
+    provider: Mapped[str] = mapped_column(String(32), default="")
+    region: Mapped[str] = mapped_column(String(32), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    summary: Mapped[str] = mapped_column(String(512), default="")
+    check_type: Mapped[str] = mapped_column(String(64), default="")
+    error_category: Mapped[str] = mapped_column(String(64), default="")
+    desired: Mapped[int] = mapped_column(Integer, default=0)
+    ready: Mapped[int] = mapped_column(Integer, default=0)
+    available: Mapped[int] = mapped_column(Integer, default=0)
+    unavailable: Mapped[int] = mapped_column(Integer, default=0)
+    restart_count: Mapped[int] = mapped_column(Integer, default=0)
+    reason: Mapped[str] = mapped_column(String(128), default="")
+    last_checked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_successful_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ApplicationHealthRow(Base):
+    __tablename__ = "application_health"
+    __table_args__ = (UniqueConstraint("application_id", "environment_id", name="uq_application_health_scope"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    application_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    application_name: Mapped[str] = mapped_column(String(255), default="")
+    environment_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String(32), default="")
+    region: Mapped[str] = mapped_column(String(32), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    cluster_id: Mapped[str] = mapped_column(String(128), default="")
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    summary: Mapped[str] = mapped_column(String(512), default="")
+    likely_cause: Mapped[str] = mapped_column(String(255), default="")
+    evidence_json: Mapped[str] = mapped_column(Text, default="[]")
+    correlation_json: Mapped[str] = mapped_column(Text, default="{}")
+    consecutive_unhealthy: Mapped[int] = mapped_column(Integer, default=0)
+    consecutive_healthy: Mapped[int] = mapped_column(Integer, default=0)
+    desired_replicas: Mapped[int] = mapped_column(Integer, default=0)
+    available_replicas: Mapped[int] = mapped_column(Integer, default=0)
+    crashloop: Mapped[int] = mapped_column(Integer, default=0)
+    failed_pods: Mapped[int] = mapped_column(Integer, default=0)
+    restart_count: Mapped[int] = mapped_column(Integer, default=0)
+    http_status: Mapped[str] = mapped_column(String(16), default="")
+    ingress_status: Mapped[str] = mapped_column(String(16), default="")
+    certificate_status: Mapped[str] = mapped_column(String(16), default="")
+    pipeline_status: Mapped[str] = mapped_column(String(32), default="")
+    deployment_status: Mapped[str] = mapped_column(String(32), default="")
+    cluster_status: Mapped[str] = mapped_column(String(16), default="")
+    last_attempted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_successful_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    error_category: Mapped[str] = mapped_column(String(64), default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class HealthIncidentRow(Base):
+    __tablename__ = "health_incident"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    application_id: Mapped[str] = mapped_column(String(128), default="", index=True)
+    environment_id: Mapped[str] = mapped_column(String(128), default="", index=True)
+    provider: Mapped[str] = mapped_column(String(32), default="")
+    region: Mapped[str] = mapped_column(String(32), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    status: Mapped[str] = mapped_column(String(24), nullable=False, index=True)
+    severity: Mapped[str] = mapped_column(String(16), default="HIGH")
+    root_symptom: Mapped[str] = mapped_column(String(255), default="")
+    affected_resources_json: Mapped[str] = mapped_column(Text, default="[]")
+    opened_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    acknowledged_by: Mapped[str] = mapped_column(String(128), default="")
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ApplicationResourceMappingRow(Base):
+    __tablename__ = "application_resource_mapping"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    application_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    environment_id: Mapped[str] = mapped_column(String(128), default="")
+    cluster_id: Mapped[str] = mapped_column(String(128), default="")
+    namespace: Mapped[str] = mapped_column(String(128), default="")
+    resource_type: Mapped[str] = mapped_column(String(32), default="")
+    resource_name: Mapped[str] = mapped_column(String(255), default="")
+    label_selector: Mapped[str] = mapped_column(String(512), default="")
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ApplicationDependencyRow(Base):
+    __tablename__ = "application_dependency"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    source_application_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    dependency_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    target_application_id: Mapped[str] = mapped_column(String(128), default="")
+    external_name: Mapped[str] = mapped_column(String(255), default="")
+    health_check_definition_id: Mapped[str] = mapped_column(String(64), default="")
+    credential_ref: Mapped[str] = mapped_column(String(256), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class HealthAlertRow(Base):
+    __tablename__ = "health_alerts"
+    __table_args__ = (UniqueConstraint("fingerprint", name="uq_health_alert_fingerprint"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(48), nullable=False)
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    application_id: Mapped[str] = mapped_column(String(128), default="")
+    environment_id: Mapped[str] = mapped_column(String(128), default="")
+    cluster_id: Mapped[str] = mapped_column(String(128), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    severity: Mapped[str] = mapped_column(String(16), default="HIGH")
+    status: Mapped[str] = mapped_column(String(24), default="OPEN")
+    title: Mapped[str] = mapped_column(String(255), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class HealthTimelineEventRow(Base):
+    __tablename__ = "health_timeline_event"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    application_id: Mapped[str] = mapped_column(String(128), default="", index=True)
+    environment_id: Mapped[str] = mapped_column(String(128), default="")
+    event_type: Mapped[str] = mapped_column(String(48), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), default="")
+    detail: Mapped[str] = mapped_column(String(512), default="")
+    href: Mapped[str] = mapped_column(String(512), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+
+
+class HealthAuditRow(Base):
+    __tablename__ = "health_audit_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    actor: Mapped[str] = mapped_column(String(128), nullable=False)
+    object_name: Mapped[str] = mapped_column(String(255), default="")
+    result: Mapped[str] = mapped_column(String(32), default="succeeded")
+    detail: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class HealthScanLockRow(Base):
+    __tablename__ = "health_scan_lock"
+
+    environment_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    owner: Mapped[str] = mapped_column(String(64), default="")
+    locked_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

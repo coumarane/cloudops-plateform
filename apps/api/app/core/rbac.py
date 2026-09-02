@@ -36,6 +36,10 @@ PERMISSIONS = {
     "pipeline:run",
     "pipeline:cancel",
     "pipeline:retry",
+    "health:read",
+    "health:run_check",
+    "incident:read",
+    "incident:acknowledge",
 }
 
 ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
@@ -66,6 +70,10 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "pipeline:sync",
             "pipeline_mapping:read",
             "pipeline_mapping:update",
+            "health:read",
+            "health:run_check",
+            "incident:read",
+            "incident:acknowledge",
         }
     ),
     "SecurityAuditor": frozenset(
@@ -79,6 +87,8 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "github_mapping:read",
             "pipeline:read",
             "pipeline_mapping:read",
+            "health:read",
+            "incident:read",
         }
     ),
     "Developer": frozenset(
@@ -90,6 +100,8 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "github_variable:update",
             "github_secret:read_metadata",
             "pipeline:read",
+            "health:read",
+            "incident:read",
         }
     ),
     "ReadOnly": frozenset(
@@ -102,6 +114,8 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "github_mapping:read",
             "pipeline:read",
             "pipeline_mapping:read",
+            "health:read",
+            "incident:read",
         }
     ),
 }

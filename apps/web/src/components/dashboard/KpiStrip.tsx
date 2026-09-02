@@ -51,7 +51,7 @@ export function KpiStrip({ summary }: { summary: KpiSummary }) {
   const expired = summary.certsExpired ?? 0;
   return (
     <div className="space-y-4">
-      <section aria-label="Operational summary" className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-8">
+      <section aria-label="Operational summary" className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-10">
         <Card label="Cluster health">
           <div className="flex flex-wrap gap-2">
             <Split value={summary.clustersHealthy} suffix="H" tone="text-healthy" />
@@ -63,6 +63,8 @@ export function KpiStrip({ summary }: { summary: KpiSummary }) {
           <div className="flex flex-wrap gap-2">
             <Split value={summary.appsHealthy} suffix="H" tone="text-healthy" />
             <Split value={summary.appsDegraded} suffix="D" tone="text-warning" />
+            <Split value={summary.appsUnhealthy ?? 0} suffix="U" tone="text-critical" />
+            <Split value={summary.appsCritical ?? 0} suffix="C" tone="text-critical" />
           </div>
         </Card>
         <Card label="Secret rotation" tone={summary.secretsOverdue > 0 ? "warning" : undefined}>
@@ -79,6 +81,12 @@ export function KpiStrip({ summary }: { summary: KpiSummary }) {
         </Card>
         <Card label="Pipeline fails" tone={summary.pipelineFailures > 0 ? "critical" : undefined} href="/pipelines">
           <p className="text-lg font-semibold text-critical">{summary.pipelineFailures}</p>
+        </Card>
+        <Card label="Unhealthy clusters" tone={(summary.unhealthyClusters ?? 0) > 0 ? "critical" : undefined} href="/health-checks">
+          <p className="text-lg font-semibold text-critical">{summary.unhealthyClusters ?? 0}</p>
+        </Card>
+        <Card label="Open incidents" tone={(summary.openIncidents ?? 0) > 0 ? "critical" : undefined} href="/health-checks?tab=incidents">
+          <p className="text-lg font-semibold text-critical">{summary.openIncidents ?? 0}</p>
         </Card>
         <Card label="Open alerts" tone={summary.openAlerts > 0 ? "critical" : undefined}>
           <p className="text-lg font-semibold text-critical">{summary.openAlerts}</p>

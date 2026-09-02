@@ -26,6 +26,12 @@ HELP = {
     "cloudops_pipeline_runs_running": "Currently running pipeline runs (labels: provider, status, environment_class)",
     "cloudops_pipeline_sync_duration_seconds": "Pipeline synchronization duration in seconds",
     "cloudops_pipeline_sync_failures_total": "Pipeline provider synchronization failures (labels: provider, status, environment_class)",
+    "cloudops_application_health_total": "Applications by health status (labels: provider, region, environment_class, health_status)",
+    "cloudops_cluster_health_total": "Clusters by health status (labels: provider, region, environment_class, health_status)",
+    "cloudops_health_checks_total": "Health checks executed (labels: provider, region, environment_class, health_status)",
+    "cloudops_health_check_failures_total": "Health check failures isolated per environment (labels: provider, region, environment_class, health_status)",
+    "cloudops_open_incidents_total": "Open health incidents (labels: provider, region, environment_class, health_status)",
+    "cloudops_health_scan_duration_seconds": "Health scan duration in seconds (labels: provider, region, environment_class, health_status)",
 }
 
 

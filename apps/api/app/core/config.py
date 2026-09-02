@@ -93,5 +93,27 @@ class Settings(BaseSettings):
     pipeline_alert_npd: str = "HIGH"
     pipeline_alert_prd: str = "CRITICAL"
 
+    health_cluster_interval_seconds: int = 120
+    health_application_interval_seconds: int = 120
+    health_http_interval_seconds: int = 60
+    health_dependency_interval_seconds: int = 120
+    health_aggregation_interval_seconds: int = 60
+    health_alert_interval_seconds: int = 60
+    health_retention_interval_seconds: int = 24 * 60 * 60
+    health_result_retention_days: int = 30
+    health_aggregate_retention_days: int = 180
+    health_incident_open_threshold: int = 3
+    health_incident_resolve_threshold: int = 2
+    health_correlation_window_minutes: int = 30
+    health_restart_degraded_threshold: int = 5
+    health_http_timeout_seconds: float = 5.0
+    health_http_allowlist: str = ""
+    health_scan_lock_seconds: int = 90
+    health_alert_dev: str = ""
+    health_alert_int_tst: str = ""
+    health_alert_uat: str = "MEDIUM"
+    health_alert_npd: str = "HIGH"
+    health_alert_prd: str = "HIGH"
+
 
 settings = Settings()

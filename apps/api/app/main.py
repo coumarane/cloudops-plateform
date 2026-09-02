@@ -21,8 +21,8 @@ async def lifespan(_application: FastAPI):
 def create_app() -> FastAPI:
     application = FastAPI(
         title=settings.app_name,
-        version="0.9.0",
-        description="CloudOps Platform API. Provider-neutral pipelines, GitHub Actions, and certificate monitoring. Secret material stays in a secret backend.",
+        version="0.10.0",
+        description="CloudOps Platform API. Unified application and Kubernetes health, provider-neutral pipelines, GitHub Actions, and certificate monitoring. Secret material stays in a secret backend.",
         lifespan=lifespan,
     )
     application.add_middleware(CorrelationIdMiddleware)

@@ -79,6 +79,14 @@ class EnvironmentIdentity(StrictModel):
     certificateTotal: int | None = None
     certificateWarning: int | None = None
     certificateCritical: int | None = None
+    overallHealth: str | None = None
+    appsTotal: int | None = None
+    appsHealthyCount: int | None = None
+    appsDegradedCount: int | None = None
+    appsUnhealthyCount: int | None = None
+    appsCriticalCount: int | None = None
+    openIncidents: int | None = None
+    pipelinesFailedRecently: int | None = None
 
 
 class CellMetrics(StrictModel):
@@ -87,6 +95,8 @@ class CellMetrics(StrictModel):
     clustersUnreachable: int = 0
     appsHealthy: int = 0
     appsDegraded: int = 0
+    appsUnhealthy: int = 0
+    appsCritical: int = 0
     certsExpiring14d: int = 0
     certsHealthy: int = 0
     certsExpiring60d: int = 0
@@ -101,6 +111,7 @@ class CellMetrics(StrictModel):
     githubFailures: int = 0
     pipelineFailures: int = 0
     openAlerts: int = 0
+    openIncidents: int = 0
     live: bool = False
     lastError: str | None = None
     readonly: bool = False
@@ -119,6 +130,8 @@ class KpiSummary(StrictModel):
     clustersUnreachable: int
     appsHealthy: int
     appsDegraded: int
+    appsUnhealthy: int = 0
+    appsCritical: int = 0
     certsExpiring14d: int
     certsHealthy: int = 0
     certsExpiring60d: int = 0
@@ -138,6 +151,8 @@ class KpiSummary(StrictModel):
     pipelinesFailedPrd: int = 0
     pipelineAverageDurationSeconds: int = 0
     openAlerts: int
+    openIncidents: int = 0
+    unhealthyClusters: int = 0
 
 
 class OperationalAlert(StrictModel):
@@ -231,6 +246,9 @@ class ApplicationRecord(StrictModel):
     pipelineProvider: str | None = None
     latestPipelineRunId: str | None = None
     latestPipelineStatus: str | None = None
+    healthStatus: str | None = None
+    healthSummary: str | None = None
+    likelyCause: str | None = None
 
 
 class HealthCheckRecord(StrictModel):

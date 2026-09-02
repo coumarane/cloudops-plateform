@@ -33,6 +33,7 @@ import type {
 import { githubQuery } from "@/lib/github";
 import type { Pipeline, PipelineOverview, PipelineRun, PipelineStage, PipelineJob } from "@/lib/pipelines";
 import { pipelineQuery } from "@/lib/pipelines";
+import type { HealthApplication, HealthIncident, HealthOverview, HealthResource, HealthTimelineEvent } from "@/lib/health";
 
 export type { ListResponse, ScopeQuery };
 
@@ -91,6 +92,27 @@ export const cloudOpsApi = {
     ),
   healthChecks: (scope?: ScopeQuery, signal?: AbortSignal) =>
     getList<HealthCheckRecord>("/health-checks", scope, signal),
+  healthOverview: (signal?: AbortSignal) => getJson<HealthOverview>("/health/overview", undefined, signal),
+  healthApplications: (query?: Record<string, string>, signal?: AbortSignal) =>
+    getJson<{ items: HealthApplication[]; lastSynced: string }>(
+      `/health/applications${pipelineQuery(query)}`,
+      undefined,
+      signal,
+    ),
+  healthApplication: (id: string, signal?: AbortSignal) => getJson<HealthApplication>(`/health/applications/${id}`, undefined, signal),
+  healthApplicationHistory: (id: string, signal?: AbortSignal) =>
+    getJson<{ items: Array<{ id: string; status: string; summary: string; createdAt: string }>; timeline: HealthTimelineEvent[] }>(
+      `/health/applications/${id}/history`,
+      undefined,
+      signal,
+    ),
+  healthResources: (query?: Record<string, string>, signal?: AbortSignal) =>
+    getJson<{ items: HealthResource[]; lastSynced: string }>(`/health/resources${pipelineQuery(query)}`, undefined, signal),
+  healthIncidents: (query?: Record<string, string>, signal?: AbortSignal) =>
+    getJson<{ items: HealthIncident[]; lastSynced: string }>(`/health/incidents${pipelineQuery(query)}`, undefined, signal),
+  healthIncident: (id: string, signal?: AbortSignal) => getJson<HealthIncident>(`/health/incidents/${id}`, undefined, signal),
+  acknowledgeIncident: (id: string, signal?: AbortSignal) => postJson<HealthIncident>(`/health/incidents/${id}/acknowledge`, signal),
+  runHealthCheck: (id: string, signal?: AbortSignal) => postJson<{ queued: boolean }>(`/health/checks/${id}/run`, signal),
   deployments: (scope?: ScopeQuery, signal?: AbortSignal) => getList<RunRecord>("/deployments", scope, signal),
   pipelines: (scope?: ScopeQuery, signal?: AbortSignal) => getList<RunRecord>("/pipeline-runs", scope, signal),
   pipelineOverview: (signal?: AbortSignal) => getJson<PipelineOverview>("/pipelines/overview", undefined, signal),

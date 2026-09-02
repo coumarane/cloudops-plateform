@@ -148,7 +148,7 @@ export function StatusChip({
 function chipTone(value: string): string {
   const base = "rounded px-2 py-0.5 text-xs font-semibold";
   const key = value.toLowerCase();
-  if (key === "unreachable" || key === "failed" || key === "failing" || key === "critical") {
+  if (key === "unreachable" || key === "failed" || key === "failing" || key === "critical" || key === "unhealthy") {
     return `${base} bg-critical px-2 text-white`;
   }
   if (key === "degraded" || key === "warning" || key === "expiring" || key === "restart loop" || key === "rollout aborted") {

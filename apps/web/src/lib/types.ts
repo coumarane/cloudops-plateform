@@ -31,6 +31,8 @@ export type CellMetrics = {
   clustersUnreachable: number;
   appsHealthy: number;
   appsDegraded: number;
+  appsUnhealthy?: number;
+  appsCritical?: number;
   certsExpiring14d: number;
   certsHealthy?: number;
   certsExpiring60d?: number;
@@ -45,6 +47,7 @@ export type CellMetrics = {
   githubFailures: number;
   pipelineFailures: number;
   openAlerts: number;
+  openIncidents?: number;
   live?: boolean;
   lastError?: string | null;
   readonly?: boolean;
@@ -86,6 +89,8 @@ export type KpiSummary = {
   clustersUnreachable: number;
   appsHealthy: number;
   appsDegraded: number;
+  appsUnhealthy?: number;
+  appsCritical?: number;
   certsExpiring14d: number;
   certsHealthy?: number;
   certsExpiring60d?: number;
@@ -105,4 +110,6 @@ export type KpiSummary = {
   pipelinesFailedPrd?: number;
   pipelineAverageDurationSeconds?: number;
   openAlerts: number;
+  openIncidents?: number;
+  unhealthyClusters?: number;
 };

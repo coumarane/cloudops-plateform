@@ -172,5 +172,88 @@ class SharedKubernetesCollector:
         )
 
 
+    def collect_inventory(
+        self,
+        cluster: DiscoveredCluster,
+        token: str,
+        ca_path: str,
+        *,
+        cert_path: str = "",
+        key_path: str = "",
+    ):
+        from app.integrations.health.normalize import (
+            normalize_cluster,
+            normalize_daemonset,
+            normalize_deployment,
+            normalize_ingress,
+            normalize_job,
+            normalize_node,
+            normalize_pod,
+            normalize_service,
+            normalize_statefulset,
+            snapshot_from_resources,
+        )
+
+        snapshot = self.collect(cluster, token, ca_path, cert_path=cert_path, key_path=key_path)
+        resources = [
+            normalize_cluster(
+                reachable=snapshot.kubernetes_api_reachable,
+                cluster_status=snapshot.control_plane_status,
+                detail=snapshot.detail,
+            )
+        ]
+        if not snapshot.kubernetes_api_reachable or not cluster.endpoint:
+            return snapshot, resources
+        try:
+            from kubernetes import client
+        except ImportError:
+            return snapshot, resources
+        configuration = client.Configuration()
+        configuration.host = cluster.endpoint
+        if ca_path:
+            configuration.ssl_ca_cert = ca_path
+        else:
+            configuration.verify_ssl = False
+        if token:
+            configuration.api_key = {"authorization": f"Bearer {token}"}
+        if cert_path:
+            configuration.cert_file = cert_path
+        if key_path:
+            configuration.key_file = key_path
+        api_client = client.ApiClient(configuration)
+        core = client.CoreV1Api(api_client)
+        apps = client.AppsV1Api(api_client)
+        batch = client.BatchV1Api(api_client)
+        networking = client.NetworkingV1Api(api_client)
+        try:
+            nodes = core.list_node().items
+            pods = core.list_pod_for_all_namespaces().items
+            deployments = apps.list_deployment_for_all_namespaces().items
+            statefulsets = apps.list_stateful_set_for_all_namespaces().items
+            daemonsets = apps.list_daemon_set_for_all_namespaces().items
+            jobs = batch.list_job_for_all_namespaces().items
+            services = core.list_service_for_all_namespaces().items
+            ingresses = networking.list_ingress_for_all_namespaces().items
+        except Exception:
+            return snapshot, resources
+        resources.extend(normalize_node(item) for item in nodes)
+        resources.extend(normalize_pod(item) for item in pods)
+        resources.extend(normalize_deployment(item) for item in deployments)
+        resources.extend(normalize_statefulset(item) for item in statefulsets)
+        resources.extend(normalize_daemonset(item) for item in daemonsets)
+        resources.extend(normalize_job(item) for item in jobs)
+        for service in services:
+            ready = 0
+            try:
+                endpoints = core.read_namespaced_endpoints(service.metadata.name, service.metadata.namespace)
+                subsets = endpoints.subsets or []
+                ready = sum(len(subset.addresses or []) for subset in subsets)
+            except Exception:
+                ready = 0
+            resources.append(normalize_service(service, endpoint_ready=ready, endpoint_expected=1))
+        resources.extend(normalize_ingress(item) for item in ingresses)
+        return snapshot_from_resources(resources, cluster_arn=cluster.arn, control_plane_status=cluster.cluster_status, detail=snapshot.detail), resources
+
+
 # Backwards-compatible alias used by AWS tests and collectors.
 DefaultKubernetesCollector = SharedKubernetesCollector
