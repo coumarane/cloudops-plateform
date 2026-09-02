@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { environmentHref } from "@/lib/environment";
+import { secretsHref } from "@/lib/secrets";
 import type {
   EnvironmentActivity,
   EnvironmentApplication,
@@ -309,12 +310,12 @@ export function OverviewSecrets({ record }: { record: EnvironmentRecord }) {
         ))}
         <div className="mt-2 border-t border-dashed border-outline pt-2 text-center">
           <Link
-            href={environmentHref(
-              record.identity.provider,
-              record.identity.region,
-              record.identity.environment,
-              "secrets",
-            )}
+            href={secretsHref({
+              provider: record.identity.provider,
+              region: record.identity.region,
+              account: record.identity.account,
+              environment: record.identity.environment,
+            })}
             className="text-xs font-semibold text-action hover:underline"
           >
             Manage secrets

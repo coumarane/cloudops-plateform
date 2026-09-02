@@ -13,6 +13,7 @@ import {
   SecretsTable,
 } from "@/components/environment/EnvironmentPanels";
 import { environmentHref, type EnvironmentTab } from "@/lib/environment";
+import { secretsHref } from "@/lib/secrets";
 import { summarizeEnvironment, type EnvironmentRecord } from "@/lib/environment-data";
 
 export function EnvironmentTabContent({
@@ -100,7 +101,22 @@ export function EnvironmentTabContent({
 
   if (tab === "secrets") {
     return (
-      <Panel title="Secrets">
+      <Panel
+        title="Secrets"
+        action={
+          <Link
+            href={secretsHref({
+              provider: identity.provider,
+              region: identity.region,
+              account: identity.account,
+              environment: identity.environment,
+            })}
+            className="text-xs font-semibold text-action hover:underline"
+          >
+            Open Secrets Management
+          </Link>
+        }
+      >
         <p className="border-b border-outline px-4 py-2 text-xs text-muted">
           Rotation state and due dates only. Secret values are never displayed.
         </p>
