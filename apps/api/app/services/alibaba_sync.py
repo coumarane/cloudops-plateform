@@ -9,7 +9,7 @@ from app.providers.alibaba.client import AlibabaClientFactory
 from app.providers.alibaba.exceptions import AlibabaTransientError, classify_alibaba_error
 from app.providers.alibaba.k8s import kubeconfig_auth_material
 from app.providers.common.k8s_certs import apply_ingress_usage, ingress_secret_hosts
-from app.providers.common.models import ClusterHealthSnapshot, DiscoveredCertificate, DiscoveredCluster
+from app.providers.common.models import DiscoveredCertificate, DiscoveredCluster
 from app.services.aws_sync import _clusters_by_account, _finish_fleet_job, _mark_job_running, _run_bounded
 from app.services.mappers import discovered_from_row
 from app.topology.alibaba import load_alibaba_topology
@@ -23,7 +23,7 @@ def discover_account(account: AccountBinding) -> list[DiscoveredCluster]:
     return ADAPTER.discover_clusters(account)
 
 
-def health_account(account: AccountBinding, clusters: list[tuple[str, DiscoveredCluster]]) -> list[tuple[str, ClusterHealthSnapshot]]:
+def health_account(account: AccountBinding, clusters: list[tuple[str, DiscoveredCluster]]) -> list[tuple]:
     return ADAPTER.scan_health(account, clusters)
 
 
@@ -128,24 +128,10 @@ def _store_discovery(account: AccountBinding, clusters: list[DiscoveredCluster],
     return len(clusters)
 
 
-def _store_health(account: AccountBinding, snapshots: list[tuple[str, ClusterHealthSnapshot]], repo: InventoryRepository) -> int:
-    from app.db.models import CloudEnvironmentRow, EksClusterRow
-    from app.services.health_sync import ingest_snapshot
-    from app.topology.models import environment_scope_id
+def _store_health(account: AccountBinding, snapshots: list[tuple], repo: InventoryRepository) -> int:
+    from app.services.health_sync import persist_account_health
 
-    for cluster_id, snapshot in snapshots:
-        repo.upsert_health(cluster_id, snapshot)
-        cluster = repo.session.get(EksClusterRow, cluster_id)
-        if cluster is None:
-            continue
-        env = repo.session.get(CloudEnvironmentRow, environment_scope_id(account.alias, cluster.environment))
-        if env is None:
-            env = repo.environment_row(cluster.provider, cluster.platform_region, cluster.environment)
-        if env is not None:
-            ingest_snapshot(repo.session, cluster, snapshot, env)
-    for environment in account.environments:
-        repo.mark_scope_success(environment_scope_id(account.alias, environment), "health")
-    return len(snapshots)
+    return persist_account_health(account, snapshots, repo)
 
 
 def _store_certificates(account: AccountBinding, certificates: list[DiscoveredCertificate], repo: InventoryRepository) -> int:
