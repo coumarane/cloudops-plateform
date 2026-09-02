@@ -212,24 +212,36 @@ export function EnvironmentTabContent({
 
   if (tab === "health") {
     const identity = record.identity;
-    const overall = identity.overallHealth || (record.applications.some((app) => (app.healthStatus || app.issue) !== "HEALTHY" && app.issue !== "Healthy") ? "UNHEALTHY" : "HEALTHY");
+    const overall =
+      identity.overallHealth ||
+      (record.applications.some((app) => (app.healthStatus || app.issue) !== "HEALTHY" && app.issue !== "Healthy")
+        ? "UNHEALTHY"
+        : "HEALTHY");
     const total = identity.appsTotal ?? record.applications.length;
-    const healthy = identity.appsHealthyCount ?? record.applications.filter((app) => (app.healthStatus || "HEALTHY") === "HEALTHY" || app.issue === "Healthy").length;
+    const healthy =
+      identity.appsHealthyCount ??
+      record.applications.filter((app) => (app.healthStatus || "HEALTHY") === "HEALTHY" || app.issue === "Healthy").length;
     const degraded = identity.appsDegradedCount ?? record.applications.filter((app) => app.healthStatus === "DEGRADED" || app.issue === "Degraded").length;
     const unhealthy = identity.appsUnhealthyCount ?? 0;
     const critical = identity.appsCriticalCount ?? 0;
-    const sorted = [...record.applications].sort((a, b) => (a.healthStatus || a.issue).localeCompare(b.healthStatus || b.issue));
+    const rank: Record<string, number> = { CRITICAL: 0, UNHEALTHY: 1, DEGRADED: 2, HEALTHY: 3, UNKNOWN: 4 };
+    const sorted = [...record.applications].sort((a, b) => {
+      const left = rank[(a.healthStatus || "").toUpperCase()] ?? 5;
+      const right = rank[(b.healthStatus || "").toUpperCase()] ?? 5;
+      return left - right;
+    });
+    const clustersHealthy = record.clusters.filter((cluster) => cluster.status === "Healthy").length;
     return (
       <div className="space-y-6">
         <Panel title={`${identity.provider} / ${identity.region} / ${identity.environment}`}>
-          <div className="grid grid-cols-2 gap-4 p-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 xl:grid-cols-3">
             <div>
               <p className="text-[10px] font-bold uppercase text-muted">Overall</p>
               <StatusChip value={overall} />
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase text-muted">Clusters</p>
-              <p className="text-sm">{record.clusters.filter((cluster) => cluster.status === "Healthy").length} healthy</p>
+              <p className="text-sm">{clustersHealthy} healthy</p>
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase text-muted">Applications</p>
@@ -238,14 +250,20 @@ export function EnvironmentTabContent({
               </p>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase text-muted">Certificates / pipelines / incidents</p>
-              <p className="font-mono text-xs text-muted">
-                {identity.certificateCritical ?? 0} cert critical · {identity.pipelinesFailedRecently ?? 0} pipeline failed · {identity.openIncidents ?? 0} open incidents
-              </p>
+              <p className="text-[10px] font-bold uppercase text-muted">Certificates</p>
+              <p className="text-sm">{identity.certificateCritical ?? 0} critical</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted">Pipelines</p>
+              <p className="text-sm">{identity.pipelinesFailedRecently ?? 0} failed recently</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted">Open incidents</p>
+              <p className="text-sm">{identity.openIncidents ?? 0}</p>
             </div>
           </div>
         </Panel>
-        <Panel title="Applications by health" action={<CatalogLink path="/health-checks" identity={identity} label="Open Health" />}>
+        <Panel title="Applications by health" action={<CatalogLink path="/health-checks" identity={identity} label="Open Health Checks" />}>
           <ApplicationsTable applications={sorted} />
         </Panel>
         <Panel title="Health events">

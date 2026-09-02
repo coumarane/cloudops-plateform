@@ -4,6 +4,7 @@ import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { certificatesHref } from "@/lib/certificates";
 import { environmentHref } from "@/lib/environment";
 import { secretsHref } from "@/lib/secrets";
+import { StatusChip as HealthStatusChip } from "@/components/catalog/CatalogChrome";
 import type {
   ActivityItem,
   ApplicationRecord,
@@ -152,6 +153,7 @@ export function ApplicationsTable({
         <thead>
           <tr className="border-b border-outline text-[11px] font-bold uppercase tracking-wide text-muted">
             <th className="p-3">Application</th>
+            <th className="p-3">Health</th>
             <th className="p-3">Namespace</th>
             <th className="p-3">Source control</th>
             <th className="p-3">Pipeline</th>
@@ -163,7 +165,16 @@ export function ApplicationsTable({
         <tbody>
           {rows.map((app) => (
             <tr key={app.name} className="border-b border-outline last:border-b-0">
-              <td className="p-3 font-mono text-xs font-semibold text-ink">{app.name}</td>
+              <td className="p-3 font-mono text-xs font-semibold text-ink">
+                <Link href={`/health-checks?app=${app.id}`} className="hover:underline">
+                  {app.name}
+                </Link>
+              </td>
+              <td className="p-3">
+                <Link href={`/health-checks?app=${app.id}`} className="hover:underline">
+                  <HealthStatusChip value={app.healthStatus || app.issue} />
+                </Link>
+              </td>
               <td className="p-3 text-muted">{app.namespace}</td>
               <td className="p-3 font-mono text-xs text-muted">
                 {app.repository ? (

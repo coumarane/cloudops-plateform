@@ -235,9 +235,7 @@ export function ClustersCatalog({ initial }: { initial: CatalogFilters }) {
               ))}
             </Table>
           </CatalogPanel>
-          {selected && rows.some((row) => row.id === selected && row.source === "aws") ? (
-            <ClusterHealthPanel clusterId={selected} />
-          ) : null}
+          {selected ? <ClusterHealthPanel clusterId={selected} /> : null}
         </div>
       )}
     </Shell>
