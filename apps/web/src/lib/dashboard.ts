@@ -50,7 +50,9 @@ export function cellSeverity(cell: CellMetrics): Severity {
     cell.clustersUnreachable > 0 ||
     cell.failedDeploys > 0 ||
     cell.githubFailures > 0 ||
-    cell.pipelineFailures > 0
+    cell.pipelineFailures > 0 ||
+    (cell.appsUnhealthy ?? 0) > 0 ||
+    (cell.appsCritical ?? 0) > 0
   ) {
     return "critical";
   }
@@ -60,7 +62,8 @@ export function cellSeverity(cell: CellMetrics): Severity {
     cell.certsExpiring14d > 0 ||
     cell.secretsOverdue > 0 ||
     cell.secretsDueSoon > 0 ||
-    cell.openAlerts > 0
+    cell.openAlerts > 0 ||
+    (cell.openIncidents ?? 0) > 0
   ) {
     return "warning";
   }
@@ -70,6 +73,15 @@ export function cellSeverity(cell: CellMetrics): Severity {
 export function cellExceptionLabel(cell: CellMetrics): string | undefined {
   if (cell.clustersUnreachable > 0) {
     return "Cluster Down";
+  }
+  if ((cell.appsCritical ?? 0) > 0) {
+    return `${cell.appsCritical} App Crit.`;
+  }
+  if ((cell.appsUnhealthy ?? 0) > 0) {
+    return `${cell.appsUnhealthy} App Unh.`;
+  }
+  if ((cell.openIncidents ?? 0) > 0) {
+    return `${cell.openIncidents} Incident`;
   }
   if (cell.githubFailures > 0) {
     return `${cell.githubFailures} GitHub`;
@@ -151,6 +163,8 @@ export function summarizeKpis(rows: MatrixRow[], filters: DashboardFilters): Kpi
     clustersUnreachable: 0,
     appsHealthy: 0,
     appsDegraded: 0,
+    appsUnhealthy: 0,
+    appsCritical: 0,
     certsExpiring14d: 0,
     certsHealthy: 0,
     certsExpiring60d: 0,
@@ -170,6 +184,8 @@ export function summarizeKpis(rows: MatrixRow[], filters: DashboardFilters): Kpi
     pipelinesFailedPrd: 0,
     pipelineAverageDurationSeconds: 0,
     openAlerts: 0,
+    openIncidents: 0,
+    unhealthyClusters: 0,
   };
 
   const environments =
@@ -183,6 +199,8 @@ export function summarizeKpis(rows: MatrixRow[], filters: DashboardFilters): Kpi
       summary.clustersUnreachable += cell.clustersUnreachable;
       summary.appsHealthy += cell.appsHealthy;
       summary.appsDegraded += cell.appsDegraded;
+      summary.appsUnhealthy = (summary.appsUnhealthy ?? 0) + (cell.appsUnhealthy ?? 0);
+      summary.appsCritical = (summary.appsCritical ?? 0) + (cell.appsCritical ?? 0);
       summary.certsExpiring14d += cell.certsExpiring14d;
       summary.certsHealthy = (summary.certsHealthy ?? 0) + (cell.certsHealthy ?? 0);
       summary.certsExpiring60d = (summary.certsExpiring60d ?? 0) + (cell.certsExpiring60d ?? 0);
@@ -194,6 +212,7 @@ export function summarizeKpis(rows: MatrixRow[], filters: DashboardFilters): Kpi
       summary.githubFailures += cell.githubFailures;
       summary.pipelineFailures += cell.pipelineFailures;
       summary.openAlerts += cell.openAlerts;
+      summary.openIncidents = (summary.openIncidents ?? 0) + (cell.openIncidents ?? 0);
     }
   }
 

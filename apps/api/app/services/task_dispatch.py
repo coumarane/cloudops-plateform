@@ -49,6 +49,15 @@ from app.services.job_kinds import (
     KIND_PIPELINE_WEBHOOK,
     TASK_NAMES,
 )
+from app.services.job_kinds import (
+    KIND_APPLICATION_HEALTH_SCAN,
+    KIND_CLUSTER_HEALTH_SCAN,
+    KIND_DEPENDENCY_HEALTH_CHECK,
+    KIND_HEALTH_AGGREGATION,
+    KIND_HEALTH_ALERT_EVALUATION,
+    KIND_HEALTH_RETENTION,
+    KIND_HTTP_HEALTH_CHECK,
+)
 
 logger = get_logger(__name__)
 
@@ -164,6 +173,34 @@ def _run_inline(kind: str, job_id: str) -> None:
             session.commit()
         finally:
             session.close()
+    elif kind == KIND_CLUSTER_HEALTH_SCAN:
+        from app.services.health_sync import run_cluster_health_scan
+
+        run_cluster_health_scan(job_id)
+    elif kind == KIND_APPLICATION_HEALTH_SCAN:
+        from app.services.health_sync import run_application_health_scan
+
+        run_application_health_scan(job_id)
+    elif kind == KIND_HTTP_HEALTH_CHECK:
+        from app.services.health_sync import run_http_health_check
+
+        run_http_health_check(job_id)
+    elif kind == KIND_DEPENDENCY_HEALTH_CHECK:
+        from app.services.health_sync import run_dependency_health_check
+
+        run_dependency_health_check(job_id)
+    elif kind == KIND_HEALTH_AGGREGATION:
+        from app.services.health_sync import run_health_aggregation
+
+        run_health_aggregation(job_id)
+    elif kind == KIND_HEALTH_ALERT_EVALUATION:
+        from app.services.health_sync import run_health_alert_evaluation
+
+        run_health_alert_evaluation(job_id)
+    elif kind == KIND_HEALTH_RETENTION:
+        from app.services.health_sync import run_health_retention
+
+        run_health_retention(job_id)
     else:
         raise ValueError(kind)
 

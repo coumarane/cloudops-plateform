@@ -18,7 +18,7 @@ from app.domain.models import (
     RunRecord,
 )
 from app.providers.common.certificates import CRITICAL, EXPIRED, HEALTHY, URGENT, WARNING, classify_expiry
-from app.services.mappers import annotate_certificate, to_certificate_record, to_cluster_record, to_health_record, to_job_record
+from app.services.mappers import annotate_certificate, to_certificate_record, to_cluster_record, to_health_record, to_job_record, _age
 from app.topology.models import environment_slug
 
 logger = get_logger(__name__)
@@ -242,9 +242,16 @@ def overlay_environment(record: EnvironmentRecord | None) -> EnvironmentRecord |
             if len(pipeline_items) >= 8:
                 break
         applications = [apply_pipeline(session, apply_source_control(session, app)) for app in updated.applications]
+        applications = [apply_health(session, app) for app in applications]
         patch: dict = {"applications": applications}
         if pipeline_items:
             patch["pipelines"] = pipeline_items
+        health_items = _environment_health_activity(session, updated.identity.provider, updated.identity.region, updated.identity.environment)
+        if health_items:
+            patch["health"] = health_items
+        identity_health = _environment_identity_health(session, updated.identity.provider, updated.identity.region, updated.identity.environment)
+        if identity_health:
+            patch["identity"] = updated.identity.model_copy(update=identity_health)
         return updated.model_copy(update=patch)
     except Exception:
         logger.exception("Live environment overlay unavailable; using mock data")
@@ -366,6 +373,10 @@ def overlay_matrix(rows: list[MatrixRow]) -> list[MatrixRow]:
                 if pipeline_failed:
                     next_cell = next_cell.model_copy(update={"pipelineFailures": len(pipeline_failed), "live": True})
                     changed = True
+                health = _health_by_scope(session).get((row.provider, row.region, environment))
+                if health:
+                    next_cell = next_cell.model_copy(update={**health, "live": True})
+                    changed = True
                 cells[environment] = next_cell
             patched.append(
                 MatrixRow(provider=row.provider, platform=row.platform, region=row.region, cells=cells)
@@ -404,7 +415,14 @@ def overlay_alerts(items: list[OperationalAlert]) -> list[OperationalAlert]:
             to_pipeline_alert(session, row)
             for row in session.scalars(select(PipelineAlertRow).where(PipelineAlertRow.status == "OPEN"))
         ]
-        return pipeline_live + github_live + live + items
+        from app.db.models import HealthAlertRow
+        from app.services.health_presenters import to_health_alert
+
+        health_live = [
+            to_health_alert(session, row)
+            for row in session.scalars(select(HealthAlertRow).where(HealthAlertRow.status == "OPEN"))
+        ]
+        return health_live + pipeline_live + github_live + live + items
     except Exception:
         logger.exception("Live certificate alert overlay unavailable")
         return items
@@ -567,7 +585,7 @@ def overlay_applications(items: list[ApplicationRecord]) -> list[ApplicationReco
         from app.services.github_presenters import apply_source_control
         from app.services.pipeline_presenters import apply_pipeline
 
-        return [apply_pipeline(session, apply_source_control(session, item)) for item in items]
+        return [apply_health(session, apply_pipeline(session, apply_source_control(session, item))) for item in items]
     except Exception:
         logger.exception("Application source-control overlay unavailable")
         return items
@@ -585,12 +603,194 @@ def overlay_github_audit(items):
             to_github_audit(row)
             for row in session.scalars(select(GithubAuditRow).order_by(GithubAuditRow.created_at.desc()))
         ]
-        return live + items
+        from app.db.models import HealthAuditRow
+        from app.domain.models import AuditEvent
+        from app.services.mappers import _age
+
+        health_live = [
+            AuditEvent(
+                id=row.id,
+                event=row.action.replace("_", " ").title(),
+                actor=row.actor,
+                objectName=row.object_name or "health",
+                detail=row.detail,
+                age=_age(row.created_at),
+                provider="AWS",
+                region="EMEA",
+                environment="DEV",
+            )
+            for row in session.scalars(select(HealthAuditRow).order_by(HealthAuditRow.created_at.desc()))
+        ]
+        return health_live + live + items
     except Exception:
         logger.exception("Live GitHub audit overlay unavailable")
         return items
     finally:
         session.close()
+
+
+def _health_by_scope(session) -> dict[tuple[str, str, str], dict]:
+    from app.db.models import ApplicationHealthRow, HealthIncidentRow, ResourceHealthRow
+    from app.integrations.health.status import CRITICAL, DEGRADED, HEALTHY, UNHEALTHY
+
+    grouped: dict[tuple[str, str, str], dict] = {}
+    apps = list(session.scalars(select(ApplicationHealthRow)))
+    if not apps:
+        return grouped
+    for row in apps:
+        key = (row.provider, row.region, row.environment)
+        bucket = grouped.setdefault(
+            key,
+            {
+                "appsHealthy": 0,
+                "appsDegraded": 0,
+                "appsUnhealthy": 0,
+                "appsCritical": 0,
+                "openIncidents": 0,
+                "unhealthyClusters": 0,
+            },
+        )
+        if row.status == HEALTHY:
+            bucket["appsHealthy"] += 1
+        elif row.status == DEGRADED:
+            bucket["appsDegraded"] += 1
+        elif row.status == UNHEALTHY:
+            bucket["appsUnhealthy"] += 1
+        elif row.status == CRITICAL:
+            bucket["appsCritical"] += 1
+    for incident in session.scalars(select(HealthIncidentRow).where(HealthIncidentRow.status.in_(("OPEN", "ACKNOWLEDGED")))):
+        key = (incident.provider, incident.region, incident.environment)
+        if key in grouped:
+            grouped[key]["openIncidents"] += 1
+        elif incident.provider and incident.region and incident.environment:
+            grouped[key] = {
+                "appsHealthy": 0,
+                "appsDegraded": 0,
+                "appsUnhealthy": 0,
+                "appsCritical": 0,
+                "openIncidents": 1,
+                "unhealthyClusters": 0,
+            }
+    for cluster in session.scalars(select(ResourceHealthRow).where(ResourceHealthRow.resource_type == "cluster")):
+        key = (cluster.provider, cluster.region, cluster.environment)
+        if cluster.status in {UNHEALTHY, CRITICAL} and key in grouped:
+            grouped[key]["unhealthyClusters"] = grouped[key].get("unhealthyClusters", 0) + 1
+    return grouped
+
+
+def apply_health(session, item: ApplicationRecord) -> ApplicationRecord:
+    from app.db.models import ApplicationHealthRow
+    from app.integrations.health.status import CRITICAL, DEGRADED, HEALTHY, UNHEALTHY
+
+    row = session.scalar(
+        select(ApplicationHealthRow).where(
+            ApplicationHealthRow.application_id == item.id,
+        )
+    )
+    if row is None:
+        row = session.scalar(
+            select(ApplicationHealthRow).where(
+                ApplicationHealthRow.application_name == item.name,
+                ApplicationHealthRow.environment == item.environment,
+            )
+        )
+    if row is None:
+        return item
+    issue = item.issue
+    if row.status == HEALTHY:
+        issue = "Healthy"
+    elif row.status == DEGRADED:
+        issue = "Degraded"
+    elif row.status == UNHEALTHY:
+        issue = "Unhealthy"
+    elif row.status == CRITICAL:
+        issue = "Critical"
+    return item.model_copy(
+        update={
+            "healthStatus": row.status,
+            "healthSummary": row.summary,
+            "likelyCause": row.likely_cause or None,
+            "issue": issue,
+        }
+    )
+
+
+def overlay_health_checks(items):
+    session = SessionLocal()
+    try:
+        from app.db.models import HealthCheckResultRow
+        from app.services.health_presenters import to_health_check_record
+
+        live = [to_health_check_record(session, row) for row in session.scalars(select(HealthCheckResultRow))]
+        if not live:
+            return items
+        return live
+    except Exception:
+        logger.exception("Live health-check overlay unavailable; using mock data")
+        return items
+    finally:
+        session.close()
+
+
+def _environment_health_activity(session, provider: str, region: str, environment: str):
+    from app.db.models import HealthIncidentRow, HealthTimelineEventRow
+    from app.domain.models import ActivityItem
+
+    items = []
+    for incident in session.scalars(select(HealthIncidentRow).order_by(HealthIncidentRow.opened_at.desc())):
+        if incident.provider == provider and incident.region == region and incident.environment == environment:
+            items.append(
+                ActivityItem(
+                    title=f"Incident {incident.status}",
+                    detail=incident.root_symptom,
+                    age=_age(incident.opened_at) if incident.opened_at else "",
+                    href=f"/health-checks?incident={incident.id}",
+                )
+            )
+        if len(items) >= 8:
+            break
+    if items:
+        return items
+    for event in session.scalars(select(HealthTimelineEventRow).order_by(HealthTimelineEventRow.created_at.desc())):
+        items.append(ActivityItem(title=event.title, detail=event.detail, age=_age(event.created_at), href=event.href or "/health-checks"))
+        if len(items) >= 8:
+            break
+    return items
+
+
+def _environment_identity_health(session, provider: str, region: str, environment: str) -> dict:
+    from app.db.models import ApplicationHealthRow, HealthIncidentRow, PipelineRunRow
+    from app.integrations.health.status import CRITICAL, DEGRADED, HEALTHY, UNHEALTHY, worst
+    from app.integrations.pipelines.status import FAILED
+
+    apps = [
+        row
+        for row in session.scalars(select(ApplicationHealthRow))
+        if row.provider == provider and row.region == region and row.environment == environment
+    ]
+    if not apps:
+        return {}
+    overall = worst(*(row.status for row in apps))
+    incidents = [
+        row
+        for row in session.scalars(select(HealthIncidentRow).where(HealthIncidentRow.status.in_(("OPEN", "ACKNOWLEDGED"))))
+        if row.provider == provider and row.region == region and row.environment == environment
+    ]
+    failed_pipelines = [
+        row
+        for row in _pipeline_runs_by_scope(session).get((provider, region, environment), [])
+        if row.status == FAILED
+    ]
+    return {
+        "overallHealth": overall,
+        "appsTotal": len(apps),
+        "appsHealthyCount": sum(1 for row in apps if row.status == HEALTHY),
+        "appsDegradedCount": sum(1 for row in apps if row.status == DEGRADED),
+        "appsUnhealthyCount": sum(1 for row in apps if row.status == UNHEALTHY),
+        "appsCriticalCount": sum(1 for row in apps if row.status == CRITICAL),
+        "openIncidents": len(incidents),
+        "pipelinesFailedRecently": len(failed_pipelines),
+    }
 
 
 def load_cluster_detail(cluster_id: str):

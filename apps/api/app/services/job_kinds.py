@@ -25,6 +25,13 @@ KIND_PIPELINE_RUN_SYNC = "pipeline-run-sync"
 KIND_PIPELINE_RUN_DETAIL_SYNC = "pipeline-run-detail-sync"
 KIND_PIPELINE_RETENTION = "pipeline-retention"
 KIND_PIPELINE_WEBHOOK = "pipeline-webhook-process"
+KIND_CLUSTER_HEALTH_SCAN = "cluster-health-scan"
+KIND_APPLICATION_HEALTH_SCAN = "application-health-scan"
+KIND_HTTP_HEALTH_CHECK = "http-health-check"
+KIND_DEPENDENCY_HEALTH_CHECK = "dependency-health-check"
+KIND_HEALTH_AGGREGATION = "health-aggregation"
+KIND_HEALTH_ALERT_EVALUATION = "health-alert-evaluation"
+KIND_HEALTH_RETENTION = "health-retention"
 
 JOB_NAMES = {
     KIND_DISCOVERY: "AWS multi-account cluster discovery",
@@ -54,6 +61,13 @@ JOB_NAMES = {
     KIND_PIPELINE_RUN_DETAIL_SYNC: "Pipeline running status sync",
     KIND_PIPELINE_RETENTION: "Pipeline history retention",
     KIND_PIPELINE_WEBHOOK: "Pipeline webhook processing",
+    KIND_CLUSTER_HEALTH_SCAN: "Unified cluster health scan",
+    KIND_APPLICATION_HEALTH_SCAN: "Application health aggregation",
+    KIND_HTTP_HEALTH_CHECK: "HTTP endpoint health check",
+    KIND_DEPENDENCY_HEALTH_CHECK: "Application dependency health check",
+    KIND_HEALTH_AGGREGATION: "Health aggregation",
+    KIND_HEALTH_ALERT_EVALUATION: "Health alert evaluation",
+    KIND_HEALTH_RETENTION: "Health history retention",
 }
 
 JOB_PROVIDERS = {
@@ -84,6 +98,13 @@ JOB_PROVIDERS = {
     KIND_PIPELINE_RUN_DETAIL_SYNC: "AWS",
     KIND_PIPELINE_RETENTION: "AWS",
     KIND_PIPELINE_WEBHOOK: "AWS",
+    KIND_CLUSTER_HEALTH_SCAN: "AWS",
+    KIND_APPLICATION_HEALTH_SCAN: "AWS",
+    KIND_HTTP_HEALTH_CHECK: "AWS",
+    KIND_DEPENDENCY_HEALTH_CHECK: "AWS",
+    KIND_HEALTH_AGGREGATION: "AWS",
+    KIND_HEALTH_ALERT_EVALUATION: "AWS",
+    KIND_HEALTH_RETENTION: "AWS",
 }
 
 TASK_NAMES = {
@@ -114,4 +135,11 @@ TASK_NAMES = {
     KIND_PIPELINE_RUN_DETAIL_SYNC: "tasks.pipeline_run_detail_sync.sync_details",
     KIND_PIPELINE_RETENTION: "tasks.pipeline_retention.prune_history",
     KIND_PIPELINE_WEBHOOK: "tasks.pipeline_webhook.process_delivery",
+    KIND_CLUSTER_HEALTH_SCAN: "tasks.cluster_health_scan.scan_clusters",
+    KIND_APPLICATION_HEALTH_SCAN: "tasks.application_health_scan.scan_applications",
+    KIND_HTTP_HEALTH_CHECK: "tasks.http_health_check.check_endpoints",
+    KIND_DEPENDENCY_HEALTH_CHECK: "tasks.dependency_health_check.check_dependencies",
+    KIND_HEALTH_AGGREGATION: "tasks.health_aggregation.aggregate",
+    KIND_HEALTH_ALERT_EVALUATION: "tasks.health_alert_evaluation.evaluate",
+    KIND_HEALTH_RETENTION: "tasks.health_retention.prune_history",
 }

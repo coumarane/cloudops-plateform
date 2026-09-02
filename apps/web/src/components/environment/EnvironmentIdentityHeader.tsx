@@ -73,6 +73,25 @@ export function EnvironmentIdentityHeader({ identity }: { identity: EnvironmentI
         {identity.lastSuccessfulScan ? (
           <p className="mt-2 font-mono text-xs text-muted">Last successful scan: {identity.lastSuccessfulScan}</p>
         ) : null}
+        {identity.overallHealth ? (
+          <p className="mt-2 text-sm text-ink">
+            Overall health:{" "}
+            <span
+              className={
+                identity.overallHealth === "CRITICAL" || identity.overallHealth === "UNHEALTHY"
+                  ? "font-semibold text-critical"
+                  : identity.overallHealth === "DEGRADED"
+                    ? "font-semibold text-warning"
+                    : "font-semibold text-healthy"
+              }
+            >
+              {identity.overallHealth}
+            </span>
+            {identity.openIncidents ? (
+              <span className="ml-2 font-mono text-xs text-muted">{identity.openIncidents} open incidents</span>
+            ) : null}
+          </p>
+        ) : null}
         {identity.certificateStatus ? (
           <p className="mt-2 text-sm text-ink">
             Certificate Status:{" "}

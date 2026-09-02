@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from app.api.v1.clusters import router as clusters_router
 from app.api.v1.credentials import router as credentials_router
 from app.api.v1.certificates import router as certificates_router
+from app.api.v1.health import router as health_router
 from app.api.v1.jobs import router as jobs_router
 from app.api.v1.pipelines import router as pipelines_router
 from app.api.v1.scm import router as scm_router
@@ -31,6 +32,7 @@ add_list_route(router, "/secrets", catalog_service.secrets)
 add_list_route(router, "/health-checks", catalog_service.health_checks)
 add_list_route(router, "/deployments", catalog_service.deployments)
 router.include_router(pipelines_router)
+router.include_router(health_router)
 add_list_route(router, "/jobs", catalog_service.jobs)
 add_list_route(router, "/github-runs", catalog_service.github_runs)
 add_list_route(router, "/alerts", catalog_service.alerts)

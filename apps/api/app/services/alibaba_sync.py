@@ -129,8 +129,20 @@ def _store_discovery(account: AccountBinding, clusters: list[DiscoveredCluster],
 
 
 def _store_health(account: AccountBinding, snapshots: list[tuple[str, ClusterHealthSnapshot]], repo: InventoryRepository) -> int:
+    from app.db.models import CloudEnvironmentRow, EksClusterRow
+    from app.services.health_sync import ingest_snapshot
+    from app.topology.models import environment_scope_id
+
     for cluster_id, snapshot in snapshots:
         repo.upsert_health(cluster_id, snapshot)
+        cluster = repo.session.get(EksClusterRow, cluster_id)
+        if cluster is None:
+            continue
+        env = repo.session.get(CloudEnvironmentRow, environment_scope_id(account.alias, cluster.environment))
+        if env is None:
+            env = repo.environment_row(cluster.provider, cluster.platform_region, cluster.environment)
+        if env is not None:
+            ingest_snapshot(repo.session, cluster, snapshot, env)
     for environment in account.environments:
         repo.mark_scope_success(environment_scope_id(account.alias, environment), "health")
     return len(snapshots)

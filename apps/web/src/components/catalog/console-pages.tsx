@@ -268,7 +268,7 @@ export function ApplicationsCatalog({ initial }: { initial: CatalogFilters }) {
     >
       {(rows: ApplicationRecord[], selected) => (
         <CatalogPanel title="Application catalog" hint="Replica and issue state only. Runtime secrets are never displayed.">
-          <Table headers={["Application", "Namespace", "Replicas", "Source control", "Pipeline", "Workflow", "Issue", "Provider", "Region", "Environment", "Cluster"]}>
+          <Table headers={["Application", "Namespace", "Replicas", "Health", "Source control", "Pipeline", "Workflow", "Issue", "Provider", "Region", "Environment", "Cluster"]}>
             {rows.map((row) => (
               <tr key={row.id} className={rowClass(row.id === selected, row.issue !== "Healthy")}>
                 <td className="p-3 font-mono text-xs font-semibold text-ink">
@@ -278,6 +278,11 @@ export function ApplicationsCatalog({ initial }: { initial: CatalogFilters }) {
                 </td>
                 <td className="p-3 font-mono text-xs text-muted">{row.namespace}</td>
                 <td className="p-3 font-mono text-xs text-muted">{row.replicas}</td>
+                <td className="p-3">
+                  <Link href={`/health-checks?app=${row.id}`} className="hover:underline">
+                    <StatusChip value={row.healthStatus || row.issue} />
+                  </Link>
+                </td>
                 <td className="p-3 font-mono text-xs text-muted">
                   {row.repository ? (
                     <Link href={row.repositoryId ? `/github?repo=${row.repositoryId}` : "/github"} className="hover:underline">

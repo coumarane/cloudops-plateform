@@ -17,6 +17,7 @@ import { catalogHref } from "@/lib/catalog";
 import { environmentHref, type EnvironmentTab } from "@/lib/environment";
 import { secretsHref } from "@/lib/secrets";
 import { summarizeEnvironment, type EnvironmentRecord } from "@/lib/environment-data";
+import { StatusChip } from "@/components/catalog/CatalogChrome";
 
 export function EnvironmentTabContent({
   record,
@@ -210,10 +211,47 @@ export function EnvironmentTabContent({
   }
 
   if (tab === "health") {
+    const identity = record.identity;
+    const overall = identity.overallHealth || (record.applications.some((app) => (app.healthStatus || app.issue) !== "HEALTHY" && app.issue !== "Healthy") ? "UNHEALTHY" : "HEALTHY");
+    const total = identity.appsTotal ?? record.applications.length;
+    const healthy = identity.appsHealthyCount ?? record.applications.filter((app) => (app.healthStatus || "HEALTHY") === "HEALTHY" || app.issue === "Healthy").length;
+    const degraded = identity.appsDegradedCount ?? record.applications.filter((app) => app.healthStatus === "DEGRADED" || app.issue === "Degraded").length;
+    const unhealthy = identity.appsUnhealthyCount ?? 0;
+    const critical = identity.appsCriticalCount ?? 0;
+    const sorted = [...record.applications].sort((a, b) => (a.healthStatus || a.issue).localeCompare(b.healthStatus || b.issue));
     return (
-      <Panel title="Health" action={<CatalogLink path="/health-checks" identity={identity} label="Open Health Checks" />}>
-        <ActivityList items={record.health} empty="No health events for this environment." />
-      </Panel>
+      <div className="space-y-6">
+        <Panel title={`${identity.provider} / ${identity.region} / ${identity.environment}`}>
+          <div className="grid grid-cols-2 gap-4 p-4 md:grid-cols-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted">Overall</p>
+              <StatusChip value={overall} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted">Clusters</p>
+              <p className="text-sm">{record.clusters.filter((cluster) => cluster.status === "Healthy").length} healthy</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted">Applications</p>
+              <p className="font-mono text-xs text-muted">
+                {total} total · {healthy} healthy · {degraded} degraded · {unhealthy} unhealthy · {critical} critical
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase text-muted">Certificates / pipelines / incidents</p>
+              <p className="font-mono text-xs text-muted">
+                {identity.certificateCritical ?? 0} cert critical · {identity.pipelinesFailedRecently ?? 0} pipeline failed · {identity.openIncidents ?? 0} open incidents
+              </p>
+            </div>
+          </div>
+        </Panel>
+        <Panel title="Applications by health" action={<CatalogLink path="/health-checks" identity={identity} label="Open Health" />}>
+          <ApplicationsTable applications={sorted} />
+        </Panel>
+        <Panel title="Health events">
+          <ActivityList items={record.health} empty="No health events for this environment." />
+        </Panel>
+      </div>
     );
   }
 

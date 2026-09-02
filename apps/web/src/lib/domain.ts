@@ -120,6 +120,9 @@ export type ApplicationRecord = {
   pipelineProvider?: string | null;
   latestPipelineRunId?: string | null;
   latestPipelineStatus?: string | null;
+  healthStatus?: string | null;
+  healthSummary?: string | null;
+  likelyCause?: string | null;
 };
 
 export type HealthCheckRecord = {
@@ -302,6 +305,14 @@ export type EnvironmentIdentity = {
   certificateTotal?: number | null;
   certificateWarning?: number | null;
   certificateCritical?: number | null;
+  overallHealth?: string | null;
+  appsTotal?: number | null;
+  appsHealthyCount?: number | null;
+  appsDegradedCount?: number | null;
+  appsUnhealthyCount?: number | null;
+  appsCriticalCount?: number | null;
+  openIncidents?: number | null;
+  pipelinesFailedRecently?: number | null;
 };
 
 export type ActivityItem = {

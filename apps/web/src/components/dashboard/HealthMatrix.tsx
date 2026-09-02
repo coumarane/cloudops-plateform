@@ -116,7 +116,7 @@ function ProviderGroup({
               className={environment === "NPD" ? "border-l border-outline p-2 text-center" : "p-2 text-center"}
             >
               <Link
-                href={environmentHref(row.provider, row.region, environment)}
+                href={environmentHref(row.provider, row.region, environment, "health")}
                 className="inline-flex"
                 aria-label={`${row.provider} ${row.region} ${environment} environment details`}
               >

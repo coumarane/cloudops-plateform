@@ -43,6 +43,13 @@ celery_app = Celery(
         "tasks.pipeline_run_detail_sync",
         "tasks.pipeline_retention",
         "tasks.pipeline_webhook",
+        "tasks.cluster_health_scan",
+        "tasks.application_health_scan",
+        "tasks.http_health_check",
+        "tasks.dependency_health_check",
+        "tasks.health_aggregation",
+        "tasks.health_alert_evaluation",
+        "tasks.health_retention",
     ),
 )
 celery_app.conf.update(
@@ -113,6 +120,34 @@ celery_app.conf.update(
         "pipeline-retention": {
             "task": "tasks.pipeline_retention.periodic_scan",
             "schedule": settings.pipeline_retention_interval_seconds,
+        },
+        "cluster-health-scan": {
+            "task": "tasks.cluster_health_scan.periodic_scan",
+            "schedule": settings.health_cluster_interval_seconds,
+        },
+        "application-health-scan": {
+            "task": "tasks.application_health_scan.periodic_scan",
+            "schedule": settings.health_application_interval_seconds,
+        },
+        "http-health-check": {
+            "task": "tasks.http_health_check.periodic_scan",
+            "schedule": settings.health_http_interval_seconds,
+        },
+        "dependency-health-check": {
+            "task": "tasks.dependency_health_check.periodic_scan",
+            "schedule": settings.health_dependency_interval_seconds,
+        },
+        "health-aggregation": {
+            "task": "tasks.health_aggregation.periodic_scan",
+            "schedule": settings.health_aggregation_interval_seconds,
+        },
+        "health-alert-evaluation": {
+            "task": "tasks.health_alert_evaluation.periodic_scan",
+            "schedule": settings.health_alert_interval_seconds,
+        },
+        "health-retention": {
+            "task": "tasks.health_retention.periodic_scan",
+            "schedule": settings.health_retention_interval_seconds,
         },
     },
 )
