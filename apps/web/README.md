@@ -2,14 +2,7 @@
 
 Next.js + TypeScript + Tailwind implementation of the CloudOps operations console.
 
-Implemented screens, converted from the CloudOps Platform Stitch project into reusable React components:
-
-- Global Operations Dashboard (`/`)
-- Environments catalog (`/environments`)
-- Environment Details (`/environments/{provider}/{region}/{environment}`), including INT/TST as `int-tst`
-- Secrets Management (`/secrets`) with Provider → Region → Account → Environment filters
-
-Other navigation routes remain placeholders.
+The console loads fleet data from the FastAPI service at `/api/v1` (proxied to `http://127.0.0.1:8000` by default). Start `apps/api` first.
 
 ```bash
 npm install
@@ -19,4 +12,4 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The console is desktop-first. Below the `md` breakpoint the sidebar collapses behind an Open navigation control.
 
-Secret values are never rendered. Mock data only includes rotation status, due dates, and object names. PRD Update / Rotate / Validate requires an explicit production confirmation.
+Secret values are never rendered. The API returns rotation status, due dates, and object names only. PRD Update / Rotate / Validate requires an explicit production confirmation.

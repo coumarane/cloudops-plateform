@@ -10,7 +10,7 @@ import {
   providerToSlug,
   regionToSlug,
 } from "@/lib/environment";
-import { getEnvironmentRecord, listEnvironmentIdentities } from "@/lib/environment-data";
+import { listEnvironmentIdentities } from "@/lib/environment-data";
 
 export function generateStaticParams() {
   return listEnvironmentIdentities().map((identity) => ({
@@ -46,11 +46,13 @@ export default async function EnvironmentDetailsPage({
     notFound();
   }
 
-  const record = getEnvironmentRecord(parsed.provider, parsed.region, parsed.environment);
-
   return (
     <Suspense fallback={<p className="p-6 text-sm text-muted">Loading environment…</p>}>
-      <EnvironmentDetails record={record} />
+      <EnvironmentDetails
+        provider={parsed.provider}
+        region={parsed.region}
+        environment={parsed.environment}
+      />
     </Suspense>
   );
 }

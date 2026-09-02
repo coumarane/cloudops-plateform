@@ -1,2 +1,5 @@
 .cursor/mcp.json
 .note.md
+__pycache__/
+*.py[cod]
+.pytest_cache/

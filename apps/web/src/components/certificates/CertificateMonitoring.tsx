@@ -4,12 +4,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { CertificatesTable } from "@/components/certificates/CertificatesTable";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { isProductionEnvironment, regionsForProvider } from "@/lib/dashboard";
+import { QueryState } from "@/components/status/QueryState";
+import { cloudOpsApi } from "@/lib/api/client";
+import { useResource } from "@/lib/api/use-resource";
 import { parseCertificatesFilters } from "@/lib/certificates";
-import {
-  filterManagedCertificates,
-  MANAGED_CERTIFICATES,
-  summarizeCertificates,
-} from "@/lib/certificates-data";
+import { summarizeCertificates } from "@/lib/certificates-data";
 import {
   environmentToSlug,
   parseEnvironment,
@@ -18,7 +17,6 @@ import {
   providerToSlug,
   regionToSlug,
 } from "@/lib/environment";
-import { LAST_SYNCED_LABEL } from "@/lib/mock-data";
 import { ENVIRONMENTS, type Environment } from "@/lib/types";
 
 export function CertificateMonitoring({
@@ -38,11 +36,19 @@ export function CertificateMonitoring({
 
   const regions = regionsForProvider(provider === "all" ? "all" : provider);
   const scopedRegion = region !== "all" && !regions.includes(region) ? "all" : region;
-  const certificates = filterManagedCertificates(MANAGED_CERTIFICATES, {
-    provider: provider === "all" ? "all" : provider,
-    region: scopedRegion === "all" ? "all" : scopedRegion,
-    environment: environment === "all" ? "all" : environment,
-  });
+  const state = useResource(
+    (signal) =>
+      cloudOpsApi.certificates(
+        {
+          provider,
+          region: scopedRegion,
+          environment,
+        },
+        signal,
+      ),
+    [provider, scopedRegion, environment],
+  );
+  const certificates = state.status === "success" ? state.data.items : [];
   const summary = summarizeCertificates(certificates);
 
   function setFilter(next: Record<string, string | null>) {
@@ -60,7 +66,7 @@ export function CertificateMonitoring({
       <PageHeader
         title="Certificate Monitoring"
         subtitle="TLS certificates across AWS EKS and Alibaba ACK. Private keys are never displayed."
-        meta={`Last synced: ${LAST_SYNCED_LABEL}`}
+        meta={state.status === "success" ? `Last synced: ${state.data.lastSynced}` : "Last synced: —"}
       />
       <div className="flex flex-wrap items-center gap-4 border-b border-outline bg-canvas px-6 py-2 text-[11px] font-bold uppercase tracking-wide text-muted">
         <span>Hierarchy:</span>
@@ -115,30 +121,41 @@ export function CertificateMonitoring({
       <main className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-[1600px] space-y-6">
           <ProductionBanner environment={environment === "all" ? "all" : environment} />
-          <section aria-label="Certificate summary" className="grid grid-cols-2 gap-4 md:grid-cols-5">
-            <Kpi label="Certificates in scope" value={summary.inScope} />
-            <Kpi
-              label="Expiring within 14d"
-              value={summary.expiring14d}
-              tone={summary.expiring14d > 0 ? "warning" : undefined}
-            />
-            <Kpi
-              label="Expired"
-              value={summary.expired}
-              tone={summary.expired > 0 ? "critical" : undefined}
-            />
-            <Kpi label="Auto-renew OK" value={summary.autoRenewOk} />
-            <Kpi label="PRD certificates" value={summary.prd} tone={summary.prd > 0 ? "prd" : undefined} />
-          </section>
-          <section className="rounded border border-outline bg-white">
-            <div className="border-b border-outline bg-surface-low px-4 py-3">
-              <h2 className="text-[15px] font-semibold text-ink">Certificate catalog</h2>
-              <p className="mt-1 text-xs text-muted">
-                Public TLS metadata only. Private keys are never displayed.
-              </p>
-            </div>
-            <CertificatesTable certificates={certificates} selectedId={selectedId} />
-          </section>
+          <QueryState
+            state={state}
+            loadingLabel="Loading certificates…"
+            emptyLabel="No certificates in the current hierarchy filter."
+            isEmpty={(data) => data.items.length === 0}
+          >
+            {() => (
+              <>
+                <section aria-label="Certificate summary" className="grid grid-cols-2 gap-4 md:grid-cols-5">
+                  <Kpi label="Certificates in scope" value={summary.inScope} />
+                  <Kpi
+                    label="Expiring within 14d"
+                    value={summary.expiring14d}
+                    tone={summary.expiring14d > 0 ? "warning" : undefined}
+                  />
+                  <Kpi
+                    label="Expired"
+                    value={summary.expired}
+                    tone={summary.expired > 0 ? "critical" : undefined}
+                  />
+                  <Kpi label="Auto-renew OK" value={summary.autoRenewOk} />
+                  <Kpi label="PRD certificates" value={summary.prd} tone={summary.prd > 0 ? "prd" : undefined} />
+                </section>
+                <section className="rounded border border-outline bg-white">
+                  <div className="border-b border-outline bg-surface-low px-4 py-3">
+                    <h2 className="text-[15px] font-semibold text-ink">Certificate catalog</h2>
+                    <p className="mt-1 text-xs text-muted">
+                      Public TLS metadata only. Private keys are never displayed.
+                    </p>
+                  </div>
+                  <CertificatesTable certificates={certificates} selectedId={selectedId} />
+                </section>
+              </>
+            )}
+          </QueryState>
           <p className="border-t border-outline pt-4 text-center font-mono text-xs text-muted">
             Private keys are never displayed in this console.
           </p>

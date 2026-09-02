@@ -15,16 +15,12 @@ import {
   providerToSlug,
   regionToSlug,
 } from "@/lib/environment";
-import { LAST_SYNCED_LABEL } from "@/lib/mock-data";
+import { QueryState } from "@/components/status/QueryState";
+import { cloudOpsApi } from "@/lib/api/client";
+import { useResource } from "@/lib/api/use-resource";
 import { parseSecretAction, parseSecretsFilters, type SecretAction } from "@/lib/secrets";
-import {
-  filterManagedSecrets,
-  listSecretAccounts,
-  MANAGED_SECRETS,
-  summarizeSecrets,
-  type ManagedSecret,
-} from "@/lib/secrets-data";
-import { ENVIRONMENTS, type Environment, type Provider, type Region } from "@/lib/types";
+import { listSecretAccounts, summarizeSecrets, type ManagedSecret } from "@/lib/secrets-data";
+import { ENVIRONMENTS } from "@/lib/types";
 
 type Notice = { tone: "ok" | "prd"; text: string };
 
@@ -45,20 +41,30 @@ export function SecretsManagement({
   const selectedAction = parseSecretAction(searchParams.get("action")) ?? initial.action;
 
   const regions = regionsForProvider(provider === "all" ? "all" : provider);
-  const accounts = listSecretAccounts().filter((item) =>
-    accountScope(item, provider, region, environment),
+  const accountsState = useResource(
+    (signal) => cloudOpsApi.accounts({ provider, region, environment }, signal),
+    [provider, region, environment],
   );
-  const secrets = filterManagedSecrets(MANAGED_SECRETS, {
-    provider: provider === "all" ? "all" : provider,
-    region: region === "all" ? "all" : region,
-    account: account === "all" ? "all" : account,
-    environment: environment === "all" ? "all" : environment,
-  });
+  const state = useResource(
+    (signal) =>
+      cloudOpsApi.secrets(
+        {
+          provider,
+          region,
+          account,
+          environment,
+        },
+        signal,
+      ),
+    [provider, region, account, environment],
+  );
+  const secrets = state.status === "success" ? state.data.items : [];
+  const accounts =
+    accountsState.status === "success"
+      ? Array.from(new Set(accountsState.data.items.map((item) => item.account))).sort()
+      : listSecretAccounts(secrets);
   const summary = summarizeSecrets(secrets);
-  const selected =
-    secrets.find((secret) => secret.id === selectedId) ??
-    MANAGED_SECRETS.find((secret) => secret.id === selectedId) ??
-    null;
+  const selected = secrets.find((secret) => secret.id === selectedId) ?? null;
 
   const [notice, setNotice] = useState<Notice | null>(null);
 
@@ -104,7 +110,7 @@ export function SecretsManagement({
       <PageHeader
         title="Secrets Management"
         subtitle="Provider → Region → Account → Environment. Secret values are never displayed."
-        meta={`Last synced: ${LAST_SYNCED_LABEL}`}
+        meta={state.status === "success" ? `Last synced: ${state.data.lastSynced}` : "Last synced: —"}
       />
       <div className="flex flex-wrap items-center gap-4 border-b border-outline bg-canvas px-6 py-2 text-[11px] font-bold uppercase tracking-wide text-muted">
         <span>Hierarchy:</span>
@@ -186,22 +192,28 @@ export function SecretsManagement({
               {notice.text}
             </p>
           ) : null}
-          <section aria-label="Secrets summary" className="grid grid-cols-2 gap-4 md:grid-cols-5">
-            <Kpi label="Secrets in scope" value={summary.inScope} />
-            <Kpi label="Rotation overdue" value={summary.overdue} tone={summary.overdue > 0 ? "warning" : undefined} />
-            <Kpi label="Due within 14d" value={summary.dueSoon} tone={summary.dueSoon > 0 ? "warning" : undefined} />
-            <Kpi label="Validation failures" value={0} />
-            <Kpi label="PRD secrets" value={summary.prd} tone={summary.prd > 0 ? "prd" : undefined} />
-          </section>
-          <section className="rounded border border-outline bg-white">
-            <div className="border-b border-outline bg-surface-low px-4 py-3">
-              <h2 className="text-[15px] font-semibold text-ink">Secrets catalog</h2>
-              <p className="mt-1 text-xs text-muted">
-                Rotation state and due dates only. Secret values are never displayed.
-              </p>
-            </div>
-            <SecretsTable secrets={secrets} onAction={openAction} />
-          </section>
+          <QueryState state={state} loadingLabel="Loading secrets…" emptyLabel="No secrets in the current hierarchy filter." isEmpty={(data) => data.items.length === 0}>
+            {() => (
+              <>
+                <section aria-label="Secrets summary" className="grid grid-cols-2 gap-4 md:grid-cols-5">
+                  <Kpi label="Secrets in scope" value={summary.inScope} />
+                  <Kpi label="Rotation overdue" value={summary.overdue} tone={summary.overdue > 0 ? "warning" : undefined} />
+                  <Kpi label="Due within 14d" value={summary.dueSoon} tone={summary.dueSoon > 0 ? "warning" : undefined} />
+                  <Kpi label="Validation failures" value={0} />
+                  <Kpi label="PRD secrets" value={summary.prd} tone={summary.prd > 0 ? "prd" : undefined} />
+                </section>
+                <section className="rounded border border-outline bg-white">
+                  <div className="border-b border-outline bg-surface-low px-4 py-3">
+                    <h2 className="text-[15px] font-semibold text-ink">Secrets catalog</h2>
+                    <p className="mt-1 text-xs text-muted">
+                      Rotation state and due dates only. Secret values are never displayed.
+                    </p>
+                  </div>
+                  <SecretsTable secrets={secrets} onAction={openAction} />
+                </section>
+              </>
+            )}
+          </QueryState>
           <p className="border-t border-outline pt-4 text-center font-mono text-xs text-muted">
             Secret values are never displayed in this console.
           </p>
@@ -237,17 +249,3 @@ function actionLabel(action: Exclude<SecretAction, "history">): string {
   return "Validate";
 }
 
-function accountScope(
-  account: string,
-  provider: Provider | "all",
-  region: Region | "all",
-  environment: Environment | "all",
-): boolean {
-  const secrets = filterManagedSecrets(MANAGED_SECRETS, {
-    provider: provider === "all" ? "all" : provider,
-    region: region === "all" ? "all" : region,
-    account: "all",
-    environment: environment === "all" ? "all" : environment,
-  });
-  return secrets.some((secret) => secret.account === account);
-}

@@ -1,0 +1,64 @@
+from typing import Literal
+
+Provider = Literal["AWS", "Alibaba"]
+Region = Literal["AMER", "EMEA", "APAC", "China"]
+Environment = Literal["DEV", "INT/TST", "UAT", "NPD", "PRD"]
+Platform = Literal["EKS", "ACK"]
+AccountClass = Literal["Production", "Non-production"]
+ClusterStatus = Literal["Healthy", "Degraded", "Unreachable"]
+HealthStatus = Literal["Passing", "Warning", "Failing"]
+RunResult = Literal["Succeeded", "Failed", "Running"]
+AlertSeverity = Literal["critical", "warning", "info"]
+SecretRotationStatus = Literal["OK", "Overdue", "Due soon"]
+RenewalStatus = Literal["OK", "Expiring", "Renewing", "Expired"]
+FailureKind = Literal["deployment", "github", "pipeline"]
+SecretAction = Literal["Update", "Rotate", "Validate"]
+
+PROVIDERS: tuple[Provider, ...] = ("AWS", "Alibaba")
+REGIONS: tuple[Region, ...] = ("AMER", "EMEA", "APAC", "China")
+ENVIRONMENTS: tuple[Environment, ...] = ("DEV", "INT/TST", "UAT", "NPD", "PRD")
+NON_PRODUCTION: tuple[Environment, ...] = ("DEV", "INT/TST", "UAT")
+PRODUCTION: tuple[Environment, ...] = ("NPD", "PRD")
+AWS_REGIONS: tuple[Region, ...] = ("AMER", "EMEA", "APAC")
+ALIBABA_REGIONS: tuple[Region, ...] = ("China",)
+
+CLOUD_REGIONS: dict[str, str] = {
+    "AWS-AMER": "us-east-1",
+    "AWS-EMEA": "eu-west-1",
+    "AWS-APAC": "ap-southeast-1",
+    "Alibaba-China": "cn-hangzhou",
+}
+
+
+def is_production(environment: Environment) -> bool:
+    return environment in PRODUCTION
+
+
+def regions_for(provider: Provider) -> tuple[Region, ...]:
+    return AWS_REGIONS if provider == "AWS" else ALIBABA_REGIONS
+
+
+def platform_for(provider: Provider) -> Platform:
+    return "ACK" if provider == "Alibaba" else "EKS"
+
+
+def cloud_region(provider: Provider, region: Region) -> str:
+    return CLOUD_REGIONS[f"{provider}-{region}"]
+
+
+def account_name(provider: Provider, region: Region, environment: Environment) -> str:
+    klass = "prod" if is_production(environment) else "nonprod"
+    if provider == "Alibaba":
+        return f"{klass}-china"
+    return f"{klass}-{region.lower()}"
+
+
+def cluster_name(provider: Provider, region: Region, environment: Environment) -> str:
+    cloud = cloud_region(provider, region)
+    env = "int" if environment == "INT/TST" else environment.lower()
+    suffix = "ack" if provider == "Alibaba" else "k8s"
+    return f"{cloud}-{env}-{suffix}"
+
+
+def environment_namespace(environment: Environment) -> str:
+    return "int-tst" if environment == "INT/TST" else environment.lower()
