@@ -7,7 +7,99 @@ services:
       POSTGRES_DB: cloudops
     ports:
       - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cloudops -d cloudops"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
   redis:
     image: redis:7
     ports:
       - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      CLOUDOPS_DATABASE_URL: postgresql+psycopg://cloudops:cloudops@postgres:5432/cloudops
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      CLOUDOPS_DATABASE_URL: postgresql+psycopg://cloudops:cloudops@postgres:5432/cloudops
+      CLOUDOPS_REDIS_URL: redis://redis:6379/0
+      CLOUDOPS_CELERY_EAGER: "false"
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  worker:
+    build:
+      context: ..
+      dockerfile: apps/worker/Dockerfile
+    environment:
+      CLOUDOPS_DATABASE_URL: postgresql+psycopg://cloudops:cloudops@postgres:5432/cloudops
+      CLOUDOPS_REDIS_URL: redis://redis:6379/0
+      CLOUDOPS_CELERY_EAGER: "false"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  beat:
+    build:
+      context: ..
+      dockerfile: apps/worker/Dockerfile
+    command: ["celery", "-A", "celery_app", "beat", "--loglevel=info"]
+    environment:
+      CLOUDOPS_DATABASE_URL: postgresql+psycopg://cloudops:cloudops@postgres:5432/cloudops
+      CLOUDOPS_REDIS_URL: redis://redis:6379/0
+      CLOUDOPS_CELERY_EAGER: "false"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    environment:
+      API_PROXY_TARGET: http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  redis-data:

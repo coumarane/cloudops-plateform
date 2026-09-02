@@ -1,0 +1,8 @@
+.git
+.cursor/mcp.json
+.note.md
+**/__pycache__
+**/.pytest_cache
+**/.next
+**/node_modules
+*.db
