@@ -64,6 +64,32 @@ export type ClusterRecord = {
   account: string;
   status: "Healthy" | "Degraded" | "Unreachable";
   appsLabel: string;
+  source?: "mock" | "aws";
+  awsAccountId?: string | null;
+  cloudRegion?: string | null;
+  endpointStatus?: string | null;
+  clusterStatus?: string | null;
+  platformVersion?: string | null;
+  createdAt?: string | null;
+  lastChecked?: string | null;
+};
+
+export type ClusterHealthRecord = {
+  clusterId: string;
+  clusterName: string;
+  controlPlaneStatus: string;
+  kubernetesApiReachable: boolean;
+  nodeCount: number;
+  readyNodeCount: number;
+  podCount: number;
+  unhealthyPodCount: number;
+  crashLoopBackOffCount: number;
+  pendingPodCount: number;
+  unavailableDeploymentCount: number;
+  failedJobCount: number;
+  lastChecked: string;
+  detail: string;
+  status: "Healthy" | "Degraded" | "Unreachable";
 };
 
 export type ApplicationRecord = {
@@ -102,6 +128,10 @@ export type RunRecord = {
   region: Region;
   environment: Environment;
   cluster: string;
+  source?: "mock" | "aws";
+  kind?: string | null;
+  correlationId?: string | null;
+  jobStatus?: string | null;
 };
 
 export type AuditEvent = {
@@ -168,6 +198,15 @@ export type CertificateRecord = {
   expiresOn: string;
   daysRemaining: number;
   renewalStatus: "OK" | "Expiring" | "Renewing" | "Expired";
+  source?: "mock" | "aws";
+  arn?: string | null;
+  subjectAlternativeNames?: string[];
+  status?: string | null;
+  notBefore?: string | null;
+  notAfter?: string | null;
+  inUseBy?: string[];
+  renewalEligibility?: string | null;
+  lastChecked?: string | null;
 };
 
 export type EnvironmentIdentity = {

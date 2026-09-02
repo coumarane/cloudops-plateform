@@ -5,7 +5,21 @@ SECRET_VALUE_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-FORBIDDEN_KEYS = {"password", "token", "apikey", "api_key", "secret_value", "private_key", "pem", "kubeconfig"}
+FORBIDDEN_KEYS = {
+    "password",
+    "token",
+    "apikey",
+    "api_key",
+    "secret_value",
+    "private_key",
+    "pem",
+    "kubeconfig",
+    "aws_secret_access_key",
+    "secret_access_key",
+    "session_token",
+    "access_key_id",
+    "aws_access_key_id",
+}
 
 
 def contains_secret_value(value: str) -> bool:

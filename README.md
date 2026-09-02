@@ -2,13 +2,14 @@
 
 Enterprise multi-cloud operations portal for AWS EKS and Alibaba ACK.
 
-## Local run (Phase 2)
+## Local run (Phase 3)
 
-Start the mock FastAPI service, then the Next.js console. The web app proxies `/api/v1` to FastAPI.
+Start PostgreSQL and Redis if you are not using the SQLite / eager-Celery defaults, then FastAPI and Next.js.
 
 ```bash
 cd apps/api
 python3 -m pip install -r requirements.txt
+PYTHONPATH=. alembic upgrade head
 python3 -m uvicorn app.main:app --reload --port 8000
 ```
 
@@ -20,4 +21,13 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-AWS and Alibaba credentials are not used. Secret values are never returned by the API or rendered in the console.
+Optional worker (when `CLOUDOPS_CELERY_EAGER=false`):
+
+```bash
+cd apps/worker
+PYTHONPATH=../api:. python3 -m celery -A celery_app worker --loglevel=info
+```
+
+Live AWS data is used only for **AWS EMEA NonProd DEV**. AMER, APAC, production cells, and Alibaba stay on mock data.
+
+Secret values are never returned by the API or rendered in the console. See [docs/aws-emea-dev-iam.md](docs/aws-emea-dev-iam.md).

@@ -1,13 +1,20 @@
 [project]
 name = "cloudops-api"
-version = "0.2.0"
-description = "CloudOps Platform API. Mock adapters only in Phase 2."
+version = "0.3.0"
+description = "CloudOps Platform API. AWS EMEA DEV uses live adapters; other scopes stay mocked."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115.0",
   "uvicorn[standard]>=0.32.0",
   "pydantic-settings>=2.6.0",
+  "sqlalchemy>=2.0.36",
+  "alembic>=1.14.0",
+  "psycopg[binary]>=3.2.0",
+  "boto3>=1.35.0",
+  "botocore>=1.35.0",
+  "celery[redis]>=5.4.0",
+  "kubernetes>=31.0.0",
 ]
 
 [project.optional-dependencies]

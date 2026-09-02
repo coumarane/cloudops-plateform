@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from app.domain.enums import ENVIRONMENTS, Environment
 from app.domain.models import CellMetrics, DashboardResponse, KpiSummary, MatrixRow, OperationalAlert, RecentFailure, Scope
 from app.providers.registry import registry
+from app.services.overlay import overlay_certificates, overlay_clusters, overlay_environment, overlay_jobs, overlay_matrix
 
 
 def matches_scope(item: object, scope: Scope) -> bool:
@@ -53,16 +54,17 @@ class CatalogService:
         return filter_items(self._collect("list_environments"), scope)
 
     def environment_detail(self, provider, region, environment):
-        return registry.get(provider).get_environment(region, environment)
+        record = registry.get(provider).get_environment(region, environment)
+        return overlay_environment(record)
 
     def clusters(self, scope: Scope):
-        return filter_items(self._collect("list_clusters"), scope)
+        return filter_items(overlay_clusters(self._collect("list_clusters")), scope)
 
     def applications(self, scope: Scope):
         return filter_items(self._collect("list_applications"), scope)
 
     def certificates(self, scope: Scope):
-        return filter_items(self._collect("list_certificates"), scope)
+        return filter_items(overlay_certificates(self._collect("list_certificates")), scope)
 
     def secrets(self, scope: Scope):
         return filter_items(self._collect("list_secrets"), scope)
@@ -77,7 +79,7 @@ class CatalogService:
         return filter_items(self._collect("list_pipelines"), scope)
 
     def jobs(self, scope: Scope):
-        return filter_items(self._collect("list_jobs"), scope)
+        return filter_items(overlay_jobs(self._collect("list_jobs")), scope)
 
     def github_runs(self, scope: Scope):
         return filter_items(self._collect("list_github_runs"), scope)
@@ -144,10 +146,12 @@ def summarize_kpis(rows: list[MatrixRow], scope: Scope) -> KpiSummary:
 
 def dashboard_snapshot(scope: Scope, last_synced: str) -> DashboardResponse:
     from app.data.inventory import MOCK_INVENTORY
+    from app.services.overlay import overlay_matrix
 
+    live_matrix = overlay_matrix(MOCK_INVENTORY.matrix)
     matrix = [
         row
-        for row in MOCK_INVENTORY.matrix
+        for row in live_matrix
         if (not scope.provider or row.provider == scope.provider)
         and (not scope.region or row.region == scope.region)
     ]
@@ -157,7 +161,7 @@ def dashboard_snapshot(scope: Scope, last_synced: str) -> DashboardResponse:
     failures = filter_items(MOCK_INVENTORY.failures, scope)
     return DashboardResponse(
         lastSynced=last_synced,
-        kpis=summarize_kpis(MOCK_INVENTORY.matrix, scope),
+        kpis=summarize_kpis(live_matrix, scope),
         matrix=matrix,
         alerts=dashboard_alerts,
         failures=failures,
