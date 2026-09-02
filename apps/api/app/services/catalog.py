@@ -296,6 +296,32 @@ def dashboard_snapshot(scope: Scope, last_synced: str) -> DashboardResponse:
     finally:
         if session is not None:
             session.close()
+    session = None
+    try:
+        from sqlalchemy import select as sa_select
+
+        from app.alerting.models import AlertStatus
+        from app.alerting.presenters import kpi_counts
+        from app.db.models import AlertRow
+        from app.db.session import SessionLocal
+
+        session = SessionLocal()
+        rows = list(session.scalars(sa_select(AlertRow)))
+        counts = kpi_counts(rows)
+        live_open = sum(1 for row in rows if row.status in {AlertStatus.OPEN, AlertStatus.ACKNOWLEDGED})
+        kpis = kpis.model_copy(
+            update={
+                "openAlerts": max(kpis.openAlerts, live_open),
+                "criticalAlerts": counts["critical"],
+                "prdCriticalAlerts": counts["prdCritical"],
+                "acknowledgedAlerts": counts["acknowledged"],
+            }
+        )
+    except Exception:
+        pass
+    finally:
+        if session is not None:
+            session.close()
     return DashboardResponse(
         lastSynced=last_synced,
         kpis=kpis,

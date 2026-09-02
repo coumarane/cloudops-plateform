@@ -34,6 +34,14 @@ import { githubQuery } from "@/lib/github";
 import type { Pipeline, PipelineOverview, PipelineRun, PipelineStage, PipelineJob } from "@/lib/pipelines";
 import { pipelineQuery } from "@/lib/pipelines";
 import type { HealthApplication, HealthIncident, HealthOverview, HealthResource, HealthTimelineEvent } from "@/lib/health";
+import type {
+  AlertListResponse,
+  AlertRoutingRule,
+  MaintenanceWindow,
+  ManagedAlert,
+  NotificationDestination,
+  NotificationPolicy,
+} from "@/lib/alerts";
 
 export type { ListResponse, ScopeQuery };
 
@@ -159,6 +167,25 @@ export const cloudOpsApi = {
     postJsonBody<GithubVariable>("/scm/variables", body, signal),
   triggerGithubSync: (signal?: AbortSignal) => postJson<{ queued: boolean; jobs: RunRecord[] }>("/scm/sync", signal),
   alerts: (scope?: ScopeQuery, signal?: AbortSignal) => getList<OperationalAlert>("/alerts", scope, signal),
+  managedAlerts: (query?: Record<string, string>, signal?: AbortSignal) =>
+    getJson<AlertListResponse>(`/alerts${pipelineQuery(query)}`, undefined, signal),
+  managedAlert: (id: string, signal?: AbortSignal) => getJson<ManagedAlert>(`/alerts/${id}`, undefined, signal),
+  acknowledgeAlert: (id: string, comment: string, signal?: AbortSignal) =>
+    postJsonBody<ManagedAlert>(`/alerts/${id}/acknowledge`, { comment }, signal),
+  resolveAlert: (id: string, comment: string, signal?: AbortSignal) =>
+    postJsonBody<ManagedAlert>(`/alerts/${id}/resolve`, { comment }, signal),
+  suppressAlert: (id: string, reason: string, signal?: AbortSignal) =>
+    postJsonBody<ManagedAlert>(`/alerts/${id}/suppress`, { reason }, signal),
+  notificationDestinations: (signal?: AbortSignal) => getList<NotificationDestination>("/notification-destinations", undefined, signal),
+  createNotificationDestination: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<NotificationDestination>("/notification-destinations", body, signal),
+  testNotificationDestination: (id: string, signal?: AbortSignal) =>
+    postJson<{ id: string; status: string; externalMessageId: string; detail: string }>(`/notification-destinations/${id}/test`, signal),
+  notificationPolicies: (signal?: AbortSignal) => getList<NotificationPolicy>("/notification-policies", undefined, signal),
+  alertRoutingRules: (signal?: AbortSignal) => getList<AlertRoutingRule>("/alert-routing-rules", undefined, signal),
+  maintenanceWindows: (signal?: AbortSignal) => getList<MaintenanceWindow>("/maintenance-windows", undefined, signal),
+  createMaintenanceWindow: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<MaintenanceWindow>("/maintenance-windows", body, signal),
   auditEvents: (scope?: ScopeQuery, signal?: AbortSignal) => getList<AuditEvent>("/audit-events", scope, signal),
   dashboard: (scope?: ScopeQuery, signal?: AbortSignal) => getJson<DashboardSnapshot>("/dashboard", scope, signal),
   adminUsers: (signal?: AbortSignal) => getList<AdminUser>("/admin/users", undefined, signal),

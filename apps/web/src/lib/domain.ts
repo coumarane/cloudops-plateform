@@ -336,6 +336,20 @@ export type EnvironmentRecord = {
   audit: ActivityItem[];
   alerts: Array<{ title: string; objectName: string; age: string; severity: AlertSeverity }>;
   recentActivity: ActivityItem[];
+  alertsSummary?: {
+    openAlerts: number;
+    criticalAlerts: number;
+    highAlerts: number;
+    acknowledgedAlerts: number;
+  } | null;
+  maintenanceWindow?: {
+    id: string;
+    name: string;
+    startsAt: string;
+    endsAt: string;
+    reason: string;
+    changeTicket: string;
+  } | null;
 };
 
 export type DashboardSnapshot = {

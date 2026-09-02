@@ -1,12 +1,12 @@
-import { AlertsCatalog } from "@/components/catalog/console-pages";
-import { CatalogRoute } from "../catalog-route";
+import { Suspense } from "react";
+import { AlertsConsole } from "@/components/alerts/AlertsConsole";
 
 export const dynamic = "force-dynamic";
 
-export default function AlertsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ provider?: string; region?: string; environment?: string; selected?: string }>;
-}) {
-  return <CatalogRoute Catalog={AlertsCatalog} label="alerts" searchParams={searchParams} />;
+export default function AlertsPage() {
+  return (
+    <Suspense fallback={<p className="p-6 text-sm text-muted">Loading alerts…</p>}>
+      <AlertsConsole />
+    </Suspense>
+  );
 }

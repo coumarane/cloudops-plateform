@@ -313,6 +313,9 @@ def evaluate_run_alert(
             existing.status = "RESOLVED"
             existing.resolved_at = utcnow()
             existing.last_evaluated_at = utcnow()
+            from app.alerting.publishers import publish_github
+
+            publish_github(session, repository=repository, workflow=workflow, run=run, environment=environment, severity=severity or "MEDIUM", recovered=True, env_row=env_row)
         return
     if existing is not None:
         existing.last_evaluated_at = utcnow()
@@ -333,6 +336,9 @@ def evaluate_run_alert(
             last_evaluated_at=utcnow(),
         )
     )
+    from app.alerting.publishers import publish_github
+
+    publish_github(session, repository=repository, workflow=workflow, run=run, environment=environment, severity=severity, env_row=env_row)
 
 
 def _finish_job(session: Session, job_id: str | None, detail: str, status: str = "succeeded") -> None:

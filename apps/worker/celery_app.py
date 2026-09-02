@@ -50,6 +50,12 @@ celery_app = Celery(
         "tasks.health_aggregation",
         "tasks.health_alert_evaluation",
         "tasks.health_retention",
+        "tasks.alert_evaluate",
+        "tasks.alert_notification_dispatch",
+        "tasks.alert_escalation_check",
+        "tasks.alert_recovery_notification",
+        "tasks.alert_suppression_expiry",
+        "tasks.maintenance_window_expiry",
     ),
 )
 celery_app.conf.update(
@@ -148,6 +154,30 @@ celery_app.conf.update(
         "health-retention": {
             "task": "tasks.health_retention.periodic_scan",
             "schedule": settings.health_retention_interval_seconds,
+        },
+        "alert-evaluate": {
+            "task": "tasks.alert_evaluate.periodic_scan",
+            "schedule": settings.alert_evaluate_interval_seconds,
+        },
+        "alert-notification-dispatch": {
+            "task": "tasks.alert_notification_dispatch.periodic_scan",
+            "schedule": settings.alert_notification_dispatch_interval_seconds,
+        },
+        "alert-escalation-check": {
+            "task": "tasks.alert_escalation_check.periodic_scan",
+            "schedule": settings.alert_escalation_interval_seconds,
+        },
+        "alert-recovery-notification": {
+            "task": "tasks.alert_recovery_notification.periodic_scan",
+            "schedule": settings.alert_recovery_interval_seconds,
+        },
+        "alert-suppression-expiry": {
+            "task": "tasks.alert_suppression_expiry.periodic_scan",
+            "schedule": settings.alert_suppression_expiry_interval_seconds,
+        },
+        "maintenance-window-expiry": {
+            "task": "tasks.maintenance_window_expiry.periodic_scan",
+            "schedule": settings.maintenance_window_expiry_interval_seconds,
         },
     },
 )

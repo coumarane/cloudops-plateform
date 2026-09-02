@@ -57,6 +57,12 @@ from app.services.job_kinds import (
     KIND_HEALTH_ALERT_EVALUATION,
     KIND_HEALTH_RETENTION,
     KIND_HTTP_HEALTH_CHECK,
+    KIND_ALERT_EVALUATE,
+    KIND_ALERT_ESCALATION_CHECK,
+    KIND_ALERT_NOTIFICATION_DISPATCH,
+    KIND_ALERT_RECOVERY_NOTIFICATION,
+    KIND_ALERT_SUPPRESSION_EXPIRY,
+    KIND_MAINTENANCE_WINDOW_EXPIRY,
 )
 
 logger = get_logger(__name__)
@@ -201,6 +207,30 @@ def _run_inline(kind: str, job_id: str) -> None:
         from app.services.health_sync import run_health_retention
 
         run_health_retention(job_id)
+    elif kind == KIND_ALERT_EVALUATE:
+        from app.alerting.jobs import run_evaluate_job
+
+        run_evaluate_job(job_id)
+    elif kind == KIND_ALERT_NOTIFICATION_DISPATCH:
+        from app.alerting.jobs import run_dispatch_job
+
+        run_dispatch_job(job_id)
+    elif kind == KIND_ALERT_ESCALATION_CHECK:
+        from app.alerting.jobs import run_escalation_job
+
+        run_escalation_job(job_id)
+    elif kind == KIND_ALERT_RECOVERY_NOTIFICATION:
+        from app.alerting.jobs import run_recovery_job
+
+        run_recovery_job(job_id)
+    elif kind == KIND_ALERT_SUPPRESSION_EXPIRY:
+        from app.alerting.jobs import run_suppression_expiry_job
+
+        run_suppression_expiry_job(job_id)
+    elif kind == KIND_MAINTENANCE_WINDOW_EXPIRY:
+        from app.alerting.jobs import run_maintenance_expiry_job
+
+        run_maintenance_expiry_job(job_id)
     else:
         raise ValueError(kind)
 
