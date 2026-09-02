@@ -10,7 +10,15 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from app.core.rbac import ROLE_PERMISSIONS
-from app.db.models import PipelineAlertRow, PipelineProviderRow, PipelineRow, PipelineRunRow, PipelineWebhookDeliveryRow
+from app.db.models import (
+    PipelineAlertRow,
+    PipelineJobRow,
+    PipelineProviderRow,
+    PipelineRow,
+    PipelineRunRow,
+    PipelineStageRow,
+    PipelineWebhookDeliveryRow,
+)
 from app.db.session import SessionLocal
 from app.integrations.pipelines import override_pipeline_providers
 from app.integrations.pipelines.azure_devops import MockAzureDevOpsProvider
@@ -338,6 +346,13 @@ def test_azure_adapter_normalizes_runs() -> None:
             assert run is not None
             assert run.status == "SUCCEEDED"
             assert run.branch == "develop"
+            stages = list(session.scalars(select(PipelineStageRow).where(PipelineStageRow.run_id == run.id)))
+            jobs = list(session.scalars(select(PipelineJobRow).where(PipelineJobRow.run_id == run.id)))
+            assert [item.name for item in stages] == ["Build"]
+            assert [item.name for item in jobs] == ["compile"]
+            detail = client.get(f"/api/v1/pipeline-runs/{run.id}", headers=_headers()).json()
+            assert detail["stages"][0]["name"] == "Build"
+            assert detail["jobs"][0]["name"] == "compile"
         finally:
             session.close()
     finally:

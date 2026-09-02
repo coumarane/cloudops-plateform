@@ -30,6 +30,10 @@ export function PipelinesConsole({ initial }: { initial: PipelineFilters }) {
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("");
   const [branchFilter, setBranchFilter] = useState("");
+  const [providerFilter, setProviderFilter] = useState("");
+  const [regionFilter, setRegionFilter] = useState("");
+  const [environmentFilter, setEnvironmentFilter] = useState("");
+  const [applicationFilter, setApplicationFilter] = useState("");
 
   const overviewState = useResource((signal) => cloudOpsApi.pipelineOverview(signal), []);
   const pipelinesState = useResource((signal) => cloudOpsApi.pipelineDefinitions(undefined, signal), []);
@@ -38,9 +42,16 @@ export function PipelinesConsole({ initial }: { initial: PipelineFilters }) {
     return rows.filter((row) => {
       if (statusFilter && (row.latestRun?.status || "").toLowerCase() !== statusFilter.toLowerCase()) return false;
       if (branchFilter && (row.latestRun?.branch || row.defaultBranch) !== branchFilter) return false;
+      if (providerFilter && (row.providerKey || "").toLowerCase() !== providerFilter.toLowerCase()) return false;
+      if (regionFilter && (row.region || row.latestRun?.region || "") !== regionFilter) return false;
+      if (environmentFilter && (row.environment || row.latestRun?.environment || "") !== environmentFilter) return false;
+      if (applicationFilter) {
+        const haystack = `${row.applicationId || ""} ${row.name}`.toLowerCase();
+        if (!haystack.includes(applicationFilter.toLowerCase())) return false;
+      }
       return true;
     });
-  }, [pipelinesState, statusFilter, branchFilter]);
+  }, [pipelinesState, statusFilter, branchFilter, providerFilter, regionFilter, environmentFilter, applicationFilter]);
 
   async function triggerSync() {
     try {
@@ -108,6 +119,33 @@ export function PipelinesConsole({ initial }: { initial: PipelineFilters }) {
           </QueryState>
           <CatalogPanel title="Pipeline catalog" hint="Filter by provider, environment, application, status, and branch. Secret values are never displayed.">
             <div className="flex flex-wrap gap-2 border-b border-outline p-3">
+              <select className="rounded border border-outline px-2 py-1 text-xs" value={providerFilter} onChange={(event) => setProviderFilter(event.target.value)}>
+                <option value="">All providers</option>
+                <option value="github-actions">GitHub Actions</option>
+                <option value="azure-devops">Azure DevOps</option>
+              </select>
+              <select className="rounded border border-outline px-2 py-1 text-xs" value={regionFilter} onChange={(event) => setRegionFilter(event.target.value)}>
+                <option value="">All regions</option>
+                {["AMER", "EMEA", "APAC", "China"].map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </select>
+              <select className="rounded border border-outline px-2 py-1 text-xs" value={environmentFilter} onChange={(event) => setEnvironmentFilter(event.target.value)}>
+                <option value="">All environments</option>
+                {["DEV", "INT/TST", "UAT", "NPD", "PRD"].map((environment) => (
+                  <option key={environment} value={environment}>
+                    {environment}
+                  </option>
+                ))}
+              </select>
+              <input
+                className="rounded border border-outline px-2 py-1 text-xs"
+                placeholder="Application"
+                value={applicationFilter}
+                onChange={(event) => setApplicationFilter(event.target.value)}
+              />
               <select className="rounded border border-outline px-2 py-1 text-xs" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
                 <option value="">All statuses</option>
                 {["QUEUED", "WAITING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED", "SKIPPED", "PARTIAL"].map((status) => (
@@ -429,10 +467,18 @@ function RunView({ runId, onBack }: { runId: string; onBack: () => void }) {
                 </div>
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                   <Meta label="Status" value={run.status} />
+                  <Meta label="Run ID" value={run.externalRunId || run.id} />
+                  <Meta label="Actor" value={run.actor || "—"} />
+                  <Meta label="Trigger" value={run.trigger || "—"} />
+                  <Meta label="Repository" value={run.repository || "—"} />
+                  <Meta label="Branch" value={run.branch || "—"} />
+                  <Meta label="Commit" value={shortSha(run.commitSha)} />
                   <Meta label="CloudOps environment" value={run.provider ? `${run.provider} / ${run.region} / ${run.environment}` : "Unmapped"} />
                   <Meta label="Application" value={run.applicationId || "—"} />
                   <Meta label="Deployment" value={run.deploymentId || "—"} />
                   <Meta label="Cluster" value={run.clusterId || "—"} />
+                  <Meta label="Started" value={run.startedAt || "—"} />
+                  <Meta label="Finished" value={run.completedAt || "—"} />
                   <Meta label="Duration" value={formatDuration(run.durationSeconds)} />
                 </div>
                 <CatalogPanel title="Timeline" hint="Pipeline run → stages → jobs. Step logs remain on the provider.">

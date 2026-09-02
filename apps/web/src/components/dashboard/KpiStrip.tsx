@@ -90,34 +90,6 @@ export function KpiStrip({ summary }: { summary: KpiSummary }) {
           </div>
         </Card>
       </section>
-      <section aria-label="Certificate expiry" className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        <Card label="Certificates healthy" href="/certificates?status=healthy">
-          <p className="text-lg font-semibold text-healthy">{healthy}</p>
-        </Card>
-        <Card label="Expiring < 60 days" tone={expiring60 > 0 ? "warning" : undefined} href="/certificates?expires_within_days=60">
-          <p className="text-lg font-semibold text-warning">{expiring60}</p>
-        </Card>
-        <Card label="Expiring < 30 days" tone={expiring30 > 0 ? "warning" : undefined} href="/certificates?expires_within_days=30">
-          <p className="text-lg font-semibold text-warning">{expiring30}</p>
-        </Card>
-        <Card label="Expiring < 7 days" tone={expiring7 > 0 ? "critical" : undefined} href="/certificates?expires_within_days=7">
-          <p className="text-lg font-semibold text-critical">{expiring7}</p>
-        </Card>
-        <Card label="Expired" tone={expired > 0 ? "critical" : undefined} href="/certificates?status=expired">
-          <p className="text-lg font-semibold text-critical">{expired}</p>
-        </Card>
-      </section>
-      <section aria-label="GitHub Workflows" className="grid grid-cols-2 gap-4 md:grid-cols-3">
-        <Card label="GitHub running" href="/github">
-          <p className="text-lg font-semibold text-action">{summary.githubWorkflowsRunning ?? 0}</p>
-        </Card>
-        <Card label="GitHub failed" tone={(summary.githubWorkflowsFailed ?? 0) > 0 ? "critical" : undefined} href="/github">
-          <p className="text-lg font-semibold text-critical">{summary.githubWorkflowsFailed ?? 0}</p>
-        </Card>
-        <Card label="GitHub success" href="/github">
-          <p className="text-lg font-semibold text-healthy">{summary.githubWorkflowsSucceeded ?? 0}</p>
-        </Card>
-      </section>
       <section aria-label="Pipelines" className="grid grid-cols-2 gap-4 md:grid-cols-5">
         <Card label="Pipeline runs today" href="/pipelines">
           <p className="text-lg font-semibold text-ink">{summary.pipelineRunsToday ?? 0}</p>
@@ -136,6 +108,34 @@ export function KpiStrip({ summary }: { summary: KpiSummary }) {
             {summary.pipelineAverageDurationSeconds ?? 0}
             <span className="ml-1 text-[10px] text-muted">s</span>
           </p>
+        </Card>
+      </section>
+      <section aria-label="GitHub Workflows" className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        <Card label="GitHub running" href="/github">
+          <p className="text-lg font-semibold text-action">{summary.githubWorkflowsRunning ?? 0}</p>
+        </Card>
+        <Card label="GitHub failed" tone={(summary.githubWorkflowsFailed ?? 0) > 0 ? "critical" : undefined} href="/github">
+          <p className="text-lg font-semibold text-critical">{summary.githubWorkflowsFailed ?? 0}</p>
+        </Card>
+        <Card label="GitHub success" href="/github">
+          <p className="text-lg font-semibold text-healthy">{summary.githubWorkflowsSucceeded ?? 0}</p>
+        </Card>
+      </section>
+      <section aria-label="Certificate expiry" className="grid grid-cols-2 gap-4 md:grid-cols-5">
+        <Card label="Certificates healthy" href="/certificates?status=healthy">
+          <p className="text-lg font-semibold text-healthy">{healthy}</p>
+        </Card>
+        <Card label="Expiring < 60 days" tone={expiring60 > 0 ? "warning" : undefined} href="/certificates?expires_within_days=60">
+          <p className="text-lg font-semibold text-warning">{expiring60}</p>
+        </Card>
+        <Card label="Expiring < 30 days" tone={expiring30 > 0 ? "warning" : undefined} href="/certificates?expires_within_days=30">
+          <p className="text-lg font-semibold text-warning">{expiring30}</p>
+        </Card>
+        <Card label="Expiring < 7 days" tone={expiring7 > 0 ? "critical" : undefined} href="/certificates?expires_within_days=7">
+          <p className="text-lg font-semibold text-critical">{expiring7}</p>
+        </Card>
+        <Card label="Expired" tone={expired > 0 ? "critical" : undefined} href="/certificates?status=expired">
+          <p className="text-lg font-semibold text-critical">{expired}</p>
         </Card>
       </section>
     </div>
