@@ -1,8 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { QueryState } from "@/components/status/QueryState";
 import { StatusCell } from "@/components/status/StatusCell";
+import { cloudOpsApi } from "@/lib/api/client";
+import { useResource } from "@/lib/api/use-resource";
 import { environmentHref } from "@/lib/environment";
-import { LAST_SYNCED_LABEL, MATRIX_ROWS } from "@/lib/mock-data";
 import {
   ENVIRONMENTS,
   NON_PRODUCTION_ENVIRONMENTS,
@@ -18,65 +22,71 @@ const PROVIDER_GROUPS: { provider: Provider; label: string }[] = [
 ];
 
 export function EnvironmentsIndex() {
+  const state = useResource((signal) => cloudOpsApi.dashboard({}, signal), []);
+
   return (
     <>
       <PageHeader
         title="Environments"
         subtitle="Select a provider, region, and environment to open operational details"
-        meta={`Last synced: ${LAST_SYNCED_LABEL}`}
+        meta={state.status === "success" ? `Last synced: ${state.data.lastSynced}` : "Last synced: —"}
       />
       <main className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-[1600px] space-y-6">
-          <section className="rounded border border-outline bg-white">
-            <div className="border-b border-outline p-4">
-              <h2 className="text-lg font-semibold text-ink">Environment catalog</h2>
-            </div>
-            <div className="overflow-x-auto p-4">
-              <table className="w-full border-collapse text-left text-[13px]">
-                <thead>
-                  <tr>
-                    <th className="p-2" />
-                    <th
-                      className="p-2 text-center text-[11px] font-bold uppercase tracking-wide text-muted"
-                      colSpan={NON_PRODUCTION_ENVIRONMENTS.length}
-                    >
-                      Non-production
-                    </th>
-                    <th
-                      className="p-2 text-center text-[11px] font-bold uppercase tracking-wide text-prd"
-                      colSpan={PRODUCTION_ENVIRONMENTS.length}
-                    >
-                      <div className="border-t-4 border-prd pt-1">Production</div>
-                    </th>
-                  </tr>
-                  <tr className="border-b border-outline">
-                    <th className="p-2 text-[11px] font-bold uppercase tracking-wide text-muted">Region</th>
-                    {ENVIRONMENTS.map((environment) => (
-                      <th
-                        key={environment}
-                        className={
-                          environment === "PRD"
-                            ? "p-2 text-center text-[11px] font-bold uppercase tracking-wide text-prd"
-                            : "p-2 text-center text-[11px] font-bold uppercase tracking-wide text-muted"
-                        }
-                      >
-                        {environment}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {PROVIDER_GROUPS.map((group) => (
-                    <ProviderGroup
-                      key={group.provider}
-                      label={group.label}
-                      rows={MATRIX_ROWS.filter((row) => row.provider === group.provider)}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <QueryState state={state} loadingLabel="Loading environment catalog…">
+            {(data) => (
+              <section className="rounded border border-outline bg-white">
+                <div className="border-b border-outline p-4">
+                  <h2 className="text-lg font-semibold text-ink">Environment catalog</h2>
+                </div>
+                <div className="overflow-x-auto p-4">
+                  <table className="w-full border-collapse text-left text-[13px]">
+                    <thead>
+                      <tr>
+                        <th className="p-2" />
+                        <th
+                          className="p-2 text-center text-[11px] font-bold uppercase tracking-wide text-muted"
+                          colSpan={NON_PRODUCTION_ENVIRONMENTS.length}
+                        >
+                          Non-production
+                        </th>
+                        <th
+                          className="p-2 text-center text-[11px] font-bold uppercase tracking-wide text-prd"
+                          colSpan={PRODUCTION_ENVIRONMENTS.length}
+                        >
+                          <div className="border-t-4 border-prd pt-1">Production</div>
+                        </th>
+                      </tr>
+                      <tr className="border-b border-outline">
+                        <th className="p-2 text-[11px] font-bold uppercase tracking-wide text-muted">Region</th>
+                        {ENVIRONMENTS.map((environment) => (
+                          <th
+                            key={environment}
+                            className={
+                              environment === "PRD"
+                                ? "p-2 text-center text-[11px] font-bold uppercase tracking-wide text-prd"
+                                : "p-2 text-center text-[11px] font-bold uppercase tracking-wide text-muted"
+                            }
+                          >
+                            {environment}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {PROVIDER_GROUPS.map((group) => (
+                        <ProviderGroup
+                          key={group.provider}
+                          label={group.label}
+                          rows={data.matrix.filter((row) => row.provider === group.provider)}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+          </QueryState>
           <p className="border-t border-outline pt-4 text-center font-mono text-xs text-muted">
             Secret values are never displayed in this console.
           </p>

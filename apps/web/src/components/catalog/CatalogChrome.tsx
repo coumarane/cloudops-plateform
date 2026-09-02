@@ -1,5 +1,4 @@
 import { isProductionEnvironment } from "@/lib/dashboard";
-import { LAST_SYNCED_LABEL } from "@/lib/mock-data";
 import type { Environment } from "@/lib/types";
 import { PageHeader } from "@/components/layout/PageHeader";
 import type { ReactNode } from "react";
@@ -12,6 +11,7 @@ export function CatalogBody({
   kpis,
   filters,
   children,
+  lastSynced,
 }: {
   title: string;
   subtitle: string;
@@ -20,10 +20,15 @@ export function CatalogBody({
   kpis: ReactNode;
   filters: ReactNode;
   children: ReactNode;
+  lastSynced?: string;
 }) {
   return (
     <>
-      <PageHeader title={title} subtitle={subtitle} meta={`Last synced: ${LAST_SYNCED_LABEL}`} />
+      <PageHeader
+        title={title}
+        subtitle={subtitle}
+        meta={lastSynced ? `Last synced: ${lastSynced}` : "Last synced: —"}
+      />
       {filters}
       <main className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-[1600px] space-y-6">

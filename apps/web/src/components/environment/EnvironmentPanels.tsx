@@ -5,14 +5,18 @@ import { certificatesHref } from "@/lib/certificates";
 import { environmentHref } from "@/lib/environment";
 import { secretsHref } from "@/lib/secrets";
 import type {
-  EnvironmentActivity,
-  EnvironmentApplication,
-  EnvironmentCertificate,
-  EnvironmentCluster,
+  ActivityItem,
+  ApplicationRecord,
+  ClusterRecord,
   EnvironmentIdentity,
   EnvironmentRecord,
-  EnvironmentSecret,
-} from "@/lib/environment-data";
+} from "@/lib/domain";
+
+type EnvironmentActivity = ActivityItem;
+type EnvironmentApplication = ApplicationRecord;
+type EnvironmentCertificate = EnvironmentRecord["certificates"][number];
+type EnvironmentCluster = ClusterRecord;
+type EnvironmentSecret = EnvironmentRecord["secrets"][number];
 
 function Panel({
   title,

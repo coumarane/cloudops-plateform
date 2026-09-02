@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { containsSecretValue } from "./dashboard";
 import {
   ENVIRONMENT_TABS,
   environmentHref,
@@ -9,11 +8,7 @@ import {
   parseRegion,
   parseTab,
 } from "./environment";
-import {
-  environmentRecordStrings,
-  getEnvironmentRecord,
-  listEnvironmentIdentities,
-} from "./environment-data";
+import { listEnvironmentIdentities } from "./environment-data";
 
 describe("environment routing", () => {
   it("uses int-tst for INT/TST and keeps production slugs literal", () => {
@@ -48,31 +43,12 @@ describe("environment routing", () => {
     expect(parseProvider("gcp")).toBeNull();
     expect(parseRegion("latam")).toBeNull();
   });
-});
 
-describe("environment records", () => {
-  it("never includes secret values in environment details data", () => {
-    for (const identity of listEnvironmentIdentities()) {
-      const record = getEnvironmentRecord(identity.provider, identity.region, identity.environment);
-      for (const value of environmentRecordStrings(record)) {
-        expect(containsSecretValue(value)).toBe(false);
-      }
-      expect(record.secrets.every((secret) => !("value" in secret))).toBe(true);
-    }
-  });
-
-  it("models AWS EMEA UAT from the Stitch screen", () => {
-    const record = getEnvironmentRecord("AWS", "EMEA", "UAT");
-    expect(record.identity.account).toBe("nonprod-emea");
-    expect(record.clusters[0]?.status).toBe("Unreachable");
-    expect(record.applications).toHaveLength(4);
-    expect(record.secrets[0]?.name).toBe("db-credentials-finance");
-    expect(record.secrets[0]?.status).toBe("Overdue");
-  });
-
-  it("marks production accounts for PRD environments", () => {
-    const record = getEnvironmentRecord("AWS", "AMER", "PRD");
-    expect(record.identity.account).toBe("prod-amer");
-    expect(record.certificates[0]?.name).toBe("ingress-tls-wildcard");
+  it("lists topology for AWS AMER/EMEA/APAC and Alibaba China", () => {
+    const scopes = new Set(listEnvironmentIdentities().map((item) => `${item.provider} ${item.region}`));
+    expect(scopes).toEqual(new Set(["AWS AMER", "AWS EMEA", "AWS APAC", "Alibaba China"]));
+    expect(listEnvironmentIdentities().find((item) => item.provider === "AWS" && item.region === "EMEA" && item.environment === "UAT")?.account).toBe(
+      "nonprod-emea",
+    );
   });
 });
