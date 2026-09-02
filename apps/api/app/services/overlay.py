@@ -122,7 +122,12 @@ def overlay_certificates(items: list[CertificateRecord]) -> list[CertificateReco
                     }
                 )
                 live.append(copied)
-        kept = [item for item in annotated if (item.provider, item.region, item.environment) not in live_scopes]
+        kept = [
+            item
+            for item in annotated
+            if (item.provider, item.region, item.environment)
+            not in {(cert.provider, cert.region, cert.environment) for cert in live}
+        ]
         return kept + live
     except Exception:
         logger.exception("Live certificate overlay unavailable; using mock data")
