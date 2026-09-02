@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AlertTriangle, ShieldCheck } from "lucide-react";
+import { certificatesHref } from "@/lib/certificates";
 import { environmentHref } from "@/lib/environment";
 import { secretsHref } from "@/lib/secrets";
 import type {
@@ -328,7 +329,21 @@ export function OverviewSecrets({ record }: { record: EnvironmentRecord }) {
 
 export function OverviewCertificates({ record }: { record: EnvironmentRecord }) {
   return (
-    <Panel title="Certificates (next 30 days)">
+    <Panel
+      title="Certificates (next 30 days)"
+      action={
+        <Link
+          href={certificatesHref({
+            provider: record.identity.provider,
+            region: record.identity.region,
+            environment: record.identity.environment,
+          })}
+          className="text-xs font-semibold text-action hover:underline"
+        >
+          View catalog
+        </Link>
+      }
+    >
       <CertificatesTable certificates={record.certificates} />
     </Panel>
   );

@@ -1,3 +1,4 @@
+import { certificatesHref } from "./certificates";
 import { assertNoSecretValues, emptyMetrics } from "./dashboard";
 import { environmentHref } from "./environment";
 import { ENVIRONMENTS, type CellMetrics, type MatrixRow, type OperationalAlert, type RecentFailure } from "./types";
@@ -85,7 +86,12 @@ export const OPERATIONAL_ALERTS: OperationalAlert[] = [
     region: "AMER",
     environment: "PRD",
     age: "1h ago",
-    href: environmentHref("AWS", "AMER", "PRD", "certificates"),
+    href: certificatesHref({
+      provider: "AWS",
+      region: "AMER",
+      environment: "PRD",
+      certificate: "cert-amer-prd-wildcard",
+    }),
   },
   {
     id: "alert-china-uat-memory",
