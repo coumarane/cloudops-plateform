@@ -202,16 +202,12 @@ export function ClustersCatalog({ initial }: { initial: CatalogFilters }) {
                 <tr key={row.id} className={rowClass(row.id === selected, row.status !== "Healthy")}>
                   <td className="p-3 font-mono text-xs font-semibold text-ink">
                     <Link
-                      href={
-                        row.source === "aws"
-                          ? catalogHref("/clusters", {
-                              provider: row.provider,
-                              region: row.region,
-                              environment: row.environment,
-                              selected: row.id,
-                            })
-                          : environmentHref(row.provider, row.region, row.environment, "clusters")
-                      }
+                      href={catalogHref("/clusters", {
+                        provider: row.provider,
+                        region: row.region,
+                        environment: row.environment,
+                        selected: row.id,
+                      })}
                       className="hover:underline"
                     >
                       {row.name}
