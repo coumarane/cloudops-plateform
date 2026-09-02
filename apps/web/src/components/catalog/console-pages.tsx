@@ -268,7 +268,7 @@ export function ApplicationsCatalog({ initial }: { initial: CatalogFilters }) {
     >
       {(rows: ApplicationRecord[], selected) => (
         <CatalogPanel title="Application catalog" hint="Replica and issue state only. Runtime secrets are never displayed.">
-          <Table headers={["Application", "Namespace", "Replicas", "Source control", "Workflow", "Issue", "Provider", "Region", "Environment", "Cluster"]}>
+          <Table headers={["Application", "Namespace", "Replicas", "Source control", "Pipeline", "Workflow", "Issue", "Provider", "Region", "Environment", "Cluster"]}>
             {rows.map((row) => (
               <tr key={row.id} className={rowClass(row.id === selected, row.issue !== "Healthy")}>
                 <td className="p-3 font-mono text-xs font-semibold text-ink">
@@ -290,8 +290,20 @@ export function ApplicationsCatalog({ initial }: { initial: CatalogFilters }) {
                   )}
                 </td>
                 <td className="p-3 font-mono text-xs text-muted">
+                  {row.pipelineId ? (
+                    <Link
+                      href={row.latestPipelineRunId ? `/pipelines?run=${row.latestPipelineRunId}` : `/pipelines?pipeline=${row.pipelineId}`}
+                      className="hover:underline"
+                    >
+                      {row.pipelineName || "pipeline"} ({row.latestPipelineStatus || row.pipelineProvider || "—"})
+                    </Link>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td className="p-3 font-mono text-xs text-muted">
                   {row.workflowRunId ? (
-                    <Link href={`/github?run=${row.workflowRunId}`} className="hover:underline">
+                    <Link href={row.latestPipelineRunId ? `/pipelines?run=${row.latestPipelineRunId}` : `/github?run=${row.workflowRunId}`} className="hover:underline">
                       {row.workflow || "workflow"} ({row.latestWorkflowStatus || "—"})
                     </Link>
                   ) : (

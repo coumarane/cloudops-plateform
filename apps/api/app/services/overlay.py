@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy import select
 
 from app.core.logging import get_logger
-from app.db.models import CertificateAlertRow, CloudEnvironmentRow, GithubAlertRow, GithubWorkflowRunRow
+from app.db.models import CertificateAlertRow, CloudEnvironmentRow, GithubAlertRow, GithubWorkflowRunRow, PipelineAlertRow, PipelineRunRow
 from app.db.repository import InventoryRepository
 from app.db.session import SessionLocal
 from app.domain.models import (
@@ -217,11 +217,22 @@ def overlay_environment(record: EnvironmentRecord | None) -> EnvironmentRecord |
         for run in session.scalars(select(GithubWorkflowRunRow).order_by(GithubWorkflowRunRow.started_at.desc())):
             record = to_run_record(session, run)
             if record.provider == updated.identity.provider and record.region == updated.identity.region and record.environment == updated.identity.environment:
-                github_items.append(ActivityItem(title=record.name, detail=record.detail, age=record.age))
+                github_items.append(ActivityItem(title=record.name, detail=record.detail, age=record.age, href=record.href))
             if len(github_items) >= 8:
                 break
         if github_items:
             updated = updated.model_copy(update={"github": github_items})
+        pipeline_items = []
+        from app.services.pipeline_presenters import to_activity, to_run_record as to_pipeline_run_record
+
+        for run in session.scalars(select(PipelineRunRow).order_by(PipelineRunRow.started_at.desc())):
+            record = to_pipeline_run_record(session, run)
+            if record.provider == updated.identity.provider and record.region == updated.identity.region and record.environment == updated.identity.environment:
+                pipeline_items.append(to_activity(session, run))
+            if len(pipeline_items) >= 8:
+                break
+        if pipeline_items:
+            updated = updated.model_copy(update={"pipelines": pipeline_items})
         return updated
     except Exception:
         logger.exception("Live environment overlay unavailable; using mock data")
@@ -335,6 +346,14 @@ def overlay_matrix(rows: list[MatrixRow]) -> list[MatrixRow]:
                 if github_failed:
                     next_cell = next_cell.model_copy(update={"githubFailures": len(github_failed), "live": True})
                     changed = True
+                pipeline_failed = [
+                    run
+                    for run in _pipeline_runs_by_scope(session).get((row.provider, row.region, environment), [])
+                    if run.status == "FAILED"
+                ]
+                if pipeline_failed:
+                    next_cell = next_cell.model_copy(update={"pipelineFailures": len(pipeline_failed), "live": True})
+                    changed = True
                 cells[environment] = next_cell
             patched.append(
                 MatrixRow(provider=row.provider, platform=row.platform, region=row.region, cells=cells)
@@ -367,7 +386,13 @@ def overlay_alerts(items: list[OperationalAlert]) -> list[OperationalAlert]:
             to_github_alert(session, row)
             for row in session.scalars(select(GithubAlertRow).where(GithubAlertRow.status == "OPEN"))
         ]
-        return github_live + live + items
+        from app.services.pipeline_presenters import to_pipeline_alert
+
+        pipeline_live = [
+            to_pipeline_alert(session, row)
+            for row in session.scalars(select(PipelineAlertRow).where(PipelineAlertRow.status == "OPEN"))
+        ]
+        return pipeline_live + github_live + live + items
     except Exception:
         logger.exception("Live certificate alert overlay unavailable")
         return items
@@ -421,6 +446,74 @@ def _github_runs_by_scope(session) -> dict[tuple[str, str, str], list]:
     return grouped
 
 
+def _pipeline_runs_by_scope(session) -> dict[tuple[str, str, str], list]:
+    from app.services.github_presenters import environment_label
+
+    grouped: dict[tuple[str, str, str], list] = {}
+    for run in session.scalars(select(PipelineRunRow)):
+        label = environment_label(session, run.environment_id)
+        provider = label.get("provider")
+        region = label.get("region")
+        environment = label.get("environment")
+        if not provider or not region or not environment:
+            continue
+        grouped.setdefault((provider, region, environment), []).append(run)
+    return grouped
+
+
+def overlay_pipelines(items: list[RunRecord]) -> list[RunRecord]:
+    session = SessionLocal()
+    try:
+        from app.services.pipeline_presenters import to_run_record
+
+        live = [to_run_record(session, row) for row in session.scalars(select(PipelineRunRow))]
+        if not live:
+            return items
+        return live
+    except Exception:
+        logger.exception("Live pipeline overlay unavailable; using mock data")
+        return items
+    finally:
+        session.close()
+
+
+def overlay_pipeline_failures(items):
+    session = SessionLocal()
+    try:
+        from app.integrations.pipelines.status import FAILED
+        from app.services.pipeline_presenters import to_recent_failure
+
+        live = [
+            to_recent_failure(session, row)
+            for row in session.scalars(select(PipelineRunRow).where(PipelineRunRow.status == FAILED))
+        ]
+        live = sorted(live, key=lambda item: item.age)
+        return live + items
+    except Exception:
+        logger.exception("Live pipeline failure overlay unavailable")
+        return items
+    finally:
+        session.close()
+
+
+def overlay_pipeline_audit(items):
+    session = SessionLocal()
+    try:
+        from app.db.models import PipelineAuditRow
+        from app.services.pipeline_presenters import to_pipeline_audit
+
+        live = [
+            to_pipeline_audit(row)
+            for row in session.scalars(select(PipelineAuditRow).order_by(PipelineAuditRow.created_at.desc()))
+        ]
+        return live + items
+    except Exception:
+        logger.exception("Live pipeline audit overlay unavailable")
+        return items
+    finally:
+        session.close()
+
+
 def overlay_github_runs(items: list[RunRecord]) -> list[RunRecord]:
     session = SessionLocal()
     try:
@@ -460,8 +553,9 @@ def overlay_applications(items: list[ApplicationRecord]) -> list[ApplicationReco
     session = SessionLocal()
     try:
         from app.services.github_presenters import apply_source_control
+        from app.services.pipeline_presenters import apply_pipeline
 
-        return [apply_source_control(session, item) for item in items]
+        return [apply_pipeline(session, apply_source_control(session, item)) for item in items]
     except Exception:
         logger.exception("Application source-control overlay unavailable")
         return items

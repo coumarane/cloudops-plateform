@@ -37,6 +37,12 @@ celery_app = Celery(
         "tasks.github_variable_sync",
         "tasks.github_secret_sync",
         "tasks.github_webhook",
+        "tasks.pipeline_provider_sync",
+        "tasks.pipeline_sync",
+        "tasks.pipeline_run_sync",
+        "tasks.pipeline_run_detail_sync",
+        "tasks.pipeline_retention",
+        "tasks.pipeline_webhook",
     ),
 )
 celery_app.conf.update(
@@ -87,6 +93,26 @@ celery_app.conf.update(
         "github-secret-metadata-sync": {
             "task": "tasks.github_secret_sync.periodic_scan",
             "schedule": settings.github_secret_sync_interval_seconds,
+        },
+        "pipeline-provider-sync": {
+            "task": "tasks.pipeline_provider_sync.periodic_scan",
+            "schedule": settings.pipeline_metadata_sync_interval_seconds,
+        },
+        "pipeline-sync": {
+            "task": "tasks.pipeline_sync.periodic_scan",
+            "schedule": settings.pipeline_metadata_sync_interval_seconds,
+        },
+        "pipeline-run-sync": {
+            "task": "tasks.pipeline_run_sync.periodic_scan",
+            "schedule": settings.pipeline_run_sync_interval_seconds,
+        },
+        "pipeline-run-detail-sync": {
+            "task": "tasks.pipeline_run_detail_sync.periodic_scan",
+            "schedule": settings.pipeline_running_sync_interval_seconds,
+        },
+        "pipeline-retention": {
+            "task": "tasks.pipeline_retention.periodic_scan",
+            "schedule": settings.pipeline_retention_interval_seconds,
         },
     },
 )

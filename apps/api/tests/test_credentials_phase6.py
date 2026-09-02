@@ -344,6 +344,7 @@ def test_rbac_read_only_cannot_create() -> None:
             "github_variable:read",
             "github_variable:update",
             "github_secret:read_metadata",
+            "pipeline:read",
         }
     )
 

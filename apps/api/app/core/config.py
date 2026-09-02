@@ -74,6 +74,24 @@ class Settings(BaseSettings):
     github_alert_npd: str = "HIGH"
     github_alert_prd: str = "CRITICAL"
     github_variable_sensitive_default: bool = False
+    azure_devops_organization: str = ""
+    azure_devops_project: str = ""
+    azure_devops_base_url: str = "https://dev.azure.com"
+    azure_devops_auth_ref: str = ""
+    azure_devops_webhook_secret: str = ""
+    azure_devops_webhook_secret_ref: str = ""
+    azure_devops_mock: bool = False
+    pipeline_metadata_sync_interval_seconds: int = 60 * 60
+    pipeline_run_sync_interval_seconds: int = 5 * 60
+    pipeline_running_sync_interval_seconds: int = 60
+    pipeline_retention_interval_seconds: int = 24 * 60 * 60
+    pipeline_run_retention_days: int = 90
+    pipeline_detail_retention_days: int = 30
+    pipeline_alert_dev: str = ""
+    pipeline_alert_int_tst: str = "LOW"
+    pipeline_alert_uat: str = "MEDIUM"
+    pipeline_alert_npd: str = "HIGH"
+    pipeline_alert_prd: str = "CRITICAL"
 
 
 settings = Settings()

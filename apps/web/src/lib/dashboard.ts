@@ -164,6 +164,11 @@ export function summarizeKpis(rows: MatrixRow[], filters: DashboardFilters): Kpi
     githubWorkflowsFailed: 0,
     githubWorkflowsSucceeded: 0,
     pipelineFailures: 0,
+    pipelineRunsToday: 0,
+    pipelinesRunning: 0,
+    pipelinesFailed: 0,
+    pipelinesFailedPrd: 0,
+    pipelineAverageDurationSeconds: 0,
     openAlerts: 0,
   };
 

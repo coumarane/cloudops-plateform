@@ -41,6 +41,12 @@ from app.services.job_kinds import (
     KIND_GITHUB_WORKFLOW_RUN_SYNC,
     KIND_GITHUB_WORKFLOW_SYNC,
     KIND_HEALTH,
+    KIND_PIPELINE_PROVIDER_SYNC,
+    KIND_PIPELINE_RETENTION,
+    KIND_PIPELINE_RUN_DETAIL_SYNC,
+    KIND_PIPELINE_RUN_SYNC,
+    KIND_PIPELINE_SYNC,
+    KIND_PIPELINE_WEBHOOK,
     TASK_NAMES,
 )
 
@@ -115,6 +121,46 @@ def _run_inline(kind: str, job_id: str) -> None:
             from app.db.repository import InventoryRepository
 
             InventoryRepository(session).mark_job_finished(job_id, status="succeeded", detail="github-webhook-process")
+            session.commit()
+        finally:
+            session.close()
+    elif kind == KIND_PIPELINE_PROVIDER_SYNC:
+        from app.services.pipeline_sync import run_provider_sync
+
+        run_provider_sync(job_id)
+    elif kind == KIND_PIPELINE_SYNC:
+        from app.services.pipeline_sync import run_pipeline_sync
+
+        run_pipeline_sync(job_id)
+    elif kind == KIND_PIPELINE_RUN_SYNC:
+        from app.services.pipeline_sync import run_pipeline_run_sync
+
+        run_pipeline_run_sync(job_id)
+    elif kind == KIND_PIPELINE_RUN_DETAIL_SYNC:
+        from app.services.pipeline_sync import run_pipeline_run_detail_sync
+
+        run_pipeline_run_detail_sync(job_id)
+    elif kind == KIND_PIPELINE_RETENTION:
+        from app.services.pipeline_sync import run_pipeline_retention
+
+        run_pipeline_retention(job_id)
+    elif kind == KIND_PIPELINE_WEBHOOK:
+        from app.services.pipeline_webhooks import process_pipeline_delivery
+        from app.db.session import SessionLocal
+        from app.db.models import PlatformJobRow
+
+        session = SessionLocal()
+        try:
+            job = session.get(PlatformJobRow, job_id)
+            target = job.target_id if job else job_id
+        finally:
+            session.close()
+        process_pipeline_delivery(target)
+        session = SessionLocal()
+        try:
+            from app.db.repository import InventoryRepository
+
+            InventoryRepository(session).mark_job_finished(job_id, status="succeeded", detail="pipeline-webhook-process")
             session.commit()
         finally:
             session.close()

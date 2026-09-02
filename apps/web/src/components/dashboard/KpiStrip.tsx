@@ -77,7 +77,7 @@ export function KpiStrip({ summary }: { summary: KpiSummary }) {
         <Card label="GitHub fails" tone={summary.githubFailures > 0 ? "critical" : undefined} href="/github">
           <p className="text-lg font-semibold text-critical">{summary.githubFailures}</p>
         </Card>
-        <Card label="Pipeline fails" tone={summary.pipelineFailures > 0 ? "critical" : undefined}>
+        <Card label="Pipeline fails" tone={summary.pipelineFailures > 0 ? "critical" : undefined} href="/pipelines">
           <p className="text-lg font-semibold text-critical">{summary.pipelineFailures}</p>
         </Card>
         <Card label="Open alerts" tone={summary.openAlerts > 0 ? "critical" : undefined}>
@@ -116,6 +116,26 @@ export function KpiStrip({ summary }: { summary: KpiSummary }) {
         </Card>
         <Card label="GitHub success" href="/github">
           <p className="text-lg font-semibold text-healthy">{summary.githubWorkflowsSucceeded ?? 0}</p>
+        </Card>
+      </section>
+      <section aria-label="Pipelines" className="grid grid-cols-2 gap-4 md:grid-cols-5">
+        <Card label="Pipeline runs today" href="/pipelines">
+          <p className="text-lg font-semibold text-ink">{summary.pipelineRunsToday ?? 0}</p>
+        </Card>
+        <Card label="Running pipelines" href="/pipelines">
+          <p className="text-lg font-semibold text-action">{summary.pipelinesRunning ?? 0}</p>
+        </Card>
+        <Card label="Failed pipelines" tone={(summary.pipelinesFailed ?? 0) > 0 ? "critical" : undefined} href="/pipelines">
+          <p className="text-lg font-semibold text-critical">{summary.pipelinesFailed ?? 0}</p>
+        </Card>
+        <Card label="Failed PRD pipelines" tone={(summary.pipelinesFailedPrd ?? 0) > 0 ? "critical" : undefined} href="/pipelines">
+          <p className="text-lg font-semibold text-prd">{summary.pipelinesFailedPrd ?? 0}</p>
+        </Card>
+        <Card label="Avg deploy duration" href="/pipelines">
+          <p className="text-lg font-semibold text-ink">
+            {summary.pipelineAverageDurationSeconds ?? 0}
+            <span className="ml-1 text-[10px] text-muted">s</span>
+          </p>
         </Card>
       </section>
     </div>

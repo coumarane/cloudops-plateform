@@ -19,6 +19,12 @@ KIND_GITHUB_WORKFLOW_RUN_SYNC = "github-workflow-run-sync"
 KIND_GITHUB_VARIABLE_SYNC = "github-variable-sync"
 KIND_GITHUB_SECRET_SYNC = "github-secret-metadata-sync"
 KIND_GITHUB_WEBHOOK = "github-webhook-process"
+KIND_PIPELINE_PROVIDER_SYNC = "pipeline-provider-sync"
+KIND_PIPELINE_SYNC = "pipeline-sync"
+KIND_PIPELINE_RUN_SYNC = "pipeline-run-sync"
+KIND_PIPELINE_RUN_DETAIL_SYNC = "pipeline-run-detail-sync"
+KIND_PIPELINE_RETENTION = "pipeline-retention"
+KIND_PIPELINE_WEBHOOK = "pipeline-webhook-process"
 
 JOB_NAMES = {
     KIND_DISCOVERY: "AWS multi-account cluster discovery",
@@ -42,6 +48,12 @@ JOB_NAMES = {
     KIND_GITHUB_VARIABLE_SYNC: "GitHub variable sync",
     KIND_GITHUB_SECRET_SYNC: "GitHub secret metadata sync",
     KIND_GITHUB_WEBHOOK: "GitHub webhook processing",
+    KIND_PIPELINE_PROVIDER_SYNC: "Pipeline provider sync",
+    KIND_PIPELINE_SYNC: "Pipeline metadata sync",
+    KIND_PIPELINE_RUN_SYNC: "Pipeline run sync",
+    KIND_PIPELINE_RUN_DETAIL_SYNC: "Pipeline running status sync",
+    KIND_PIPELINE_RETENTION: "Pipeline history retention",
+    KIND_PIPELINE_WEBHOOK: "Pipeline webhook processing",
 }
 
 JOB_PROVIDERS = {
@@ -66,6 +78,12 @@ JOB_PROVIDERS = {
     KIND_GITHUB_VARIABLE_SYNC: "AWS",
     KIND_GITHUB_SECRET_SYNC: "AWS",
     KIND_GITHUB_WEBHOOK: "AWS",
+    KIND_PIPELINE_PROVIDER_SYNC: "AWS",
+    KIND_PIPELINE_SYNC: "AWS",
+    KIND_PIPELINE_RUN_SYNC: "AWS",
+    KIND_PIPELINE_RUN_DETAIL_SYNC: "AWS",
+    KIND_PIPELINE_RETENTION: "AWS",
+    KIND_PIPELINE_WEBHOOK: "AWS",
 }
 
 TASK_NAMES = {
@@ -90,4 +108,10 @@ TASK_NAMES = {
     KIND_GITHUB_VARIABLE_SYNC: "tasks.github_variable_sync.sync_variables",
     KIND_GITHUB_SECRET_SYNC: "tasks.github_secret_sync.sync_secrets",
     KIND_GITHUB_WEBHOOK: "tasks.github_webhook.process_delivery",
+    KIND_PIPELINE_PROVIDER_SYNC: "tasks.pipeline_provider_sync.sync_providers",
+    KIND_PIPELINE_SYNC: "tasks.pipeline_sync.sync_pipelines",
+    KIND_PIPELINE_RUN_SYNC: "tasks.pipeline_run_sync.sync_runs",
+    KIND_PIPELINE_RUN_DETAIL_SYNC: "tasks.pipeline_run_detail_sync.sync_details",
+    KIND_PIPELINE_RETENTION: "tasks.pipeline_retention.prune_history",
+    KIND_PIPELINE_WEBHOOK: "tasks.pipeline_webhook.process_delivery",
 }
