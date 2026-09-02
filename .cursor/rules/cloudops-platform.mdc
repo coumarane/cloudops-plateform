@@ -1,0 +1,208 @@
+---
+description: Architecture, UI and development rules for CloudOps Platform
+alwaysApply: true
+---
+
+# CloudOps Platform
+
+CloudOps Platform is an enterprise multi-cloud operations platform.
+
+## Stack
+
+Frontend:
+- Next.js
+- TypeScript
+- Tailwind CSS
+
+Backend:
+- FastAPI
+
+Database:
+- PostgreSQL
+
+Background processing:
+- Celery
+- Redis
+
+Integrations:
+- AWS EKS
+- AWS ACM
+- AWS Secrets Manager
+- Alibaba ACK
+- Alibaba certificate services
+- GitHub Actions
+- GitHub variables
+- GitHub secrets
+- DevOps pipelines
+
+## Infrastructure Model
+
+Use this hierarchy:
+
+Provider
+→ Region
+→ Cloud Account
+→ Environment
+→ Cluster
+→ Application
+
+### AWS
+
+Regions:
+
+- AMER
+- EMEA
+- APAC
+
+Each region has:
+
+Non-production account:
+- DEV
+- INT/TST
+- UAT
+
+Production account:
+- NPD
+- PRD
+
+### Alibaba Cloud
+
+Region:
+
+- China
+
+Non-production account:
+- DEV
+- TST
+- UAT
+
+Production account:
+- NPD
+- PRD
+
+## UI Workflow
+
+For significant new UI work:
+
+1. Use Google Stitch through the Stitch MCP.
+2. Reuse the existing CloudOps Platform Stitch project: `16290258496511126264`.
+3. Reuse the existing Stitch design system.
+4. Generate or refine the design in Stitch first.
+5. Do not implement the screen immediately.
+6. Present the Stitch result for review.
+7. Only after approval implement it using Next.js, TypeScript and Tailwind CSS.
+8. Refactor generated UI into reusable production components.
+
+Do not create a new Stitch project for every screen.
+
+## Main Navigation
+
+- Overview
+- Cloud Infrastructure
+- Environments
+- Clusters
+- Applications
+- Secrets
+- Certificates
+- Health Checks
+- Deployments
+- Pipelines
+- GitHub
+- Background Jobs
+- Alerts
+- Audit Logs
+- Administration
+
+## Design Principles
+
+Use a professional enterprise operations-console design.
+
+Prefer:
+- persistent left sidebar
+- breadcrumbs
+- compact tables
+- KPI cards
+- status badges
+- drawers
+- confirmation dialogs
+- global filters
+- global search
+
+The design should feel similar to:
+- AWS Console
+- GitHub
+- Argo CD
+- Grafana
+
+PRD must be visually obvious.
+
+Do not make the application excessively colorful.
+
+## Secrets
+
+Never expose secret values.
+
+Never place secret values in:
+- frontend output
+- API responses
+- logs
+- audit logs
+- Celery results
+
+Display metadata only:
+- secret name
+- provider
+- region
+- account
+- environment
+- fingerprint
+- last rotation
+- next rotation
+- status
+
+Production secret updates require explicit confirmation.
+
+## Certificates
+
+Monitor certificates for:
+
+AWS:
+- AMER
+- EMEA
+- APAC
+
+Alibaba:
+- China
+
+Classification:
+- Healthy: > 60 days
+- Warning: 30-60 days
+- Critical: 7-30 days
+- Urgent: < 7 days
+- Expired
+
+## Architecture
+
+Provider-specific behavior must be behind adapters.
+
+Example:
+
+CloudProviderAdapter
+├── AWSProviderAdapter
+└── AlibabaProviderAdapter
+
+Do not hard-code regions or environments into application logic.
+
+Store them as configuration and database records.
+
+PostgreSQL stores metadata, configuration and audit data.
+
+Actual credentials should use an appropriate secrets manager.
+
+Celery handles asynchronous operations such as:
+- cluster discovery
+- cluster health scans
+- certificate scans
+- credential validation
+- GitHub synchronization
+- pipeline synchronization
