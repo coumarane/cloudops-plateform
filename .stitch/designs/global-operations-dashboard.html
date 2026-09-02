@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Global Operations Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@450&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#000000",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "primary-fixed-dim": "#bec6e0",
+                        "outline": "#76777d",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "tertiary-fixed-dim": "#ffb86f",
+                        "on-primary-fixed": "#131b2e",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#bec6e0",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#f7f9fb",
+                        "on-tertiary-container": "#bf7100",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#2170e4",
+                        "surface-dim": "#d8dadc",
+                        "surface-container-low": "#f2f4f6",
+                        "on-primary-container": "#7c839b",
+                        "inverse-surface": "#2d3133",
+                        "on-secondary-fixed-variant": "#004395",
+                        "tertiary": "#000000",
+                        "surface": "#f7f9fb",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e6e8ea",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-secondary-fixed": "#001a42",
+                        "on-error": "#ffffff",
+                        "secondary": "#0058be",
+                        "secondary-fixed": "#d8e2ff",
+                        "surface-container": "#eceef0",
+                        "primary-fixed": "#dae2fd",
+                        "on-surface": "#191c1e",
+                        "outline-variant": "#c6c6cd",
+                        "tertiary-fixed": "#ffdcbd",
+                        "on-background": "#191c1e",
+                        "primary-container": "#131b2e",
+                        "on-surface-variant": "#45464d",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-variant": "#e0e3e5",
+                        "background": "#f7f9fb",
+                        "on-secondary-container": "#fefcff",
+                        "surface-tint": "#565e74",
+                        "on-primary": "#ffffff",
+                        "tertiary-container": "#2c1600",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#2c1600",
+                        "on-tertiary-fixed-variant": "#693c00"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gap-md": "16px",
+                        "sidebar-collapsed": "64px",
+                        "unit": "4px",
+                        "container-padding": "24px",
+                        "sidebar-width": "240px",
+                        "table-cell-padding": "8px 12px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "table-data": ["Inter"],
+                        "display": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "code-sm": ["12px", { "lineHeight": "16px", "fontWeight": "450" }],
+                        "table-data": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "display": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0; }
+        .fill-icon .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+        body { background-color: #F8FAFC; color: #0F172A; }
+    </style>
+</head>
+<body class="font-body-sm text-body-sm bg-background text-on-background flex h-screen overflow-hidden">
+<!-- SideNavBar (from JSON) -->
+<aside class="docked h-screen w-sidebar fixed left-0 top-0 bg-primary flex flex-col h-full py-container-padding z-50">
+<div class="px-container-padding mb-8">
+<h1 class="font-display text-display text-on-primary">CloudOps Platform</h1>
+<p class="text-on-primary-fixed-variant text-xs mt-1">Enterprise Ops</p>
+</div>
+<nav class="flex-1 overflow-y-auto px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 bg-secondary-container text-on-secondary-container rounded-lg group" href="#">
+<span class="material-symbols-outlined text-[20px]" data-weight="fill" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+<span class="">Infrastructure</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+<span class="">Clusters</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">layers</span>
+<span class="">Environments</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">apps</span>
+<span class="">Applications</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">vpn_key</span>
+<span class="">Secrets</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">verified_user</span>
+<span class="">Certificates</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">health_and_safety</span>
+<span class="">Health Checks</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">rocket_launch</span>
+<span class="">Deployments</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">dynamic_form</span>
+<span class="">Pipelines</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+<span class="">GitHub</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">work</span>
+<span class="">Jobs</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="">Alerts</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">policy</span>
+<span class="">Audit</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-primary-container hover:bg-on-primary-fixed-variant transition-colors rounded-lg cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-[20px]">settings_applications</span>
+<span class="">Administration</span>
+</a>
+</nav>
+<div class="px-container-padding mt-4 flex items-center gap-3">
+<img alt="User Profile" class="w-8 h-8 rounded-full border border-on-primary-fixed-variant object-cover" data-alt="A small, professional circular avatar portrait of a technical system administrator with a calm demeanor, modern minimalist background. The lighting is studio quality, high-key, aligning with a clean enterprise software aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB81oZr4oVM6NxosjC1Pd0Uvt_CKAdMuYVHBFJLNTxwlsMuy8fAleo5Xpd2ub4J5y05NFSa0nouhmIxQvu0NlFW-DsQowPbOIhvCb9vGna-w2kX6C3Q3ib7Kk4h-8WNBrKVRtJC_AoP9C4_EAvDTKqQl-1vp13IE6Vw3pi03tSd05lBFX48vQ9RuS3cmTY6R1qQn7FXLkoGsJbaSHsPiyRnlK4lk5-3hVGlISSZEge5MnJtVPeTkAKjfQ"/>
+<div class="flex-1 min-w-0">
+<p class="text-on-primary text-sm truncate">admin@k8s.local</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<div class="flex-1 flex flex-col ml-sidebar relative bg-surface">
+<!-- TopNavBar (from JSON) -->
+<header class="docked full-width top-0 sticky bg-surface border-b border-outline-variant flex justify-between items-center h-16 px-container-padding w-full z-40">
+<div class="flex flex-col justify-center h-full">
+<span class="font-headline-md text-headline-md text-primary">Global Operations Dashboard</span>
+<span class="text-xs text-on-surface-variant">Multi-cloud EKS and ACK health across AWS AMER, EMEA, APAC and Alibaba China</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-xs text-on-surface-variant font-code-sm">Last synced: 14:32:45 UTC</span>
+<button class="text-on-surface-variant hover:text-primary transition-all duration-200"><span class="material-symbols-outlined">notifications</span></button>
+<button class="text-on-surface-variant hover:text-primary transition-all duration-200"><span class="material-symbols-outlined">help_outline</span></button>
+<img alt="Admin Avatar" class="w-6 h-6 rounded-full ml-2 object-cover border border-outline-variant" data-alt="Admin Avatar, a generic geometric profile icon placeholder, minimalist, high contrast black and white design suitable for enterprise software." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_R7hVTinXxJVOAw-Q-m-1IxUW8RPIhDENYQrVBkVfFRkoCmjkdi5E8DpPq2PAWzalPQ16aF7BbH7NNSikbrqcnXE1YR91or2srIsQPpjFL_bREYba3uC1iJ36oa8Q8IPn4Yr3WGHH-d-yu-ph13AxP5Twy60247FhMhawsrXlqaEKMLUBux3Y-fLOOmbgkdNa6DcBog7jC9rZ3fH1TOHyYEYA_g0fWrl_SkT5hQ766qWTsekIMPyOfQ"/>
+</div>
+</header>
+<!-- Global Filters Bar -->
+<div class="bg-surface border-b border-outline-variant px-container-padding py-2 flex items-center gap-4 font-label-caps text-label-caps">
+<span class="text-on-surface-variant mr-2">GLOBAL FILTERS:</span>
+<div class="flex items-center gap-2">
+<span class="text-on-surface-variant">PROVIDER:</span>
+<select class="bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-primary focus:ring-2 focus:ring-secondary focus:border-secondary h-6 text-[11px]">
+<option>All Providers</option>
+<option>AWS</option>
+<option>Alibaba</option>
+</select>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-on-surface-variant">REGION:</span>
+<select class="bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-primary focus:ring-2 focus:ring-secondary focus:border-secondary h-6 text-[11px]">
+<option>All Regions</option>
+<option>AMER</option>
+<option>EMEA</option>
+<option>APAC</option>
+<option>China</option>
+</select>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-on-surface-variant">ENVIRONMENT:</span>
+<select class="bg-surface-container-lowest border border-outline-variant rounded px-2 py-1 text-primary focus:ring-2 focus:ring-secondary focus:border-secondary h-6 text-[11px]">
+<option>All Environments</option>
+<option>DEV</option>
+<option>INT/TST</option>
+<option>UAT</option>
+<option>NPD</option>
+<option>PRD</option>
+</select>
+</div>
+</div>
+<!-- Dashboard Content -->
+<main class="flex-1 overflow-y-auto p-container-padding">
+<div class="max-w-[1600px] mx-auto space-y-6">
+<!-- KPI Cards -->
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-3 shadow-sm hover:bg-surface-container-low transition-colors">
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-1 truncate">CLUSTER HEALTH</p>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-sm text-[#16a34a]">21</span><span class="text-[10px] text-on-surface-variant">H</span>
+<span class="font-headline-md text-sm text-[#f59e0b] ml-1">2</span><span class="text-[10px] text-on-surface-variant">D</span>
+<span class="font-headline-md text-sm text-error ml-1">1</span><span class="text-[10px] text-on-surface-variant">U</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-3 shadow-sm hover:bg-surface-container-low transition-colors">
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-1 truncate">APP HEALTH</p>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-sm text-[#16a34a]">186</span><span class="text-[10px] text-on-surface-variant">H</span>
+<span class="font-headline-md text-sm text-[#f59e0b] ml-1">8</span><span class="text-[10px] text-on-surface-variant">D</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-3 shadow-sm border-l-4 border-l-[#f59e0b] hover:bg-surface-container-low transition-colors">
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-1 truncate">EXPIRING CERTS</p>
+<div class="flex items-baseline gap-1">
+<p class="font-headline-md text-headline-md text-[#f59e0b]">3</p>
+<span class="text-[10px] text-on-surface-variant">&lt; 14d</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-3 shadow-sm border-l-4 border-l-[#f59e0b] hover:bg-surface-container-low transition-colors">
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-1 truncate">SECRET ROTATION</p>
+<div class="flex items-baseline gap-1">
+<p class="font-headline-md text-headline-md text-[#f59e0b]">5</p>
+<span class="text-[10px] text-on-surface-variant">Overdue</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-3 shadow-sm border-l-4 border-l-error hover:bg-surface-container-low transition-colors">
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-1 truncate">FAILED DEPLOYS</p>
+<p class="font-headline-md text-headline-md text-error">2</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-3 shadow-sm border-l-4 border-l-error hover:bg-surface-container-low transition-colors">
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-1 truncate">GITHUB FAILS</p>
+<p class="font-headline-md text-headline-md text-error">3</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-3 shadow-sm border-l-4 border-l-error hover:bg-surface-container-low transition-colors">
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-1 truncate">PIPELINE FAILS</p>
+<p class="font-headline-md text-headline-md text-error">1</p>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-3 shadow-sm border-l-4 border-l-error hover:bg-surface-container-low transition-colors">
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-1 truncate">OPEN ALERTS</p>
+<p class="font-headline-md text-headline-md text-error">4</p>
+</div>
+</div>
+<!-- Bento Grid Layout for Main Content -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Left Column: Health Matrix (Spans 2 columns on lg) -->
+<div class="lg:col-span-2 space-y-6">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg shadow-sm">
+<div class="border-b border-outline-variant p-4 flex justify-between items-center">
+<h2 class="font-headline-md text-headline-md text-primary">Infrastructure Health Matrix</h2>
+<button class="text-secondary hover:text-on-secondary-fixed-variant font-label-caps text-label-caps flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">refresh</span> SYNC
+                                </button>
+</div>
+<div class="overflow-x-auto p-4">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr>
+<th></th>
+<th class="p-table-cell-padding text-center border-b border-outline-variant font-label-caps text-label-caps text-on-surface-variant" colspan="3">NON-PRODUCTION</th>
+<th class="p-table-cell-padding text-center border-b border-outline-variant font-label-caps text-label-caps text-[#dc2626]" colspan="2">
+<div class="border-t-4 border-[#dc2626] pt-1">PRODUCTION</div>
+</th>
+</tr>
+<tr class="border-b border-outline-variant">
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant">REGION</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant text-center">DEV</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant text-center">INT/TST</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant text-center">UAT</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant text-center">NPD</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-[#dc2626] text-center">PRD</th>
+</tr>
+</thead>
+<tbody class="font-table-data text-table-data">
+<tr>
+<td class="bg-surface-container-low p-2 font-label-caps text-xs text-primary font-bold" colspan="6">AWS | EKS | AMER · EMEA · APAC</td>
+</tr>
+<tr class="border-b border-surface-variant hover:bg-surface-container-low">
+<td class="p-table-cell-padding font-code-sm text-code-sm text-primary">AMER</td>
+<td class="p-table-cell-padding text-center"><span class="material-symbols-outlined text-[#16a34a] text-[18px]">check_circle</span></td>
+<td class="p-table-cell-padding text-center">
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-error text-[18px]">error</span>
+<span class="text-[9px] bg-error/10 text-error px-1 rounded">1 GitHub</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-center">
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-[#f59e0b] text-[18px]">warning</span>
+<span class="text-[9px] bg-[#f59e0b]/10 text-[#b45309] px-1 rounded">1 Secret Due</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-center border-l border-surface-variant"><span class="material-symbols-outlined text-[#16a34a] text-[18px]">check_circle</span></td>
+<td class="p-table-cell-padding text-center">
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-[#f59e0b] text-[18px]">warning</span>
+<span class="text-[9px] bg-[#f59e0b]/10 text-[#b45309] px-1 rounded">1 Cert (12d)</span>
+</div>
+</td>
+</tr>
+<tr class="border-b border-surface-variant hover:bg-surface-container-low">
+<td class="p-table-cell-padding font-code-sm text-code-sm text-primary">EMEA</td>
+<td class="p-table-cell-padding text-center"><span class="material-symbols-outlined text-[#16a34a] text-[18px]">check_circle</span></td>
+<td class="p-table-cell-padding text-center"><span class="material-symbols-outlined text-[#16a34a] text-[18px]">check_circle</span></td>
+<td class="p-table-cell-padding text-center">
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-error text-[18px]">error</span>
+<span class="text-[9px] bg-error/10 text-error px-1 rounded">Cluster Down</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-center border-l border-surface-variant">
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-error text-[18px]">error</span>
+<span class="text-[9px] bg-error/10 text-error px-1 rounded">1 Pipeline</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-center"><span class="material-symbols-outlined text-[#16a34a] text-[18px]">check_circle</span></td>
+</tr>
+<tr class="border-b border-surface-variant hover:bg-surface-container-low">
+<td class="p-table-cell-padding font-code-sm text-code-sm text-primary">APAC</td>
+<td class="p-table-cell-padding text-center"><span class="material-symbols-outlined text-[#16a34a] text-[18px]">check_circle</span></td>
+<td class="p-table-cell-padding text-center">
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-[#f59e0b] text-[18px]">warning</span>
+<span class="text-[9px] bg-[#f59e0b]/10 text-[#b45309] px-1 rounded">1 App Deg.</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-center"><span class="material-symbols-outlined text-[#16a34a] text-[18px]">check_circle</span></td>
+<td class="p-table-cell-padding text-center border-l border-surface-variant"><span class="material-symbols-outlined text-[#16a34a] text-[18px]">check_circle</span></td>
+<td class="p-table-cell-padding text-center">
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-error text-[18px]">error</span>
+<span class="text-[9px] bg-error/10 text-error px-1 rounded">1 Deploy</span>
+</div>
+</td>
+</tr>
+<tr>
+<td class="bg-surface-container-low p-2 font-label-caps text-xs text-primary font-bold" colspan="6">Alibaba | ACK | China</td>
+</tr>
+<tr class="hover:bg-surface-container-low">
+<td class="p-table-cell-padding font-code-sm text-code-sm text-primary">China</td>
+<td class="p-table-cell-padding text-center"><span class="material-symbols-outlined text-[#16a34a] text-[18px]">check_circle</span></td>
+<td class="p-table-cell-padding text-center"><span class="material-symbols-outlined text-[#16a34a] text-[18px]">check_circle</span></td>
+<td class="p-table-cell-padding text-center">
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-[#f59e0b] text-[18px]">warning</span>
+<span class="text-[9px] bg-[#f59e0b]/10 text-[#b45309] px-1 rounded">2 Alerts</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-center border-l border-surface-variant"><span class="material-symbols-outlined text-[#16a34a] text-[18px]">check_circle</span></td>
+<td class="p-table-cell-padding text-center">
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-[#f59e0b] text-[18px]">warning</span>
+<span class="text-[9px] bg-[#f59e0b]/10 text-[#b45309] px-1 rounded">1 Secret (4d)</span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Column: Alerts & Failures -->
+<div class="lg:col-span-1 space-y-6">
+<!-- Alerts Feed -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg shadow-sm">
+<div class="border-b border-outline-variant p-4 flex justify-between items-center bg-error-container/10">
+<h2 class="font-headline-md text-headline-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-error">warning</span>
+                                    Operational Alerts
+                                </h2>
+<span class="bg-error text-on-error px-2 py-0.5 rounded-full text-[10px] font-bold">4 OPEN</span>
+</div>
+<div class="p-4 space-y-3">
+<div class="p-3 border border-error/20 bg-error/5 rounded-lg">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-1.5 py-0.5 bg-surface-variant text-[9px] font-bold rounded">UAT</span>
+<span class="text-[10px] text-on-surface-variant font-code-sm">EMEA</span>
+</div>
+<p class="font-bold text-error text-sm mb-1">Cluster Unreachable</p>
+<p class="text-xs text-on-surface-variant font-code-sm">eu-west-1-uat-k8s</p>
+</div>
+<span class="text-xs text-on-surface-variant">10m ago</span>
+</div>
+<button class="mt-2 text-xs font-bold text-error hover:underline">INVESTIGATE →</button>
+</div>
+<div class="p-3 border border-[#f59e0b]/20 bg-[#f59e0b]/5 rounded-lg">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-1.5 py-0.5 bg-[#dc2626] text-white text-[9px] font-bold rounded">PRD</span>
+<span class="text-[10px] text-on-surface-variant font-code-sm">AMER</span>
+</div>
+<p class="font-bold text-[#b45309] text-sm mb-1">Cert Expiring</p>
+<p class="text-xs text-on-surface-variant font-code-sm">ingress-tls-wildcard (12 days)</p>
+</div>
+<span class="text-xs text-on-surface-variant">1h ago</span>
+</div>
+<button class="mt-2 text-xs font-bold text-[#b45309] hover:underline">INVESTIGATE →</button>
+</div>
+<div class="p-3 border border-outline-variant bg-surface-container-low rounded-lg">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-1.5 py-0.5 bg-surface-variant text-[9px] font-bold rounded">UAT</span>
+<span class="text-[10px] text-on-surface-variant font-code-sm">China</span>
+</div>
+<p class="font-bold text-primary text-sm mb-1">High Memory Usage</p>
+<p class="text-xs text-on-surface-variant font-code-sm">prometheus-server (88%)</p>
+</div>
+<span class="text-xs text-on-surface-variant">2h ago</span>
+</div>
+<button class="mt-2 text-xs font-bold text-secondary hover:underline">INVESTIGATE →</button>
+</div>
+<div class="p-3 border border-outline-variant bg-surface-container-low rounded-lg">
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-1.5 py-0.5 bg-surface-variant text-[9px] font-bold rounded">UAT</span>
+<span class="text-[10px] text-on-surface-variant font-code-sm">China</span>
+</div>
+<p class="font-bold text-primary text-sm mb-1">Pod Restart Loop</p>
+<p class="text-xs text-on-surface-variant font-code-sm">api-gateway-v2</p>
+</div>
+<span class="text-xs text-on-surface-variant">3h ago</span>
+</div>
+<button class="mt-2 text-xs font-bold text-secondary hover:underline">INVESTIGATE →</button>
+</div>
+</div>
+</div>
+<!-- Failed Deployments/Jobs -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg shadow-sm">
+<div class="border-b border-outline-variant p-4">
+<h2 class="font-headline-md text-headline-md text-primary">Recent Failures</h2>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-surface-variant bg-surface-bright">
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant">NAME</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant">REGION/ENV</th>
+<th class="p-table-cell-padding font-label-caps text-label-caps text-on-surface-variant text-right">TIME</th>
+</tr>
+</thead>
+<tbody class="font-table-data text-table-data">
+<tr class="border-b border-surface-variant hover:bg-surface-container-low">
+<td class="p-table-cell-padding font-code-sm text-code-sm text-error">Deploy: payment-svc</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-1">
+<span class="text-[10px] text-on-surface-variant">APAC</span>
+<span class="px-1.5 py-0.5 bg-[#dc2626] text-white rounded text-[9px] font-bold">PRD</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant text-xs">15m ago</td>
+</tr>
+<tr class="border-b border-surface-variant hover:bg-surface-container-low">
+<td class="p-table-cell-padding font-code-sm text-code-sm text-error">GitHub: auth-build</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-1">
+<span class="text-[10px] text-on-surface-variant">AMER</span>
+<span class="px-1.5 py-0.5 bg-surface-variant text-on-surface rounded text-[9px] font-bold">INT</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant text-xs">1h ago</td>
+</tr>
+<tr class="hover:bg-surface-container-low">
+<td class="p-table-cell-padding font-code-sm text-code-sm text-error">Pipe: data-sync</td>
+<td class="p-table-cell-padding">
+<div class="flex items-center gap-1">
+<span class="text-[10px] text-on-surface-variant">EMEA</span>
+<span class="px-1.5 py-0.5 bg-surface-variant text-on-surface rounded text-[9px] font-bold">NPD</span>
+</div>
+</td>
+<td class="p-table-cell-padding text-right text-on-surface-variant text-xs">2h ago</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<footer class="mt-8 border-t border-outline-variant pt-4 pb-8 flex justify-center">
+<p class="text-xs text-on-surface-variant font-code-sm">Secret values are never displayed in this console.</p>
+</footer>
+</div>
+</main>
+</div>
+</body></html>
