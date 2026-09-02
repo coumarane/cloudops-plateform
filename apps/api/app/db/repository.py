@@ -52,10 +52,12 @@ class InventoryRepository:
         return row
 
     def discovery_is_live(self) -> bool:
-        return bool(self.scope_state().discovery_active)
+        row = self.session.get(LiveScopeStateRow, LIVE_SCOPE_ID)
+        return bool(row and row.discovery_active)
 
     def certificates_are_live(self) -> bool:
-        return self.scope_state().last_certificate_scan_at is not None
+        row = self.session.get(LiveScopeStateRow, LIVE_SCOPE_ID)
+        return bool(row and row.last_certificate_scan_at is not None)
 
     def replace_clusters(self, clusters: list[DiscoveredCluster]) -> list[EksClusterRow]:
         now = utcnow()

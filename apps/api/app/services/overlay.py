@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.core.config import settings
+from app.core.logging import get_logger
 from app.db.repository import InventoryRepository
 from app.db.session import SessionLocal
 from app.domain.enums import Environment, Provider, Region
@@ -14,6 +14,8 @@ from app.domain.models import (
     RunRecord,
 )
 from app.services.mappers import to_certificate_record, to_cluster_record, to_health_record, to_job_record
+
+logger = get_logger(__name__)
 
 LIVE_PROVIDER: Provider = "AWS"
 LIVE_REGION: Region = "EMEA"
@@ -36,6 +38,9 @@ def overlay_clusters(items: list[ClusterRecord]) -> list[ClusterRecord]:
         ]
         kept = [item for item in items if not is_live_cell(item.provider, item.region, item.environment)]
         return kept + live
+    except Exception:
+        logger.exception("Live cluster overlay unavailable; using mock data")
+        return items
     finally:
         session.close()
 
@@ -49,6 +54,9 @@ def overlay_certificates(items: list[CertificateRecord]) -> list[CertificateReco
         live = [to_certificate_record(row) for row in repo.present_certificates()]
         kept = [item for item in items if not is_live_cell(item.provider, item.region, item.environment)]
         return kept + live
+    except Exception:
+        logger.exception("Live certificate overlay unavailable; using mock data")
+        return items
     finally:
         session.close()
 
@@ -59,6 +67,9 @@ def overlay_jobs(items: list[RunRecord]) -> list[RunRecord]:
         repo = InventoryRepository(session)
         live = [to_job_record(row) for row in repo.list_jobs()]
         return live + items
+    except Exception:
+        logger.exception("Live job overlay unavailable; using mock data")
+        return items
     finally:
         session.close()
 
@@ -83,6 +94,9 @@ def overlay_environment(record: EnvironmentRecord | None) -> EnvironmentRecord |
                 EnvironmentCertificate(name=item.domain, daysToExpiry=item.daysRemaining) for item in live_certs
             ]
         return updated
+    except Exception:
+        logger.exception("Live environment overlay unavailable; using mock data")
+        return record
     finally:
         session.close()
 
@@ -134,6 +148,9 @@ def overlay_matrix(rows: list[MatrixRow]) -> list[MatrixRow]:
             )
             patched.append(MatrixRow(provider=row.provider, platform=row.platform, region=row.region, cells=cells))
         return patched
+    except Exception:
+        logger.exception("Live dashboard overlay unavailable; using mock data")
+        return rows
     finally:
         session.close()
 
@@ -148,5 +165,8 @@ def load_cluster_detail(cluster_id: str):
         health = repo.get_health(cluster_id)
         health_record = to_health_record(cluster, health) if health else None
         return to_cluster_record(cluster, health), health_record
+    except Exception:
+        logger.exception("Live cluster detail unavailable")
+        return None, None
     finally:
         session.close()

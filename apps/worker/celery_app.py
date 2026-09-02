@@ -15,6 +15,11 @@ celery_app = Celery(
     "cloudops",
     broker=settings.redis_url,
     backend=settings.redis_url,
+    include=(
+        "tasks.aws_cluster_discovery",
+        "tasks.aws_cluster_health",
+        "tasks.aws_certificate_scan",
+    ),
 )
 celery_app.conf.update(
     task_always_eager=settings.celery_eager,
@@ -24,9 +29,4 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
-    imports=(
-        "tasks.aws_cluster_discovery",
-        "tasks.aws_cluster_health",
-        "tasks.aws_certificate_scan",
-    ),
 )
