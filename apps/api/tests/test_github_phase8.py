@@ -20,6 +20,7 @@ from app.db.models import (
     GithubWebhookDeliveryRow,
     GithubWorkflowJobRow,
     GithubWorkflowRunRow,
+    GithubWorkflowRow,
 )
 from app.db.session import SessionLocal, engine
 from app.integrations.github.auth import build_app_jwt

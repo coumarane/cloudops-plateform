@@ -28,6 +28,14 @@ def _iso(value: datetime | None) -> str | None:
     return value.isoformat() if value else None
 
 
+def _aware(value: datetime | None) -> datetime:
+    if value is None:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
 def environment_label(session: Session, environment_id: str) -> dict:
     if not environment_id:
         return {"cloudopsEnvironmentId": "", "provider": None, "region": None, "environment": None}
@@ -155,7 +163,7 @@ def run_dump(session: Session, row: GithubWorkflowRunRow | None) -> dict | None:
         "clusterId": row.cluster_id,
         "age": _age(row.started_at or row.completed_at) if (row.started_at or row.completed_at) else "",
         **environment_label(session, row.cloudops_environment_id),
-        "provider": "github",
+        "scmProvider": "github",
     }
 
 
@@ -191,7 +199,7 @@ def variable_dump(session: Session, row: GithubVariableRow) -> dict:
         "sensitive": row.sensitive,
         "updatedAt": _iso(row.updated_at),
         **environment_label(session, row.cloudops_environment_id),
-        "provider": "github",
+        "scmProvider": "github",
     }
 
 
@@ -209,7 +217,7 @@ def secret_dump(session: Session, row: GithubSecretRow) -> dict:
         "createdAt": _iso(row.created_at),
         "updatedAt": _iso(row.updated_at),
         **environment_label(session, row.cloudops_environment_id),
-        "provider": "github",
+        "scmProvider": "github",
     }
 
 
@@ -224,6 +232,8 @@ def overview_dump(session: Session) -> dict:
         if run.status != FAILED:
             continue
         stamp = run.completed_at or run.started_at
+        if stamp is not None and stamp.tzinfo is None:
+            stamp = stamp.replace(tzinfo=timezone.utc)
         if stamp and (now - stamp).total_seconds() <= 86400:
             failed_24h += 1
     linked = {link.repository_id for link in session.scalars(select(GithubApplicationRepositoryRow))}
@@ -240,7 +250,7 @@ def overview_dump(session: Session) -> dict:
             run_dump(session, run)
             for run in sorted(
                 (item for item in runs if item.status == FAILED),
-                key=lambda item: item.completed_at or item.started_at or datetime.min.replace(tzinfo=timezone.utc),
+                key=lambda item: _aware(item.completed_at or item.started_at),
                 reverse=True,
             )[:8]
         ],

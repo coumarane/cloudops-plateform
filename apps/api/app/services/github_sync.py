@@ -100,7 +100,8 @@ def record_audit(
     )
 
 
-def _environment_class(environment_id: str) -> str:
+def _environment_class(environment_id: str | None) -> str:
+    environment_id = environment_id or ""
     if environment_id.endswith("-prd") or environment_id.endswith("/prd") or environment_id.endswith("prd"):
         return "PRD"
     if "-npd" in environment_id or environment_id.endswith("npd"):
@@ -364,14 +365,17 @@ def run_repository_sync(job_id: str | None = None, *, provider: SourceControlPro
             )
             session.add(integration)
             session.flush()
+        org_by_login: dict[str, GithubOrganizationRow] = {}
         for org in orgs:
-            upsert_organization(session, integration, org)
-        org_by_login = {row.login: row for row in session.scalars(select(GithubOrganizationRow))}
+            row = upsert_organization(session, integration, org)
+            org_by_login[row.login] = row
+        session.flush()
         for repo in scm.list_repositories():
             org = org_by_login.get(repo.organization)
             if org is None and orgs:
                 org = upsert_organization(session, integration, orgs[0])
                 org_by_login[org.login] = org
+                session.flush()
             if org is None:
                 continue
             upsert_repository(session, org, repo)
