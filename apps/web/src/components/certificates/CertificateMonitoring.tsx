@@ -104,6 +104,8 @@ export function CertificateMonitoring({
             <option value="all">All providers</option>
             <option value="aws">AWS</option>
             <option value="alibaba">Alibaba</option>
+            <option value="azure">Azure</option>
+            <option value="gcp">GCP</option>
           </select>
         </label>
         <label className="flex items-center gap-2">

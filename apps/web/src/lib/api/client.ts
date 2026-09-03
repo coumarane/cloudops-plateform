@@ -305,4 +305,42 @@ export const cloudOpsApi = {
       region: string;
       error?: string;
     }>("/admin/alibaba-credentials", body, signal),
+  azureCredentialsStatus: (signal?: AbortSignal) =>
+    getJson<{
+      configured: boolean;
+      valid: boolean;
+      account: string;
+      arn: string;
+      principal: string;
+      error?: string;
+    }>("/admin/azure-credentials/status", undefined, signal),
+  configureAzureCredentials: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<{
+      configured: boolean;
+      valid: boolean;
+      account: string;
+      arn: string;
+      principal: string;
+      region: string;
+      error?: string;
+    }>("/admin/azure-credentials", body, signal),
+  gcpCredentialsStatus: (signal?: AbortSignal) =>
+    getJson<{
+      configured: boolean;
+      valid: boolean;
+      account: string;
+      arn: string;
+      principal: string;
+      error?: string;
+    }>("/admin/gcp-credentials/status", undefined, signal),
+  configureGcpCredentials: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<{
+      configured: boolean;
+      valid: boolean;
+      account: string;
+      arn: string;
+      principal: string;
+      region: string;
+      error?: string;
+    }>("/admin/gcp-credentials", body, signal),
 };

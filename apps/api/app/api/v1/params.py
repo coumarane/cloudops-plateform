@@ -3,7 +3,13 @@ from fastapi import HTTPException, Query
 from app.domain.enums import ENVIRONMENTS, PROVIDERS, REGIONS, Environment, Provider, Region
 from app.domain.models import Scope
 
-PROVIDER_ALIASES: dict[str, Provider] = {item.lower(): item for item in PROVIDERS} | {"aws": "AWS", "alibaba": "Alibaba"}
+PROVIDER_ALIASES: dict[str, Provider] = {item.lower(): item for item in PROVIDERS} | {
+    "aws": "AWS",
+    "alibaba": "Alibaba",
+    "azure": "Azure",
+    "gcp": "GCP",
+    "google": "GCP",
+}
 REGION_ALIASES: dict[str, Region] = {item.lower(): item for item in REGIONS}
 ENVIRONMENT_ALIASES: dict[str, Environment] = {
     item.lower(): item for item in ENVIRONMENTS

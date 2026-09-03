@@ -1,4 +1,4 @@
-export const PROVIDERS = ["AWS", "Alibaba"] as const;
+export const PROVIDERS = ["AWS", "Alibaba", "Azure", "GCP"] as const;
 export type Provider = (typeof PROVIDERS)[number];
 
 export const REGIONS = ["AMER", "EMEA", "APAC", "China"] as const;
@@ -10,7 +10,7 @@ export type Environment = (typeof ENVIRONMENTS)[number];
 export const NON_PRODUCTION_ENVIRONMENTS = ["DEV", "INT/TST", "UAT"] as const;
 export const PRODUCTION_ENVIRONMENTS = ["NPD", "PRD"] as const;
 
-export type ClusterPlatform = "EKS" | "ACK";
+export type ClusterPlatform = "EKS" | "ACK" | "AKS" | "GKE";
 export type Severity = "healthy" | "warning" | "critical";
 export type AlertSeverity = "critical" | "warning" | "info";
 export type FailureKind = "deployment" | "github" | "pipeline";

@@ -187,8 +187,16 @@ class CatalogService:
             return filter_items(overlay_secret_records(self._collect("list_secrets")), scope)
         from app.providers.alibaba.secrets import list_live_alibaba_secrets
         from app.providers.aws.secrets import list_live_aws_secrets
+        from app.providers.azure.secrets import list_live_azure_secrets
+        from app.providers.gcp.secrets import list_live_gcp_secrets
 
-        return filter_items(overlay_secret_records(list_live_aws_secrets() + list_live_alibaba_secrets()), scope)
+        live = (
+            list_live_aws_secrets()
+            + list_live_alibaba_secrets()
+            + list_live_azure_secrets()
+            + list_live_gcp_secrets()
+        )
+        return filter_items(overlay_secret_records(live), scope)
 
     def health_checks(self, scope: Scope):
         if self._use_demo():

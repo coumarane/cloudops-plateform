@@ -14,6 +14,8 @@ services:
     volumes:
       - ~/.aws:/root/.aws:rw
       - ~/.aliyun:/root/.aliyun:rw
+      - ~/.azure:/root/.azure:rw
+      - ~/.config/gcloud:/root/.config/gcloud:rw
       - api-data:/app/data
     depends_on:
       - redis

@@ -49,6 +49,34 @@ class AccountBinding:
                 account_alias=self.alias,
                 cluster_environment_tag=self.cluster_environment_tag,
             )
+        if self.provider == "Azure":
+            from app.providers.azure.models import AzureConnectionConfig
+
+            return AzureConnectionConfig(
+                cloud_region=self.cloud_region,
+                account_id=self.account_id,
+                tenant_id=None,
+                client_id=self.role_arn,
+                client_secret_ref=self.credential_ref,
+                vault_url=self.config_secret_arn,
+                platform_region=self.logical_region,
+                environment=self.environments[0] if self.environments else "",
+                account_alias=self.alias,
+                credential_ref=self.credential_ref,
+            )
+        if self.provider == "GCP":
+            from app.providers.gcp.models import GcpConnectionConfig
+
+            return GcpConnectionConfig(
+                cloud_region=self.cloud_region,
+                account_id=self.account_id,
+                project_id=self.account_id,
+                credentials_file=None,
+                platform_region=self.logical_region,
+                environment=self.environments[0] if self.environments else "",
+                account_alias=self.alias,
+                credential_ref=self.credential_ref,
+            )
         from app.providers.aws.models import AwsConnectionConfig
 
         return AwsConnectionConfig(

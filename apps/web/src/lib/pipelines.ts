@@ -120,7 +120,7 @@ export function pipelineHref(filters?: Partial<PipelineFilters>): string {
 export function parsePipelineFilters(search: Record<string, string | undefined>): PipelineFilters {
   const regionMap: Record<string, Region> = { amer: "AMER", emea: "EMEA", apac: "APAC", china: "China" };
   return {
-    provider: search.provider === "aws" ? "AWS" : search.provider === "alibaba" ? "Alibaba" : "all",
+    provider: search.provider === "aws" ? "AWS" : search.provider === "alibaba" ? "Alibaba" : search.provider === "azure" ? "Azure" : search.provider === "gcp" ? "GCP" : "all",
     region: regionMap[search.region ?? ""] ?? "all",
     environment:
       search.environment === "int-tst"

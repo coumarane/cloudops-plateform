@@ -47,11 +47,13 @@ AUTH_STRATEGIES = {
     "AWS": ("AssumeRole", "IAM"),
     "Alibaba": ("RAM", "STS", "AccessKey"),
     "Azure": ("ManagedIdentity", "WorkloadIdentity", "ServicePrincipal"),
+    "GCP": ("WorkloadIdentity", "ServiceAccount"),
 }
 PROVIDER_DEFAULTS = {
     "AWS": ("EMEA", "eu-west-1"),
     "Alibaba": ("China", "cn-hangzhou"),
     "Azure": ("EMEA", "westeurope"),
+    "GCP": ("EMEA", "europe-west1"),
 }
 ACCOUNT_CLASSES = {"NONPROD": "NONPROD", "PROD": "PROD", "NON-PRODUCTION": "NONPROD", "PRODUCTION": "PROD"}
 ENVIRONMENT_CLASSES = {"DEV", "INT", "TST", "INT/TST", "UAT", "NPD", "PRD"}
@@ -109,6 +111,7 @@ def list_provider_types() -> list[dict]:
         {"id": "AWS", "name": "AWS", "platform": "EKS", "authStrategies": list(AUTH_STRATEGIES["AWS"]), "inventorySupported": True},
         {"id": "Alibaba", "name": "Alibaba Cloud", "platform": "ACK", "authStrategies": list(AUTH_STRATEGIES["Alibaba"]), "inventorySupported": True},
         {"id": "Azure", "name": "Microsoft Azure", "platform": "AKS", "authStrategies": list(AUTH_STRATEGIES["Azure"]), "inventorySupported": False},
+        {"id": "GCP", "name": "Google Cloud", "platform": "GKE", "authStrategies": list(AUTH_STRATEGIES["GCP"]), "inventorySupported": False},
     ]
 
 
@@ -387,8 +390,9 @@ def validate_account_connection(session: Session, account_id: str, actor: str) -
     row = session.get(CloudAccountRow, account_id)
     if row is None:
         raise PlatformNotFoundError("Account not found")
-    if row.provider == "Azure":
-        raise PlatformStateError("Azure AKS validation is not available yet. Configure the account now; add the Azure adapter before validating or discovering resources.")
+    if row.provider in {"Azure", "GCP"}:
+        label = "Azure AKS" if row.provider == "Azure" else "GCP GKE"
+        raise PlatformStateError(f"{label} validation is not available yet. Configure the account now; cluster discovery remains disabled until the inventory adapter is added.")
     adapter = provider_adapter(row.provider)
     result = adapter.validate_connection(_binding_for_account(session, row))
     row.last_validated_at = utcnow()
@@ -442,8 +446,9 @@ def enqueue_account_discovery(session: Session, account_id: str, actor: str) -> 
     row = session.get(CloudAccountRow, account_id)
     if row is None:
         raise PlatformNotFoundError("Account not found")
-    if row.provider == "Azure":
-        raise PlatformStateError("Azure AKS discovery is not available yet. Add the Azure adapter before discovering resources.")
+    if row.provider in {"Azure", "GCP"}:
+        label = "Azure AKS" if row.provider == "Azure" else "GCP GKE"
+        raise PlatformStateError(f"{label} discovery is not available yet. Add the inventory adapter before discovering resources.")
     adapter = provider_adapter(row.provider)
     job = enqueue_job(
         adapter.discovery_job_kind,
@@ -460,8 +465,9 @@ def enqueue_environment_job(session: Session, environment_id: str, action: str, 
     row = session.get(CloudEnvironmentRow, environment_id)
     if row is None:
         raise PlatformNotFoundError("Environment not found")
-    if row.provider == "Azure":
-        raise PlatformStateError("Azure AKS jobs are not available yet. Add the Azure adapter before running discovery, health, or certificate scans.")
+    if row.provider in {"Azure", "GCP"}:
+        label = "Azure AKS" if row.provider == "Azure" else "GCP GKE"
+        raise PlatformStateError(f"{label} jobs are not available yet. Add the inventory adapter before running discovery, health, or certificate scans.")
     adapter = provider_adapter(row.provider)
     kinds = {
         "discover": adapter.discovery_job_kind,

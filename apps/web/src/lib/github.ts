@@ -160,7 +160,7 @@ export function githubHref(filters?: Partial<GithubFilters>): string {
 }
 
 export function parseGithubFilters(search: Record<string, string | undefined>): GithubFilters {
-  const provider = search.provider === "aws" ? "AWS" : search.provider === "alibaba" ? "Alibaba" : "all";
+  const provider = search.provider === "aws" ? "AWS" : search.provider === "alibaba" ? "Alibaba" : search.provider === "azure" ? "Azure" : search.provider === "gcp" ? "GCP" : "all";
   const regionMap: Record<string, Region> = { amer: "AMER", emea: "EMEA", apac: "APAC", china: "China" };
   return {
     provider,

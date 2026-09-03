@@ -47,6 +47,8 @@ export function environmentToSlug(environment: Environment): string {
 export function parseProvider(value: string): Provider | null {
   if (value === "aws") return "AWS";
   if (value === "alibaba") return "Alibaba";
+  if (value === "azure") return "Azure";
+  if (value === "gcp" || value === "google") return "GCP";
   return null;
 }
 

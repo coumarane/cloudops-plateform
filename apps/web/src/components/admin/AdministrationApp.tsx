@@ -159,7 +159,7 @@ function ProvidersPanel({ nonce, onNotice }: { nonce: number; onNotice: (message
               {data.items.length === 0 ? (
                 <EmptyCatalog
                   title="No cloud providers configured"
-                  description="Add AWS, Alibaba Cloud, or Microsoft Azure as a logical provider. Credentials are stored separately and never displayed."
+                  description="Add AWS, Alibaba Cloud, Microsoft Azure, or Google Cloud as a logical provider. Credentials are stored separately and never displayed."
                   action="Add Provider"
                   onClick={() => setWizard(true)}
                 />
@@ -229,6 +229,7 @@ function ProviderWizard({ onDone, onCancel }: { onDone: (message: string) => voi
         { id: "AWS", name: "AWS", platform: "EKS", authStrategies: ["AssumeRole", "IAM"], inventorySupported: true },
         { id: "Alibaba", name: "Alibaba Cloud", platform: "ACK", authStrategies: ["RAM", "STS", "AccessKey"], inventorySupported: true },
         { id: "Azure", name: "Microsoft Azure", platform: "AKS", authStrategies: ["ManagedIdentity", "WorkloadIdentity", "ServicePrincipal"], inventorySupported: false },
+        { id: "GCP", name: "Google Cloud", platform: "GKE", authStrategies: ["WorkloadIdentity", "ServiceAccount"], inventorySupported: false },
       ];
   const selectedType = typeOptions.find((item) => item.id === providerType) || typeOptions[0];
   const strategies = selectedType?.authStrategies || [];
@@ -244,6 +245,20 @@ function ProviderWizard({ onDone, onCancel }: { onDone: (message: string) => voi
     } finally {
       setBusy(false);
     }
+  }
+
+  function providerDescription(id: string) {
+    if (id === "Alibaba") return "China region · ACK clusters · RAM / STS identity.";
+    if (id === "Azure") return "AMER, EMEA, APAC · AKS configuration · inventory adapter pending.";
+    if (id === "GCP") return "AMER, EMEA, APAC · GKE configuration · inventory adapter pending.";
+    return "AMER, EMEA, APAC · EKS clusters · AssumeRole / IAM.";
+  }
+
+  function defaultProviderName(id: string) {
+    if (id === "Alibaba") return "Alibaba China";
+    if (id === "Azure") return "Azure Corporate";
+    if (id === "GCP") return "GCP Corporate";
+    return "AWS Corporate";
   }
 
   return (
@@ -273,15 +288,11 @@ function ProviderWizard({ onDone, onCancel }: { onDone: (message: string) => voi
             <ChoiceCard
               key={item.id}
               title={item.name}
-              description={item.id === "Alibaba"
-                ? "China region · ACK clusters · RAM / STS identity."
-                : item.id === "Azure"
-                  ? "AMER, EMEA, APAC · AKS configuration · inventory adapter pending."
-                  : "AMER, EMEA, APAC · EKS clusters · AssumeRole / IAM."}
+              description={providerDescription(item.id)}
               selected={providerType === item.id}
               onSelect={() => {
                 setProviderType(item.id);
-                setName(item.id === "AWS" ? "AWS Corporate" : item.id === "Alibaba" ? "Alibaba China" : "Azure Corporate");
+                setName(defaultProviderName(item.id));
                 setAuthStrategy(item.authStrategies[0]);
               }}
             />
@@ -313,7 +324,9 @@ function ProviderWizard({ onDone, onCancel }: { onDone: (message: string) => voi
         <div className="rounded border border-outline bg-surface-low p-4 text-sm text-ink">
           {selectedType?.inventorySupported
             ? "Validation runs after an account is attached. Save the provider first, then add an account and click Validate."
-            : "Azure account configuration is available now. Validation and AKS discovery remain disabled until the Azure inventory adapter is added."}
+            : providerType === "GCP"
+              ? "GCP account configuration is available now. Validation and GKE discovery remain disabled until the GCP inventory adapter is added."
+              : "Azure account configuration is available now. Validation and AKS discovery remain disabled until the Azure inventory adapter is added."}
         </div>
       ) : null}
       {step === 5 ? (
@@ -386,7 +399,7 @@ function ProviderDetails({ id, onClose, onNotice }: { id: string; onClose: () =>
               <Meta label="Last discovery" value={row.lastSynchronizedAt || "—"} />
             </div>
             <div className="flex flex-wrap gap-2 border-y border-outline py-4">
-              {row.inventorySupported === false ? <p className="text-sm text-muted">Azure AKS validation and discovery require the Azure inventory adapter.</p> : <>
+              {row.inventorySupported === false ? <p className="text-sm text-muted">{row.providerType === "GCP" ? "GCP GKE validation and discovery require the GCP inventory adapter." : "Azure AKS validation and discovery require the Azure inventory adapter."}</p> : <>
                 <PrimaryButton disabled={!!busy} onClick={() => void run("validate")}>{busy === "validate" ? "Validating…" : "Validate Provider"}</PrimaryButton>
                 <GhostButton disabled={!!busy} onClick={() => void run("discover")}>{busy === "discover" ? "Starting…" : "Discover All"}</GhostButton>
               </>}
@@ -474,10 +487,12 @@ function AccountForm({ providers, onDone, onCancel }: { providers: ManagedProvid
   const selected = providers.find((item) => item.id === providerId);
   const alibaba = selected?.providerType === "Alibaba";
   const azure = selected?.providerType === "Azure";
-  const [name, setName] = useState(alibaba ? "Alibaba China NonProd" : azure ? "Azure EMEA NonProd" : "AWS EMEA NonProd");
+  const gcp = selected?.providerType === "GCP";
+  const awsLike = !alibaba && !azure && !gcp;
+  const [name, setName] = useState(alibaba ? "Alibaba China NonProd" : azure ? "Azure EMEA NonProd" : gcp ? "GCP EMEA NonProd" : "AWS EMEA NonProd");
   const [accountId, setAccountId] = useState("");
   const [region, setRegion] = useState(alibaba ? "China" : "EMEA");
-  const [cloudRegion, setCloudRegion] = useState(alibaba ? "cn-hangzhou" : azure ? "westeurope" : "eu-west-1");
+  const [cloudRegion, setCloudRegion] = useState(alibaba ? "cn-hangzhou" : azure ? "westeurope" : gcp ? "europe-west1" : "eu-west-1");
   const [roleArn, setRoleArn] = useState("");
   const [externalId, setExternalId] = useState("");
   const [accountClass, setAccountClass] = useState("NONPROD");
@@ -494,11 +509,11 @@ function AccountForm({ providers, onDone, onCancel }: { providers: ManagedProvid
       if (secretValue) {
         const credential = await cloudOpsApi.createCredential({
           name: `${name}-identity`,
-          provider: alibaba ? "alibaba" : azure ? "azure" : "aws",
+          provider: alibaba ? "alibaba" : azure ? "azure" : gcp ? "gcp" : "aws",
           region: region.toLowerCase(),
           account: name.toLowerCase().replace(/\s+/g, "-"),
           environment: accountClass === "PROD" ? "prd" : "dev",
-          credentialType: alibaba ? "ram_role" : azure ? "application" : "sts_assume_role",
+          credentialType: alibaba ? "ram_role" : azure ? "application" : gcp ? "service_account" : "sts_assume_role",
           secretValue,
           roleArn,
         });
@@ -513,7 +528,7 @@ function AccountForm({ providers, onDone, onCancel }: { providers: ManagedProvid
         cloudRegions: [cloudRegion],
         roleArn: alibaba ? undefined : roleArn,
         ramRole: alibaba ? roleArn : undefined,
-        externalId: alibaba || azure ? undefined : externalId || undefined,
+        externalId: awsLike ? externalId || undefined : undefined,
         accountClass,
         credentialRef: ref,
         authStrategy: selected?.authStrategy,
@@ -551,6 +566,10 @@ function AccountForm({ providers, onDone, onCancel }: { providers: ManagedProvid
             setName("Azure EMEA NonProd");
             setRegion("EMEA");
             setCloudRegion("westeurope");
+          } else if (provider?.providerType === "GCP") {
+            setName("GCP EMEA NonProd");
+            setRegion("EMEA");
+            setCloudRegion("europe-west1");
           } else {
             setName("AWS EMEA NonProd");
             setRegion("EMEA");
@@ -560,23 +579,31 @@ function AccountForm({ providers, onDone, onCancel }: { providers: ManagedProvid
           {providers.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </AdminSelect>
         <AdminField label="Account name" value={name} onChange={setName} />
-        <AdminField label={alibaba ? "Alibaba account ID" : azure ? "Azure subscription ID" : "AWS account ID"} value={accountId} onChange={(value) => {
-          setAccountId(value);
-          if (!alibaba && !azure && (!roleArn || roleArn.endsWith(":role/CloudOpsDiscoveryRole"))) {
-            setRoleArn(value ? `arn:aws:iam::${value}:role/CloudOpsDiscoveryRole` : "");
-          }
-        }} />
+        <AdminField
+          label={alibaba ? "Alibaba account ID" : azure ? "Azure subscription ID" : gcp ? "GCP project ID" : "AWS account ID"}
+          value={accountId}
+          onChange={(value) => {
+            setAccountId(value);
+            if (awsLike && (!roleArn || roleArn.endsWith(":role/CloudOpsDiscoveryRole"))) {
+              setRoleArn(value ? `arn:aws:iam::${value}:role/CloudOpsDiscoveryRole` : "");
+            }
+          }}
+        />
         <AdminField label="Logical region" value={region} onChange={setRegion} />
         <AdminField label="Cloud region" value={cloudRegion} onChange={setCloudRegion} />
-        <AdminField label={alibaba ? "RAM role" : azure ? "Managed identity or application ID" : "Role ARN"} value={roleArn} onChange={setRoleArn} />
-        {!alibaba && !azure ? <AdminField label="External ID (optional)" value={externalId} onChange={setExternalId} /> : null}
+        <AdminField
+          label={alibaba ? "RAM role" : azure ? "Managed identity or application ID" : gcp ? "Service account email (optional)" : "Role ARN"}
+          value={roleArn}
+          onChange={setRoleArn}
+        />
+        {awsLike ? <AdminField label="External ID (optional)" value={externalId} onChange={setExternalId} /> : null}
         <AdminSelect label="Account class" value={accountClass} onChange={setAccountClass}>
           <option value="NONPROD">NONPROD</option>
           <option value="PROD">PROD</option>
         </AdminSelect>
         <AdminField label="Existing credential reference" value={credentialRef} onChange={setCredentialRef} />
         <AdminField label="New secret material (write-only)" value={secretValue} onChange={setSecretValue} type="password" autoComplete="new-password" className="md:col-span-2" />
-        {!alibaba && !azure ? <p className="-mt-2 text-xs text-muted md:col-span-2">Leave External ID empty for an AWS role trusted by this account. Use it only when a third-party trust policy requires it.</p> : null}
+        {awsLike ? <p className="-mt-2 text-xs text-muted md:col-span-2">Leave External ID empty for an AWS role trusted by this account. Use it only when a third-party trust policy requires it.</p> : null}
         {error ? <p className="text-sm text-critical md:col-span-2">{error}</p> : null}
       </div>
     </AdminDialog>
@@ -618,7 +645,7 @@ function AccountDetails({ id, onClose, onNotice }: { id: string; onClose: () => 
               <Meta label="Last validation" value={row.validationStatus || "—"} />
             </div>
             <div className="flex flex-wrap gap-2 border-y border-outline py-4">
-              {row.inventorySupported === false ? <p className="text-sm text-muted">Azure AKS validation and discovery require the Azure inventory adapter.</p> : <>
+              {row.inventorySupported === false ? <p className="text-sm text-muted">{row.provider === "GCP" ? "GCP GKE validation and discovery require the GCP inventory adapter." : "Azure AKS validation and discovery require the Azure inventory adapter."}</p> : <>
                 <PrimaryButton disabled={!!busy} onClick={() => void run("validate")}>{busy === "validate" ? "Validating…" : "Validate"}</PrimaryButton>
                 <GhostButton disabled={!!busy} onClick={() => void run("discover")}>{busy === "discover" ? "Starting…" : "Discover"}</GhostButton>
               </>}
@@ -1406,6 +1433,8 @@ function AwsConsolePanel({ nonce, onNotice }: { nonce: number; onNotice: (messag
       ) : null}
 
       <AlibabaCredentialsPanel nonce={nonce} onNotice={onNotice} />
+      <AzureCredentialsPanel nonce={nonce} onNotice={onNotice} />
+      <GcpCredentialsPanel nonce={nonce} onNotice={onNotice} />
     </div>
   );
 }
@@ -1475,6 +1504,176 @@ function AlibabaCredentialsPanel({ nonce, onNotice }: { nonce: number; onNotice:
             <div className={`rounded border p-3 text-sm ${result.valid ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-red-300 bg-red-50 text-red-800"}`}>
               {result.valid ? (
                 <p>✓ Credentials valid — Alibaba Account <strong>{result.account}</strong></p>
+              ) : (
+                <p>✗ Validation failed: {result.error}</p>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </CatalogPanel>
+    </>
+  );
+}
+
+function AzureCredentialsPanel({ nonce, onNotice }: { nonce: number; onNotice: (message: string) => void }) {
+  const credStatus = useResource((signal) => cloudOpsApi.azureCredentialsStatus(signal), [nonce]);
+  const [tenantId, setTenantId] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
+  const [subscriptionId, setSubscriptionId] = useState("");
+  const [vaultUrl, setVaultUrl] = useState("");
+  const [region, setRegion] = useState("westeurope");
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<{ valid: boolean; account: string; arn: string; error?: string } | null>(null);
+
+  async function handleSave() {
+    if (!tenantId || !clientId || !clientSecret) return;
+    setSaving(true);
+    setResult(null);
+    try {
+      const response = await cloudOpsApi.configureAzureCredentials({
+        tenantId,
+        clientId,
+        clientSecret,
+        subscriptionId: subscriptionId || undefined,
+        vaultUrl: vaultUrl || undefined,
+        region,
+      });
+      setResult(response);
+      if (response.valid) {
+        onNotice(`Azure credentials configured — subscription ${response.account || "validated"}`);
+        setClientSecret("");
+      }
+    } catch (error) {
+      setResult({ valid: false, account: "", arn: "", error: String(error) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <CatalogPanel title="Azure Credentials Status" hint="Stored in ~/.azure/cloudops.json. Secret values are never displayed.">
+        <QueryState state={credStatus} loadingLabel="Checking Azure credentials…">
+          {(data) => (
+            <div className="p-4">
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-2">
+                  <span className={`inline-block h-2.5 w-2.5 rounded-full ${data.valid ? "bg-emerald-500" : data.configured ? "bg-amber-500" : "bg-zinc-300"}`} />
+                  <span className="text-sm font-semibold">{data.valid ? "Valid" : data.configured ? "Invalid" : "Not Configured"}</span>
+                </div>
+                {data.account ? <span className="rounded bg-surface-low px-2 py-0.5 text-xs font-mono">Subscription: {data.account}</span> : null}
+                {data.principal ? <span className="rounded bg-surface-low px-2 py-0.5 text-xs font-mono">Principal: {data.principal}</span> : null}
+              </div>
+              {data.error ? <p className="mt-2 text-xs text-critical">{data.error}</p> : null}
+            </div>
+          )}
+        </QueryState>
+      </CatalogPanel>
+      <CatalogPanel title="Configure Azure Credentials" hint="Service principal is written to ~/.azure/cloudops.json and validated against Azure Subscriptions. Set Key Vault URL to list secrets.">
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <AdminField label="Tenant ID" value={tenantId} onChange={setTenantId} />
+            <AdminField label="Client ID" value={clientId} onChange={setClientId} />
+            <AdminField label="Client Secret" value={clientSecret} onChange={setClientSecret} type="password" autoComplete="new-password" />
+            <AdminField label="Subscription ID (optional)" value={subscriptionId} onChange={setSubscriptionId} />
+            <AdminField label="Key Vault URL (for secrets)" value={vaultUrl} onChange={setVaultUrl} className="md:col-span-2" />
+            <AdminSelect label="Region" value={region} onChange={setRegion}>
+              <option value="westeurope">westeurope</option>
+              <option value="northeurope">northeurope</option>
+              <option value="eastus">eastus</option>
+              <option value="southeastasia">southeastasia</option>
+            </AdminSelect>
+          </div>
+          <PrimaryButton disabled={saving || !tenantId || !clientId || !clientSecret} onClick={handleSave}>
+            {saving ? "Saving…" : "Save & Validate"}
+          </PrimaryButton>
+          {result ? (
+            <div className={`rounded border p-3 text-sm ${result.valid ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-red-300 bg-red-50 text-red-800"}`}>
+              {result.valid ? (
+                <p>✓ Credentials valid — Azure subscription <strong>{result.account || "ok"}</strong></p>
+              ) : (
+                <p>✗ Validation failed: {result.error}</p>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </CatalogPanel>
+    </>
+  );
+}
+
+function GcpCredentialsPanel({ nonce, onNotice }: { nonce: number; onNotice: (message: string) => void }) {
+  const credStatus = useResource((signal) => cloudOpsApi.gcpCredentialsStatus(signal), [nonce]);
+  const [projectId, setProjectId] = useState("");
+  const [credentialsJson, setCredentialsJson] = useState("");
+  const [region, setRegion] = useState("europe-west1");
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<{ valid: boolean; account: string; arn: string; error?: string } | null>(null);
+
+  async function handleSave() {
+    if (!projectId || !credentialsJson) return;
+    setSaving(true);
+    setResult(null);
+    try {
+      const response = await cloudOpsApi.configureGcpCredentials({ projectId, credentialsJson, region });
+      setResult(response);
+      if (response.valid) {
+        onNotice(`GCP credentials configured — project ${response.account}`);
+        setCredentialsJson("");
+      }
+    } catch (error) {
+      setResult({ valid: false, account: "", arn: "", error: String(error) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <CatalogPanel title="GCP Credentials Status" hint="Service account JSON is stored under ~/.config/gcloud/cloudops-adc.json. Secret values are never displayed.">
+        <QueryState state={credStatus} loadingLabel="Checking GCP credentials…">
+          {(data) => (
+            <div className="p-4">
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-2">
+                  <span className={`inline-block h-2.5 w-2.5 rounded-full ${data.valid ? "bg-emerald-500" : data.configured ? "bg-amber-500" : "bg-zinc-300"}`} />
+                  <span className="text-sm font-semibold">{data.valid ? "Valid" : data.configured ? "Invalid" : "Not Configured"}</span>
+                </div>
+                {data.account ? <span className="rounded bg-surface-low px-2 py-0.5 text-xs font-mono">Project: {data.account}</span> : null}
+                {data.principal ? <span className="rounded bg-surface-low px-2 py-0.5 text-xs font-mono">Principal: {data.principal}</span> : null}
+              </div>
+              {data.error ? <p className="mt-2 text-xs text-critical">{data.error}</p> : null}
+            </div>
+          )}
+        </QueryState>
+      </CatalogPanel>
+      <CatalogPanel title="Configure GCP Credentials" hint="Paste a service account JSON key. It is written to ~/.config/gcloud/cloudops-adc.json and validated with Google Auth.">
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <AdminField label="Project ID" value={projectId} onChange={setProjectId} />
+            <AdminSelect label="Region" value={region} onChange={setRegion}>
+              <option value="europe-west1">europe-west1</option>
+              <option value="us-central1">us-central1</option>
+              <option value="asia-southeast1">asia-southeast1</option>
+            </AdminSelect>
+            <label className="block space-y-1 text-sm md:col-span-2">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-muted">Service account JSON</span>
+              <textarea
+                className={`${adminInputClass} min-h-36 font-mono text-xs`}
+                value={credentialsJson}
+                onChange={(event) => setCredentialsJson(event.target.value)}
+                placeholder='{"type":"service_account","project_id":"..."}'
+              />
+            </label>
+          </div>
+          <PrimaryButton disabled={saving || !projectId || !credentialsJson} onClick={handleSave}>
+            {saving ? "Saving…" : "Save & Validate"}
+          </PrimaryButton>
+          {result ? (
+            <div className={`rounded border p-3 text-sm ${result.valid ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-red-300 bg-red-50 text-red-800"}`}>
+              {result.valid ? (
+                <p>✓ Credentials valid — GCP project <strong>{result.account}</strong></p>
               ) : (
                 <p>✗ Validation failed: {result.error}</p>
               )}

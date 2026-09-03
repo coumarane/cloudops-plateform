@@ -9,17 +9,26 @@ const CLOUD_REGIONS: Record<string, string> = {
   "AWS-EMEA": "eu-west-1",
   "AWS-APAC": "ap-southeast-1",
   "Alibaba-China": "cn-hangzhou",
+  "Azure-AMER": "eastus",
+  "Azure-EMEA": "westeurope",
+  "Azure-APAC": "southeastasia",
+  "GCP-AMER": "us-central1",
+  "GCP-EMEA": "europe-west1",
+  "GCP-APAC": "asia-southeast1",
 };
 
 function accountName(provider: Provider, region: Region, environment: Environment): string {
   const classLabel = isProductionEnvironment(environment) ? "prod" : "nonprod";
-  return provider === "Alibaba" ? `alibaba-china-${classLabel}` : `aws-${region.toLowerCase()}-${classLabel}`;
+  if (provider === "Alibaba") return `alibaba-china-${classLabel}`;
+  if (provider === "Azure") return `azure-${region.toLowerCase()}-${classLabel}`;
+  if (provider === "GCP") return `gcp-${region.toLowerCase()}-${classLabel}`;
+  return `aws-${region.toLowerCase()}-${classLabel}`;
 }
 
 function clusterName(provider: Provider, region: Region, environment: Environment): string {
   const cloud = CLOUD_REGIONS[`${provider}-${region}`];
   const env = environment === "INT/TST" ? "int" : environment.toLowerCase();
-  const suffix = provider === "Alibaba" ? "ack" : "k8s";
+  const suffix = { Alibaba: "ack", Azure: "aks", GCP: "gke" }[provider as string] || "k8s";
   return `${cloud}-${env}-${suffix}`;
 }
 
@@ -28,11 +37,12 @@ export function getEnvironmentIdentity(
   region: Region,
   environment: Environment,
 ): EnvironmentIdentity {
+  const platform = { Alibaba: "ACK", Azure: "AKS", GCP: "GKE" }[provider as string] || "EKS";
   return {
     provider,
     region,
     environment,
-    platform: provider === "Alibaba" ? "ACK" : "EKS",
+    platform: platform as EnvironmentIdentity["platform"],
     cloudRegion: CLOUD_REGIONS[`${provider}-${region}`] ?? "",
     account: accountName(provider, region, environment),
     clusterName: clusterName(provider, region, environment),

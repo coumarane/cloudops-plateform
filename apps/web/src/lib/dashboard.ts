@@ -36,7 +36,7 @@ export function isProductionEnvironment(environment: Environment): boolean {
 }
 
 export function regionsForProvider(provider: DashboardFilters["provider"]): Region[] {
-  if (provider === "AWS") {
+  if (provider === "AWS" || provider === "Azure" || provider === "GCP") {
     return ["AMER", "EMEA", "APAC"];
   }
   if (provider === "Alibaba") {

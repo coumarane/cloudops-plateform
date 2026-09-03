@@ -30,6 +30,10 @@ Integrations:
 - AWS Secrets Manager
 - Alibaba ACK
 - Alibaba certificate services
+- Azure AKS (credentials + Key Vault secrets; inventory adapter pending)
+- Azure Key Vault
+- GCP GKE (credentials + Secret Manager; inventory adapter pending)
+- GCP Secret Manager
 - GitHub Actions
 - GitHub variables
 - GitHub secrets
@@ -74,6 +78,44 @@ Region:
 Non-production account:
 - DEV
 - TST
+- UAT
+
+Production account:
+- NPD
+- PRD
+
+### Azure
+
+Regions:
+
+- AMER
+- EMEA
+- APAC
+
+Each region has:
+
+Non-production account:
+- DEV
+- INT/TST
+- UAT
+
+Production account:
+- NPD
+- PRD
+
+### Google Cloud (GCP)
+
+Regions:
+
+- AMER
+- EMEA
+- APAC
+
+Each region has:
+
+Non-production account:
+- DEV
+- INT/TST
 - UAT
 
 Production account:
@@ -173,7 +215,9 @@ Example:
 
 CloudProviderAdapter
 ├── AWSProviderAdapter
-└── AlibabaProviderAdapter
+├── AlibabaProviderAdapter
+├── AzureProviderAdapter
+└── GcpProviderAdapter
 
 Do not hard-code regions or environments into application logic.
 
@@ -190,3 +234,5 @@ Celery handles asynchronous operations such as:
 - credential validation
 - GitHub synchronization
 - pipeline synchronization
+
+Azure and GCP currently support Cloud Credentials configuration and live secrets listing (Key Vault / Secret Manager). AKS and GKE inventory adapters remain deferred.

@@ -63,6 +63,12 @@ export function sourceLabel(source?: string) {
     case "cas":
     case "alibaba":
       return "CAS";
+    case "azure":
+    case "keyvault":
+      return "Key Vault";
+    case "gcp":
+    case "secretmanager":
+      return "Secret Manager";
     case "kubernetes":
       return "Kubernetes TLS";
     case "https":

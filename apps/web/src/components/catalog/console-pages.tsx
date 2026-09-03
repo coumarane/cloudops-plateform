@@ -243,7 +243,7 @@ export function ClustersCatalog({ initial }: { initial: CatalogFilters }) {
                     <EnvBadge environment={row.environment} />
                   </td>
                   <td className="p-3 font-mono text-xs text-muted">{row.account}</td>
-                  <td className="p-3 text-xs text-muted">{row.source === "mock" ? "Catalog" : `${row.source === "alibaba" ? "Alibaba" : "AWS"} live`}</td>
+                  <td className="p-3 text-xs text-muted">{row.source === "mock" ? "Catalog" : `${({ aws: "AWS", alibaba: "Alibaba", azure: "Azure", gcp: "GCP" } as Record<string, string>)[row.source || ""] || "Cloud"} live`}</td>
                   <td className="p-3">
                     <StatusChip value={row.status} />
                   </td>
