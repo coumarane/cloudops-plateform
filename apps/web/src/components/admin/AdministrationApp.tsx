@@ -156,7 +156,7 @@ function ProvidersPanel({ nonce, onNotice }: { nonce: number; onNotice: (message
               {data.items.length === 0 ? (
                 <EmptyCatalog
                   title="No cloud providers configured"
-                  description="Add AWS or Alibaba Cloud as a logical provider. Credentials are stored separately and never displayed."
+                  description="Add AWS, Alibaba Cloud, or Microsoft Azure as a logical provider. Credentials are stored separately and never displayed."
                   action="Add Provider"
                   onClick={() => setWizard(true)}
                 />
@@ -220,8 +220,15 @@ function ProviderWizard({ onDone, onCancel }: { onDone: (message: string) => voi
   const [authStrategy, setAuthStrategy] = useState("AssumeRole");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const strategies = providerType === "Alibaba" ? ["RAM", "STS", "AccessKey"] : ["AssumeRole", "IAM"];
-  const typeOptions = types.status === "success" ? types.data.items : [{ id: "AWS", name: "AWS" }, { id: "Alibaba", name: "Alibaba Cloud" }];
+  const typeOptions = types.status === "success"
+    ? types.data.items
+    : [
+        { id: "AWS", name: "AWS", platform: "EKS", authStrategies: ["AssumeRole", "IAM"], inventorySupported: true },
+        { id: "Alibaba", name: "Alibaba Cloud", platform: "ACK", authStrategies: ["RAM", "STS", "AccessKey"], inventorySupported: true },
+        { id: "Azure", name: "Microsoft Azure", platform: "AKS", authStrategies: ["ManagedIdentity", "WorkloadIdentity", "ServicePrincipal"], inventorySupported: false },
+      ];
+  const selectedType = typeOptions.find((item) => item.id === providerType) || typeOptions[0];
+  const strategies = selectedType?.authStrategies || [];
 
   async function save() {
     setBusy(true);
@@ -263,12 +270,16 @@ function ProviderWizard({ onDone, onCancel }: { onDone: (message: string) => voi
             <ChoiceCard
               key={item.id}
               title={item.name}
-              description={item.id === "Alibaba" ? "China region · ACK clusters · RAM / STS identity." : "AMER, EMEA, APAC · EKS clusters · AssumeRole / IAM."}
+              description={item.id === "Alibaba"
+                ? "China region · ACK clusters · RAM / STS identity."
+                : item.id === "Azure"
+                  ? "AMER, EMEA, APAC · AKS configuration · inventory adapter pending."
+                  : "AMER, EMEA, APAC · EKS clusters · AssumeRole / IAM."}
               selected={providerType === item.id}
               onSelect={() => {
                 setProviderType(item.id);
-                setName(item.id === "AWS" ? "AWS Corporate" : "Alibaba China");
-                setAuthStrategy(item.id === "AWS" ? "AssumeRole" : "RAM");
+                setName(item.id === "AWS" ? "AWS Corporate" : item.id === "Alibaba" ? "Alibaba China" : "Azure Corporate");
+                setAuthStrategy(item.authStrategies[0]);
               }}
             />
           ))}
@@ -286,17 +297,20 @@ function ProviderWizard({ onDone, onCancel }: { onDone: (message: string) => voi
       ) : null}
       {step === 3 ? (
         <div className="space-y-3">
-          <p className="text-xs text-muted">Use a credential reference on the account. Role ARN / RAM role are metadata only.</p>
+          <p className="text-xs text-muted">Use a credential reference on the account. Identity metadata is stored without secret values.</p>
           <div className="grid gap-3 sm:grid-cols-3">
             {strategies.map((item) => (
               <ChoiceCard key={item} title={item} description="Identity metadata only. Secret values stay in SecretBackend." selected={authStrategy === item} onSelect={() => setAuthStrategy(item)} />
             ))}
           </div>
+          {providerType === "AWS" && authStrategy === "AssumeRole" ? <AwsAssumeRoleHelp /> : null}
         </div>
       ) : null}
       {step === 4 ? (
         <div className="rounded border border-outline bg-surface-low p-4 text-sm text-ink">
-          Validation runs after an account is attached. Save the provider first, then add an account and click Validate.
+          {selectedType?.inventorySupported
+            ? "Validation runs after an account is attached. Save the provider first, then add an account and click Validate."
+            : "Azure account configuration is available now. Validation and AKS discovery remain disabled until the Azure inventory adapter is added."}
         </div>
       ) : null}
       {step === 5 ? (
@@ -310,6 +324,21 @@ function ProviderWizard({ onDone, onCancel }: { onDone: (message: string) => voi
       ) : null}
       {error ? <p className="mt-4 text-sm text-critical">{error}</p> : null}
     </AdminDialog>
+  );
+}
+
+function AwsAssumeRoleHelp() {
+  return (
+    <section className="rounded border border-action/30 bg-action/5 p-4 text-sm text-ink">
+      <p className="font-semibold">Local Docker with IAM Identity Center</p>
+      <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-muted">
+        <li>In AWS IAM, create `CloudOpsDiscoveryRole` using <strong>AWS account - This account</strong> as the trusted entity.</li>
+        <li>Attach only the EKS/ACM read-only inline policy from the CloudOps provider onboarding guide.</li>
+        <li>On the next account form, enter the account ID, AWS region, and the new role ARN.</li>
+        <li>Log in to your AWS SSO profile on the Docker host before validating. The API and worker need that profile mounted at runtime.</li>
+      </ol>
+      <p className="mt-3 text-xs text-muted">The full policy and cross-provider guidance are documented in `docs/cloud-provider-onboarding.md`.</p>
+    </section>
   );
 }
 
@@ -354,8 +383,10 @@ function ProviderDetails({ id, onClose, onNotice }: { id: string; onClose: () =>
               <Meta label="Last discovery" value={row.lastSynchronizedAt || "—"} />
             </div>
             <div className="flex flex-wrap gap-2 border-y border-outline py-4">
-              <PrimaryButton disabled={!!busy} onClick={() => void run("validate")}>{busy === "validate" ? "Validating…" : "Validate Provider"}</PrimaryButton>
-              <GhostButton disabled={!!busy} onClick={() => void run("discover")}>{busy === "discover" ? "Starting…" : "Discover All"}</GhostButton>
+              {row.inventorySupported === false ? <p className="text-sm text-muted">Azure AKS validation and discovery require the Azure inventory adapter.</p> : <>
+                <PrimaryButton disabled={!!busy} onClick={() => void run("validate")}>{busy === "validate" ? "Validating…" : "Validate Provider"}</PrimaryButton>
+                <GhostButton disabled={!!busy} onClick={() => void run("discover")}>{busy === "discover" ? "Starting…" : "Discover All"}</GhostButton>
+              </>}
               <GhostButton onClick={() => void run(row.enabled ? "disable" : "enable")}>{row.enabled ? "Disable" : "Enable"}</GhostButton>
             </div>
             <div>
@@ -439,11 +470,13 @@ function AccountForm({ providers, onDone, onCancel }: { providers: ManagedProvid
   const [providerId, setProviderId] = useState(first?.id || "");
   const selected = providers.find((item) => item.id === providerId);
   const alibaba = selected?.providerType === "Alibaba";
-  const [name, setName] = useState(alibaba ? "Alibaba China NonProd" : "AWS EMEA NonProd");
+  const azure = selected?.providerType === "Azure";
+  const [name, setName] = useState(alibaba ? "Alibaba China NonProd" : azure ? "Azure EMEA NonProd" : "AWS EMEA NonProd");
   const [accountId, setAccountId] = useState("");
   const [region, setRegion] = useState(alibaba ? "China" : "EMEA");
-  const [cloudRegion, setCloudRegion] = useState(alibaba ? "cn-hangzhou" : "eu-west-1");
+  const [cloudRegion, setCloudRegion] = useState(alibaba ? "cn-hangzhou" : azure ? "westeurope" : "eu-west-1");
   const [roleArn, setRoleArn] = useState("");
+  const [externalId, setExternalId] = useState("");
   const [accountClass, setAccountClass] = useState("NONPROD");
   const [credentialRef, setCredentialRef] = useState("");
   const [secretValue, setSecretValue] = useState("");
@@ -458,11 +491,11 @@ function AccountForm({ providers, onDone, onCancel }: { providers: ManagedProvid
       if (secretValue) {
         const credential = await cloudOpsApi.createCredential({
           name: `${name}-identity`,
-          provider: alibaba ? "alibaba" : "aws",
+          provider: alibaba ? "alibaba" : azure ? "azure" : "aws",
           region: region.toLowerCase(),
           account: name.toLowerCase().replace(/\s+/g, "-"),
           environment: accountClass === "PROD" ? "prd" : "dev",
-          credentialType: alibaba ? "ram_role" : "sts_assume_role",
+          credentialType: alibaba ? "ram_role" : azure ? "application" : "sts_assume_role",
           secretValue,
           roleArn,
         });
@@ -477,6 +510,7 @@ function AccountForm({ providers, onDone, onCancel }: { providers: ManagedProvid
         cloudRegions: [cloudRegion],
         roleArn: alibaba ? undefined : roleArn,
         ramRole: alibaba ? roleArn : undefined,
+        externalId: alibaba || azure ? undefined : externalId || undefined,
         accountClass,
         credentialRef: ref,
         authStrategy: selected?.authStrategy,
@@ -503,20 +537,43 @@ function AccountForm({ providers, onDone, onCancel }: { providers: ManagedProvid
       }
     >
       <div className="grid gap-4 md:grid-cols-2">
-        <AdminSelect label="Provider" value={providerId} onChange={setProviderId}>
+        <AdminSelect label="Provider" value={providerId} onChange={(id) => {
+          const provider = providers.find((item) => item.id === id);
+          setProviderId(id);
+          if (provider?.providerType === "Alibaba") {
+            setName("Alibaba China NonProd");
+            setRegion("China");
+            setCloudRegion("cn-hangzhou");
+          } else if (provider?.providerType === "Azure") {
+            setName("Azure EMEA NonProd");
+            setRegion("EMEA");
+            setCloudRegion("westeurope");
+          } else {
+            setName("AWS EMEA NonProd");
+            setRegion("EMEA");
+            setCloudRegion("eu-west-1");
+          }
+        }}>
           {providers.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </AdminSelect>
         <AdminField label="Account name" value={name} onChange={setName} />
-        <AdminField label={alibaba ? "Alibaba account ID" : "AWS account ID"} value={accountId} onChange={setAccountId} />
+        <AdminField label={alibaba ? "Alibaba account ID" : azure ? "Azure subscription ID" : "AWS account ID"} value={accountId} onChange={(value) => {
+          setAccountId(value);
+          if (!alibaba && !azure && (!roleArn || roleArn.endsWith(":role/CloudOpsDiscoveryRole"))) {
+            setRoleArn(value ? `arn:aws:iam::${value}:role/CloudOpsDiscoveryRole` : "");
+          }
+        }} />
         <AdminField label="Logical region" value={region} onChange={setRegion} />
         <AdminField label="Cloud region" value={cloudRegion} onChange={setCloudRegion} />
-        <AdminField label={alibaba ? "RAM role" : "Role ARN"} value={roleArn} onChange={setRoleArn} />
+        <AdminField label={alibaba ? "RAM role" : azure ? "Managed identity or application ID" : "Role ARN"} value={roleArn} onChange={setRoleArn} />
+        {!alibaba && !azure ? <AdminField label="External ID (optional)" value={externalId} onChange={setExternalId} /> : null}
         <AdminSelect label="Account class" value={accountClass} onChange={setAccountClass}>
           <option value="NONPROD">NONPROD</option>
           <option value="PROD">PROD</option>
         </AdminSelect>
         <AdminField label="Existing credential reference" value={credentialRef} onChange={setCredentialRef} />
         <AdminField label="New secret material (write-only)" value={secretValue} onChange={setSecretValue} type="password" autoComplete="new-password" className="md:col-span-2" />
+        {!alibaba && !azure ? <p className="-mt-2 text-xs text-muted md:col-span-2">Leave External ID empty for an AWS role trusted by this account. Use it only when a third-party trust policy requires it.</p> : null}
         {error ? <p className="text-sm text-critical md:col-span-2">{error}</p> : null}
       </div>
     </AdminDialog>
@@ -558,8 +615,10 @@ function AccountDetails({ id, onClose, onNotice }: { id: string; onClose: () => 
               <Meta label="Last validation" value={row.validationStatus || "—"} />
             </div>
             <div className="flex flex-wrap gap-2 border-y border-outline py-4">
-              <PrimaryButton disabled={!!busy} onClick={() => void run("validate")}>{busy === "validate" ? "Validating…" : "Validate"}</PrimaryButton>
-              <GhostButton disabled={!!busy} onClick={() => void run("discover")}>{busy === "discover" ? "Starting…" : "Discover"}</GhostButton>
+              {row.inventorySupported === false ? <p className="text-sm text-muted">Azure AKS validation and discovery require the Azure inventory adapter.</p> : <>
+                <PrimaryButton disabled={!!busy} onClick={() => void run("validate")}>{busy === "validate" ? "Validating…" : "Validate"}</PrimaryButton>
+                <GhostButton disabled={!!busy} onClick={() => void run("discover")}>{busy === "discover" ? "Starting…" : "Discover"}</GhostButton>
+              </>}
               <GhostButton
                 onClick={() => {
                   if (window.confirm(`Delete ${row.name} if unused?`)) {

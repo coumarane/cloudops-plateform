@@ -46,6 +46,12 @@ def _apply_enabled(row, body: dict) -> None:
 AUTH_STRATEGIES = {
     "AWS": ("AssumeRole", "IAM"),
     "Alibaba": ("RAM", "STS", "AccessKey"),
+    "Azure": ("ManagedIdentity", "WorkloadIdentity", "ServicePrincipal"),
+}
+PROVIDER_DEFAULTS = {
+    "AWS": ("EMEA", "eu-west-1"),
+    "Alibaba": ("China", "cn-hangzhou"),
+    "Azure": ("EMEA", "westeurope"),
 }
 ACCOUNT_CLASSES = {"NONPROD": "NONPROD", "PROD": "PROD", "NON-PRODUCTION": "NONPROD", "PRODUCTION": "PROD"}
 ENVIRONMENT_CLASSES = {"DEV", "INT", "TST", "INT/TST", "UAT", "NPD", "PRD"}
@@ -100,8 +106,9 @@ def _ensure_type_rows(session: Session, provider_type: str, region: str, cloud_r
 
 def list_provider_types() -> list[dict]:
     return [
-        {"id": "AWS", "name": "AWS", "platform": "EKS", "authStrategies": list(AUTH_STRATEGIES["AWS"])},
-        {"id": "Alibaba", "name": "Alibaba Cloud", "platform": "ACK", "authStrategies": list(AUTH_STRATEGIES["Alibaba"])},
+        {"id": "AWS", "name": "AWS", "platform": "EKS", "authStrategies": list(AUTH_STRATEGIES["AWS"]), "inventorySupported": True},
+        {"id": "Alibaba", "name": "Alibaba Cloud", "platform": "ACK", "authStrategies": list(AUTH_STRATEGIES["Alibaba"]), "inventorySupported": True},
+        {"id": "Azure", "name": "Microsoft Azure", "platform": "AKS", "authStrategies": list(AUTH_STRATEGIES["Azure"]), "inventorySupported": False},
     ]
 
 
@@ -149,12 +156,7 @@ def create_provider(session: Session, body: dict, actor: str) -> dict:
         updated_at=now,
     )
     session.add(row)
-    _ensure_type_rows(
-        session,
-        provider_type,
-        "EMEA" if provider_type == "AWS" else "China",
-        "eu-west-1" if provider_type == "AWS" else "cn-hangzhou",
-    )
+    _ensure_type_rows(session, provider_type, *PROVIDER_DEFAULTS[provider_type])
     _audit(session, "PROVIDER_CREATED", actor, row.name)
     session.flush()
     return provider_dump(session, row)
@@ -221,7 +223,7 @@ def create_account(session: Session, body: dict, actor: str) -> dict:
     if session.scalar(select(CloudAccountRow).where(CloudAccountRow.alias == alias)):
         raise PlatformConflictError("An account with this name already exists")
     region = body["region"]
-    cloud = body.get("cloudRegion") or ("cn-hangzhou" if provider.provider_type == "Alibaba" else "eu-west-1")
+    cloud = body.get("cloudRegion") or PROVIDER_DEFAULTS[provider.provider_type][1]
     account_class = _normalize_account_class(body["accountClass"])
     _ensure_type_rows(session, provider.provider_type, region, cloud)
     row = CloudAccountRow(
@@ -385,6 +387,8 @@ def validate_account_connection(session: Session, account_id: str, actor: str) -
     row = session.get(CloudAccountRow, account_id)
     if row is None:
         raise PlatformNotFoundError("Account not found")
+    if row.provider == "Azure":
+        raise PlatformStateError("Azure AKS validation is not available yet. Configure the account now; add the Azure adapter before validating or discovering resources.")
     adapter = provider_adapter(row.provider)
     result = adapter.validate_connection(_binding_for_account(session, row))
     row.last_validated_at = utcnow()
@@ -438,6 +442,8 @@ def enqueue_account_discovery(session: Session, account_id: str, actor: str) -> 
     row = session.get(CloudAccountRow, account_id)
     if row is None:
         raise PlatformNotFoundError("Account not found")
+    if row.provider == "Azure":
+        raise PlatformStateError("Azure AKS discovery is not available yet. Add the Azure adapter before discovering resources.")
     adapter = provider_adapter(row.provider)
     job = enqueue_job(
         adapter.discovery_job_kind,
@@ -454,6 +460,8 @@ def enqueue_environment_job(session: Session, environment_id: str, action: str, 
     row = session.get(CloudEnvironmentRow, environment_id)
     if row is None:
         raise PlatformNotFoundError("Environment not found")
+    if row.provider == "Azure":
+        raise PlatformStateError("Azure AKS jobs are not available yet. Add the Azure adapter before running discovery, health, or certificate scans.")
     adapter = provider_adapter(row.provider)
     kinds = {
         "discover": adapter.discovery_job_kind,

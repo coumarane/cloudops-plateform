@@ -18,6 +18,8 @@ The `migrate` service runs `alembic upgrade head` once PostgreSQL is healthy; th
 
 Stop the stack with `docker compose -f infrastructure/docker-compose.yml down`. Add `-v` only when you intend to remove the local PostgreSQL and Redis data volumes.
 
+For local AWS IAM Identity Center authentication, use the optional read-only SSO profile mount described in [docs/cloud-provider-onboarding.md](docs/cloud-provider-onboarding.md#aws-eks). Do not add AWS credentials to `.env` or Compose files.
+
 ### Podman On Windows
 
 Install Podman Desktop or Podman, then initialize and start its Linux machine in PowerShell:
@@ -54,9 +56,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). With an empty database the dashboard shows onboarding, not fake infrastructure. Configure providers from **Administration**. See [docs/platform-administration.md](docs/platform-administration.md).
-
-`CLOUDOPS_DEMO_MODE` defaults to `false`. Set it to `true` only when you explicitly want catalog demo data (a **DEMO DATA** badge is shown). `CLOUDOPS_PROVIDER_STUB=true` fakes cloud SDK calls for local discovery without credentials.
+Open [http://localhost:3000](http://localhost:3000).
 
 Optional worker (when `CLOUDOPS_CELERY_EAGER=false`):
 
@@ -66,7 +66,7 @@ PYTHONPATH=../api:. python3 -m celery -A celery_app worker --loglevel=info
 PYTHONPATH=../api:. python3 -m celery -A celery_app beat --loglevel=info
 ```
 
-Live AWS and Alibaba inventory appears after a provider, account, and environment are configured in Administration and discovery succeeds. Unconfigured platforms stay empty. PRD is read-only for cluster inventory. Credential replace on NPD/PRD requires `credential:prod_update`.
+Live AWS data is used for **AMER, EMEA, and APAC** after a successful scan of that account. Live Alibaba data is used for **China** after a successful ACK scan. Unscanned cells keep mock catalog data. PRD is read-only for cluster inventory. Credential replace on NPD/PRD requires `credential:prod_update`.
 
 Certificate expiry classification is computed in the API. Dashboard cards link to `/certificates?expires_within_days=7` (and related filters). Private keys are never stored or returned.
 

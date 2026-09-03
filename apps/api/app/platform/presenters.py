@@ -84,7 +84,7 @@ def provider_dump(session: Session, row: ManagedProviderRow) -> dict:
         "name": row.name,
         "providerType": row.provider_type,
         "provider": row.provider_type,
-        "platform": platform_for(row.provider_type),  # type: ignore[arg-type]
+        "platform": {"AWS": "EKS", "Alibaba": "ACK", "Azure": "AKS"}.get(row.provider_type, "Kubernetes"),
         "description": row.description,
         "enabled": row.enabled,
         "authStrategy": row.auth_strategy,
@@ -98,7 +98,8 @@ def provider_dump(session: Session, row: ManagedProviderRow) -> dict:
         "accounts": len(accounts),
         "environments": env_count,
         "clusters": cluster_count,
-        "regions": ["AMER", "EMEA", "APAC"] if row.provider_type == "AWS" else ["China"],
+        "regions": ["China"] if row.provider_type == "Alibaba" else ["AMER", "EMEA", "APAC"],
+        "inventorySupported": row.provider_type != "Azure",
     }
 
 
@@ -124,7 +125,7 @@ def account_dump(session: Session, row: CloudAccountRow) -> dict:
         "accountClass": klass,
         "accountClassCode": row.account_class,
         "cloudRegion": row.cloud_region,
-        "platform": platform_for(row.provider),  # type: ignore[arg-type]
+        "platform": {"AWS": "EKS", "Alibaba": "ACK", "Azure": "AKS"}.get(row.provider, "Kubernetes"),
         "hostedEnvironments": hosted,
         "environments": ", ".join(hosted),
         "clusters": clusters,
@@ -136,6 +137,7 @@ def account_dump(session: Session, row: CloudAccountRow) -> dict:
         "credentialRef": row.credential_ref,
         "enabled": row.enabled,
         "managedProviderId": row.managed_provider_id,
+        "inventorySupported": row.provider != "Azure",
         "description": row.description,
         "validationStatus": row.validation_status,
         "lastValidatedAt": _iso(row.last_validated_at),
@@ -162,13 +164,13 @@ def environment_dump(session: Session, row: CloudEnvironmentRow) -> dict:
         "provider": row.provider,
         "region": row.platform_region,
         "environment": row.environment,
-        "platform": platform_for(row.provider),  # type: ignore[arg-type]
+        "platform": {"AWS": "EKS", "Alibaba": "ACK", "Azure": "AKS"}.get(row.provider, "Kubernetes"),
         "cloudRegion": row.cloud_region,
         "account": row.account_alias,
         "accountId": row.account_id,
         "clusterName": "",
         "readonly": row.readonly,
-        "source": "alibaba" if row.provider == "Alibaba" else "aws",
+        "source": {"AWS": "aws", "Alibaba": "alibaba", "Azure": "azure"}.get(row.provider, "unknown"),
         "lastSuccessfulScan": _iso(row.last_successful_scan_at),
         "lastError": row.last_error or None,
         "discoveryActive": row.discovery_active,

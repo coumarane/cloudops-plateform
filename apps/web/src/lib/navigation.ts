@@ -9,6 +9,7 @@ export type NavItem = {
     | "applications"
     | "secrets"
     | "certificates"
+    | "storage"
     | "health"
     | "deployments"
     | "pipelines"
@@ -27,6 +28,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/applications", label: "Applications", icon: "applications" },
   { href: "/secrets", label: "Secrets", icon: "secrets" },
   { href: "/certificates", label: "Certificates", icon: "certificates" },
+  { href: "/storage", label: "Storage", icon: "storage" },
   { href: "/health-checks", label: "Health Checks", icon: "health" },
   { href: "/deployments", label: "Deployments", icon: "deployments" },
   { href: "/pipelines", label: "Pipelines", icon: "pipelines" },

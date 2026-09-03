@@ -1,6 +1,6 @@
 # Platform administration and real data
 
-CloudOps is configured from **Administration**, not by editing database rows or backend files.
+CloudOps is configured from **Administration**, not by editing database rows or backend files. Create provider-side identities first using [cloud-provider-onboarding.md](cloud-provider-onboarding.md).
 
 ## Data modes
 
@@ -33,7 +33,7 @@ Do not enable bootstrap admin on a deployed environment that is reachable withou
 6. Environment → Discover Clusters. Watch Administration → Discovery Jobs.
 7. Scan Certificates / Run Health Check from the environment page.
 
-Live IAM guidance: [aws-emea-dev-iam.md](aws-emea-dev-iam.md). Prefer IRSA / instance profile over access keys.
+Live IAM guidance: [cloud-provider-onboarding.md](cloud-provider-onboarding.md#aws-eks) and [aws-emea-dev-iam.md](aws-emea-dev-iam.md). Prefer IRSA / instance profile over access keys.
 
 Local E2E without AWS: `CLOUDOPS_PROVIDER_STUB=true`.
 
@@ -44,7 +44,15 @@ Local E2E without AWS: `CLOUDOPS_PROVIDER_STUB=true`.
 3. Add account (China, `cn-hangzhou`, RAM role, NONPROD or PROD).
 4. Add environment, Validate, Discover Clusters.
 
-RAM guidance: [alibaba-china-ram.md](alibaba-china-ram.md).
+RAM guidance: [cloud-provider-onboarding.md](cloud-provider-onboarding.md#alibaba-cloud-ack) and [alibaba-china-ram.md](alibaba-china-ram.md).
+
+## Azure setup (UI)
+
+1. Add provider **Microsoft Azure** and select the intended identity pattern.
+2. Add the Azure subscription account, logical region, and Azure region.
+3. Azure validation, AKS discovery, health scans, and certificate scans are unavailable until the Azure inventory adapter is implemented.
+
+Azure identity planning: [cloud-provider-onboarding.md](cloud-provider-onboarding.md#microsoft-azure-aks).
 
 ## Integrations
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, type ReactNode } from "react";
+import { useEffect, useId, useSyncExternalStore, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 const SIZE: Record<"md" | "lg" | "xl", string> = {
   md: "max-w-lg",
@@ -35,6 +36,7 @@ export function AdminDialog({
   useOverlay(onClose);
 
   return (
+    <OverlayPortal>
     <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto p-4 sm:items-center">
       <button type="button" className="fixed inset-0 bg-black/45" aria-label="Close dialog" onClick={onClose} />
       <div
@@ -64,6 +66,7 @@ export function AdminDialog({
         {footer ? <footer className="flex justify-end gap-2 border-t border-outline bg-surface-low px-5 py-3">{footer}</footer> : null}
       </div>
     </div>
+    </OverlayPortal>
   );
 }
 
@@ -82,6 +85,7 @@ export function AdminDrawer({
   useOverlay(onClose);
 
   return (
+    <OverlayPortal>
     <div className="fixed inset-0 z-[70] flex justify-end">
       <button type="button" className="absolute inset-0 bg-black/45" aria-label="Close drawer" onClick={onClose} />
       <aside
@@ -110,6 +114,7 @@ export function AdminDrawer({
         <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
       </aside>
     </div>
+    </OverlayPortal>
   );
 }
 
@@ -410,6 +415,24 @@ function useOverlay(onClose: () => void) {
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);
+}
+
+function OverlayPortal({ children }: { children: ReactNode }) {
+  const mounted = useSyncExternalStore(subscribeToClientMount, getClientSnapshot, getServerSnapshot);
+
+  return mounted ? createPortal(children, document.body) : null;
+}
+
+function subscribeToClientMount() {
+  return () => {};
+}
+
+function getClientSnapshot() {
+  return true;
+}
+
+function getServerSnapshot() {
+  return false;
 }
 
 function CloseIcon() {

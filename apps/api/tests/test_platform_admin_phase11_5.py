@@ -187,6 +187,44 @@ def test_alibaba_provider_setup(monkeypatch) -> None:
     assert any(item["provider"] == "Alibaba" for item in clusters)
 
 
+def test_azure_provider_can_be_configured_without_inventory_adapter(monkeypatch) -> None:
+    _real_mode(monkeypatch, stub=False)
+    _wipe()
+    types = client.get("/api/v1/provider-types")
+    assert types.status_code == 200, types.text
+    azure_type = next(item for item in types.json()["items"] if item["id"] == "Azure")
+    assert azure_type["platform"] == "AKS"
+    assert azure_type["inventorySupported"] is False
+
+    provider = client.post(
+        "/api/v1/providers",
+        json={"providerType": "Azure", "name": "Azure Corporate", "authStrategy": "ManagedIdentity"},
+    )
+    assert provider.status_code == 200, provider.text
+    assert provider.json()["platform"] == "AKS"
+    assert provider.json()["inventorySupported"] is False
+
+    account = client.post(
+        "/api/v1/accounts",
+        json={
+            "providerId": provider.json()["id"],
+            "name": "Azure EMEA NonProd",
+            "accountId": "00000000-0000-0000-0000-000000000000",
+            "region": "EMEA",
+            "cloudRegion": "westeurope",
+            "roleArn": "00000000-0000-0000-0000-000000000001",
+            "accountClass": "NONPROD",
+            "authStrategy": "ManagedIdentity",
+        },
+    )
+    assert account.status_code == 200, account.text
+    assert account.json()["platform"] == "AKS"
+    assert account.json()["inventorySupported"] is False
+    validation = client.post(f"/api/v1/accounts/{account.json()['id']}/validate")
+    assert validation.status_code == 400
+    assert "Azure AKS validation is not available yet" in validation.json()["detail"]
+
+
 def test_failed_validation(monkeypatch) -> None:
     _real_mode(monkeypatch, stub=False)
     _wipe()

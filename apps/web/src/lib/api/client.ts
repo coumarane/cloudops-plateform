@@ -64,6 +64,11 @@ export const cloudOpsApi = {
     getList<ApplicationRecord>("/applications", scope, signal),
   certificates: (scope?: ScopeQuery, signal?: AbortSignal) =>
     getList<CertificateRecord>("/certificates", scope, signal),
+  storageBuckets: (signal?: AbortSignal) =>
+    getJson<{
+      items: Array<{ name: string; createdAt?: string | null; account: string; accountId: string }>;
+      errors: Array<{ account: string; accountId: string; detail: string }>;
+    }>("/storage/buckets", undefined, signal),
   certificate: (id: string, signal?: AbortSignal) =>
     getJson<CertificateRecord>(`/certificates/${id}`, undefined, signal),
   certificateHistory: (id: string, signal?: AbortSignal) =>
@@ -191,7 +196,7 @@ export const cloudOpsApi = {
   adminUsers: (signal?: AbortSignal) => getList<AdminUser>("/admin/users", undefined, signal),
   adminIntegrations: (signal?: AbortSignal) => getList<AdminIntegration>("/admin/integrations", undefined, signal),
   platformStatus: (signal?: AbortSignal) => getJson<import("@/lib/platform").PlatformStatus>("/platform/status", undefined, signal),
-  providerTypes: (signal?: AbortSignal) => getList<{ id: string; name: string; platform: string; authStrategies: string[] }>("/provider-types", undefined, signal),
+  providerTypes: (signal?: AbortSignal) => getList<{ id: string; name: string; platform: string; authStrategies: string[]; inventorySupported: boolean }>("/provider-types", undefined, signal),
   managedProviders: (signal?: AbortSignal) => getList<import("@/lib/platform").ManagedProvider>("/providers", undefined, signal),
   managedProvider: (id: string, signal?: AbortSignal) =>
     getJson<import("@/lib/platform").ManagedProvider>(`/providers/${id}`, undefined, signal),

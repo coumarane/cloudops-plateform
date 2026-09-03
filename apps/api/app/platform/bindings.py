@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+from app.core.config import settings
 from app.db.models import CloudAccountRow, CloudEnvironmentRow
 from app.topology.models import AccountBinding, environment_scope_id
 
@@ -33,7 +34,7 @@ def account_binding(account: CloudAccountRow, environments: tuple[str, ...]) -> 
         environments=environments or ("DEV",),
         session_name=account.session_name or "cloudops-admin",
         cluster_environment_tag=account.cluster_environment_tag or "Environment",
-        profile=None,
+        profile=settings.aws_profile if account.provider == "AWS" else None,
         config_secret_arn=account.credential_ref if (account.credential_ref or "").startswith("arn:") else None,
         credential_ref=account.credential_ref or None,
         access_key_id_ref=None,

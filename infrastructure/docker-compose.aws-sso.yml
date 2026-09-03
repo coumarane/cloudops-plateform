@@ -1,0 +1,23 @@
+# Optional local AWS IAM Identity Center support. Use only on a trusted developer machine.
+# The host SSO configuration and token cache are mounted read-only; no credentials are persisted by CloudOps.
+services:
+  api:
+    environment:
+      CLOUDOPS_AWS_PROFILE: ${CLOUDOPS_AWS_PROFILE:-default}
+      AWS_SDK_LOAD_CONFIG: "1"
+    volumes:
+      - ${HOME}/.aws:/root/.aws:ro
+
+  worker:
+    environment:
+      CLOUDOPS_AWS_PROFILE: ${CLOUDOPS_AWS_PROFILE:-default}
+      AWS_SDK_LOAD_CONFIG: "1"
+    volumes:
+      - ${HOME}/.aws:/root/.aws:ro
+
+  beat:
+    environment:
+      CLOUDOPS_AWS_PROFILE: ${CLOUDOPS_AWS_PROFILE:-default}
+      AWS_SDK_LOAD_CONFIG: "1"
+    volumes:
+      - ${HOME}/.aws:/root/.aws:ro

@@ -26,6 +26,7 @@ export type ManagedProvider = {
   identityAccount?: string;
   identityPrincipal?: string;
   errorCategory?: string;
+  inventorySupported?: boolean;
   accountsDetail?: ManagedAccount[];
   environmentsDetail?: ManagedEnvironment[];
 };
@@ -46,6 +47,7 @@ export type ManagedAccount = {
   credentialRef?: string;
   enabled: boolean;
   managedProviderId?: string;
+  inventorySupported?: boolean;
   readiness: Readiness;
   validationStatus?: string;
   lastValidatedAt?: string | null;
