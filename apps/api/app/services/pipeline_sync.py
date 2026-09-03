@@ -218,6 +218,8 @@ def evaluate_run_alert(session: Session, pipeline: PipelineRow, run: PipelineRun
             select(PipelineAlertRow).where(PipelineAlertRow.run_id == run.id, PipelineAlertRow.status == "OPEN")
         )
     if run.status == SUCCEEDED:
+        from app.alerting.publishers import publish_pipeline
+
         if existing_run is not None:
             existing_run.status = "RESOLVED"
             existing_run.resolved_at = utcnow()
@@ -234,6 +236,7 @@ def evaluate_run_alert(session: Session, pipeline: PipelineRow, run: PipelineRun
             alert.status = "RESOLVED"
             alert.resolved_at = utcnow()
             alert.last_evaluated_at = utcnow()
+        publish_pipeline(session, pipeline=pipeline, run=run, environment=environment or "", severity=severity or "MEDIUM", recovered=True, env_row=env_row)
         return
     if run.status != FAILED or not severity:
         return
@@ -256,6 +259,9 @@ def evaluate_run_alert(session: Session, pipeline: PipelineRow, run: PipelineRun
         )
     )
     session.flush()
+    from app.alerting.publishers import publish_pipeline
+
+    publish_pipeline(session, pipeline=pipeline, run=run, environment=environment or "", severity=severity, env_row=env_row)
 
 
 def upsert_pipeline(session: Session, provider_row: PipelineProviderRow, item: ProviderPipeline) -> PipelineRow:

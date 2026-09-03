@@ -51,7 +51,7 @@ export function KpiStrip({ summary }: { summary: KpiSummary }) {
   const expired = summary.certsExpired ?? 0;
   return (
     <div className="space-y-4">
-      <section aria-label="Operational summary" className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-10">
+      <section aria-label="Operational summary" className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-12">
         <Card label="Cluster health">
           <div className="flex flex-wrap gap-2">
             <Split value={summary.clustersHealthy} suffix="H" tone="text-healthy" />
@@ -88,8 +88,17 @@ export function KpiStrip({ summary }: { summary: KpiSummary }) {
         <Card label="Open incidents" tone={(summary.openIncidents ?? 0) > 0 ? "critical" : undefined} href="/health-checks?tab=incidents">
           <p className="text-lg font-semibold text-critical">{summary.openIncidents ?? 0}</p>
         </Card>
-        <Card label="Open alerts" tone={summary.openAlerts > 0 ? "critical" : undefined}>
+        <Card label="Open alerts" tone={summary.openAlerts > 0 ? "critical" : undefined} href="/alerts">
           <p className="text-lg font-semibold text-critical">{summary.openAlerts}</p>
+        </Card>
+        <Card label="Critical alerts" tone={(summary.criticalAlerts ?? 0) > 0 ? "critical" : undefined} href="/alerts?status=open">
+          <p className="text-lg font-semibold text-critical">{summary.criticalAlerts ?? 0}</p>
+        </Card>
+        <Card label="PRD critical" tone={(summary.prdCriticalAlerts ?? 0) > 0 ? "critical" : undefined} href="/alerts">
+          <p className="text-lg font-semibold text-prd">{summary.prdCriticalAlerts ?? 0}</p>
+        </Card>
+        <Card label="Acknowledged" href="/alerts">
+          <p className="text-lg font-semibold text-ink">{summary.acknowledgedAlerts ?? 0}</p>
         </Card>
         <Card label="Expiring certs" tone={summary.certsExpiring14d > 0 ? "warning" : undefined} href="/certificates?expires_within_days=14">
           <div className="flex items-baseline gap-1">

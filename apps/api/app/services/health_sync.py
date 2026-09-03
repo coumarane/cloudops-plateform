@@ -52,7 +52,6 @@ from app.integrations.health.status import (
     UNKNOWN,
     worst,
 )
-from app.notifications.factory import get_notification_provider
 from app.providers.common.certificates import EXPIRED
 from app.services.endpoint_tls import EndpointPolicyError
 from app.services.health_http import probe_http
@@ -590,43 +589,12 @@ def upsert_alert(session: Session, *, kind: str, row: ApplicationHealthRow, titl
     return alert
 
 
-def maybe_notify(session: Session, row: ApplicationHealthRow, kind: str) -> None:
-    severity = health_to_alert_severity(row.status)
-    if not meets_notification_floor(row.environment, severity):
-        return
-    from app.db.models import NotificationEventRow
+def maybe_notify(session: Session, row: ApplicationHealthRow, kind: str, title: str) -> None:
+    from app.alerting.models import normalize_severity
+    from app.alerting.publishers import publish_health
 
-    cutoff = utcnow() - timedelta(seconds=settings.certificate_notification_cooldown_seconds)
-    recent = session.scalar(
-        select(NotificationEventRow).where(
-            NotificationEventRow.certificate_id == row.id,
-            NotificationEventRow.event_type == kind,
-            NotificationEventRow.created_at >= cutoff,
-        )
-    )
-    if recent is not None:
-        return
-    provider = get_notification_provider()
-    payload = {
-        "kind": kind,
-        "application": row.application_name or row.application_id,
-        "environment": row.environment,
-        "region": row.region,
-        "provider": row.provider,
-        "status": row.status,
-        "summary": row.summary,
-    }
-    provider.send(kind, payload)
-    session.add(
-        NotificationEventRow(
-            id=str(uuid4()),
-            certificate_id=row.id,
-            event_type=kind,
-            channel=provider.name,
-            payload=sanitize_text(_json(payload)),
-            created_at=utcnow(),
-        )
-    )
+    severity = health_to_alert_severity(row.status)
+    publish_health(session, kind=kind, row=row, title=title, severity=normalize_severity(severity))
 
 
 def aggregate_application_row(session: Session, application_id: str, environment: CloudEnvironmentRow) -> ApplicationHealthRow:
@@ -785,12 +753,17 @@ def aggregate_application_row(session: Session, application_id: str, environment
         )
     evaluate_incident(session, row)
     if result.status == CRITICAL:
-        upsert_alert(session, kind="APPLICATION_CRITICAL", row=row, title=f"{row.application_name or application_id} critical")
-        maybe_notify(session, row, "APPLICATION_CRITICAL")
+        title = f"{row.application_name or application_id} critical"
+        upsert_alert(session, kind="APPLICATION_CRITICAL", row=row, title=title)
+        maybe_notify(session, row, "APPLICATION_CRITICAL", title)
     elif result.status == UNHEALTHY:
-        upsert_alert(session, kind="APPLICATION_UNHEALTHY", row=row, title=f"{row.application_name or application_id} unhealthy")
-        maybe_notify(session, row, "APPLICATION_UNHEALTHY")
+        title = f"{row.application_name or application_id} unhealthy"
+        upsert_alert(session, kind="APPLICATION_UNHEALTHY", row=row, title=title)
+        maybe_notify(session, row, "APPLICATION_UNHEALTHY", title)
     elif result.status == HEALTHY:
+        from app.alerting.publishers import recover_health
+
+        recover_health(session, application_id=application_id, environment_id=environment.id)
         for alert in session.scalars(
             select(HealthAlertRow).where(
                 HealthAlertRow.application_id == application_id,
@@ -1041,7 +1014,7 @@ def run_http_health_check(job_id: str) -> int:
                     )
                     if app_row is not None:
                         upsert_alert(session, kind="ENDPOINT_UNAVAILABLE", row=app_row, title=f"{definition.name} unavailable")
-                        maybe_notify(session, app_row, "ENDPOINT_UNAVAILABLE")
+                        maybe_notify(session, app_row, "ENDPOINT_UNAVAILABLE", f"{definition.name} unavailable")
                         add_timeline(
                             session,
                             application_id=definition.application_id,
@@ -1148,13 +1121,25 @@ def run_health_alert_evaluation(job_id: str) -> int:
         evaluated = 0
         for row in session.scalars(select(ApplicationHealthRow)):
             if row.status == CRITICAL:
-                upsert_alert(session, kind="APPLICATION_CRITICAL", row=row, title=f"{row.application_name or row.application_id} critical")
+                title = f"{row.application_name or row.application_id} critical"
+                upsert_alert(session, kind="APPLICATION_CRITICAL", row=row, title=title)
+                maybe_notify(session, row, "APPLICATION_CRITICAL", title)
             elif row.status == UNHEALTHY:
-                upsert_alert(session, kind="APPLICATION_UNHEALTHY", row=row, title=f"{row.application_name or row.application_id} unhealthy")
+                title = f"{row.application_name or row.application_id} unhealthy"
+                upsert_alert(session, kind="APPLICATION_UNHEALTHY", row=row, title=title)
+                maybe_notify(session, row, "APPLICATION_UNHEALTHY", title)
+            elif row.status == HEALTHY:
+                from app.alerting.publishers import recover_health
+
+                recover_health(session, application_id=row.application_id, environment_id=row.environment_id)
             if row.cluster_status in {UNHEALTHY, CRITICAL}:
-                upsert_alert(session, kind="CLUSTER_UNHEALTHY", row=row, title=f"cluster unhealthy ({row.environment})")
+                title = f"cluster unhealthy ({row.environment})"
+                upsert_alert(session, kind="CLUSTER_UNHEALTHY", row=row, title=title)
+                maybe_notify(session, row, "CLUSTER_UNHEALTHY", title)
             if row.desired_replicas and row.available_replicas == 0:
-                upsert_alert(session, kind="WORKLOAD_UNAVAILABLE", row=row, title=f"{row.application_name or row.application_id} workload unavailable")
+                title = f"{row.application_name or row.application_id} workload unavailable"
+                upsert_alert(session, kind="WORKLOAD_UNAVAILABLE", row=row, title=title)
+                maybe_notify(session, row, "WORKLOAD_UNAVAILABLE", title)
             evaluated += 1
         for cluster in session.scalars(select(ResourceHealthRow).where(ResourceHealthRow.resource_type == "cluster")):
             labels = {

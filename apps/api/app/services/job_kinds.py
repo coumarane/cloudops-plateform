@@ -32,6 +32,12 @@ KIND_DEPENDENCY_HEALTH_CHECK = "dependency-health-check"
 KIND_HEALTH_AGGREGATION = "health-aggregation"
 KIND_HEALTH_ALERT_EVALUATION = "health-alert-evaluation"
 KIND_HEALTH_RETENTION = "health-retention"
+KIND_ALERT_EVALUATE = "alert-evaluate"
+KIND_ALERT_NOTIFICATION_DISPATCH = "alert-notification-dispatch"
+KIND_ALERT_ESCALATION_CHECK = "alert-escalation-check"
+KIND_ALERT_RECOVERY_NOTIFICATION = "alert-recovery-notification"
+KIND_ALERT_SUPPRESSION_EXPIRY = "alert-suppression-expiry"
+KIND_MAINTENANCE_WINDOW_EXPIRY = "maintenance-window-expiry"
 
 JOB_NAMES = {
     KIND_DISCOVERY: "AWS multi-account cluster discovery",
@@ -68,6 +74,12 @@ JOB_NAMES = {
     KIND_HEALTH_AGGREGATION: "Health aggregation",
     KIND_HEALTH_ALERT_EVALUATION: "Health alert evaluation",
     KIND_HEALTH_RETENTION: "Health history retention",
+    KIND_ALERT_EVALUATE: "Central alert evaluation",
+    KIND_ALERT_NOTIFICATION_DISPATCH: "Alert notification dispatch",
+    KIND_ALERT_ESCALATION_CHECK: "Alert escalation check",
+    KIND_ALERT_RECOVERY_NOTIFICATION: "Alert recovery notification",
+    KIND_ALERT_SUPPRESSION_EXPIRY: "Alert suppression expiry",
+    KIND_MAINTENANCE_WINDOW_EXPIRY: "Maintenance window expiry",
 }
 
 JOB_PROVIDERS = {
@@ -105,6 +117,12 @@ JOB_PROVIDERS = {
     KIND_HEALTH_AGGREGATION: "AWS",
     KIND_HEALTH_ALERT_EVALUATION: "AWS",
     KIND_HEALTH_RETENTION: "AWS",
+    KIND_ALERT_EVALUATE: "AWS",
+    KIND_ALERT_NOTIFICATION_DISPATCH: "AWS",
+    KIND_ALERT_ESCALATION_CHECK: "AWS",
+    KIND_ALERT_RECOVERY_NOTIFICATION: "AWS",
+    KIND_ALERT_SUPPRESSION_EXPIRY: "AWS",
+    KIND_MAINTENANCE_WINDOW_EXPIRY: "AWS",
 }
 
 TASK_NAMES = {
@@ -142,4 +160,10 @@ TASK_NAMES = {
     KIND_HEALTH_AGGREGATION: "tasks.health_aggregation.aggregate",
     KIND_HEALTH_ALERT_EVALUATION: "tasks.health_alert_evaluation.evaluate",
     KIND_HEALTH_RETENTION: "tasks.health_retention.prune_history",
+    KIND_ALERT_EVALUATE: "tasks.alert_evaluate.evaluate",
+    KIND_ALERT_NOTIFICATION_DISPATCH: "tasks.alert_notification_dispatch.dispatch",
+    KIND_ALERT_ESCALATION_CHECK: "tasks.alert_escalation_check.check",
+    KIND_ALERT_RECOVERY_NOTIFICATION: "tasks.alert_recovery_notification.notify",
+    KIND_ALERT_SUPPRESSION_EXPIRY: "tasks.alert_suppression_expiry.expire",
+    KIND_MAINTENANCE_WINDOW_EXPIRY: "tasks.maintenance_window_expiry.expire",
 }

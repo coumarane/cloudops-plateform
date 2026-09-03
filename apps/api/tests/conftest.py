@@ -15,6 +15,7 @@ init_db()
 import pytest
 
 from app.core.rate_limit import reset_rate_limits
+from app.notifications.dispatcher import TEST_PROVIDERS
 from app.db.models import (
     AcmCertificateRow,
     CertificateAlertRow,
@@ -67,6 +68,17 @@ from app.db.models import (
     HealthScanLockRow,
     HealthTimelineEventRow,
     ResourceHealthRow,
+    AlertRow,
+    AlertEventRow,
+    AlertRuleRow,
+    AlertRoutingRuleRow,
+    AlertSuppressionRow,
+    AlertAuditRow,
+    MaintenanceWindowRow,
+    NotificationDeliveryRow,
+    NotificationDestinationRow,
+    NotificationPolicyRow,
+    NotificationPolicyStepRow,
 )
 from app.db.session import SessionLocal
 from app.secrets.backends.local import LocalDevSecretBackend
@@ -75,6 +87,7 @@ from app.secrets.backends.local import LocalDevSecretBackend
 @pytest.fixture(autouse=True)
 def reset_live_tables() -> None:
     LocalDevSecretBackend.reset()
+    TEST_PROVIDERS.clear()
     reset_rate_limits()
     session = SessionLocal()
     for model in (
@@ -99,6 +112,17 @@ def reset_live_tables() -> None:
         ResourceHealthRow,
         HealthCheckDefinitionRow,
         HealthScanLockRow,
+        NotificationDeliveryRow,
+        AlertEventRow,
+        AlertAuditRow,
+        AlertSuppressionRow,
+        MaintenanceWindowRow,
+        AlertRow,
+        AlertRoutingRuleRow,
+        NotificationPolicyStepRow,
+        NotificationPolicyRow,
+        NotificationDestinationRow,
+        AlertRuleRow,
         GithubWorkflowJobRow,
         GithubAlertRow,
         GithubAuditRow,

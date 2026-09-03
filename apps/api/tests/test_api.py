@@ -45,6 +45,9 @@ def test_catalog_endpoints_return_items() -> None:
             assert len(body["alerts"]) == 4
             assert len(body["failures"]) == 3
         else:
+            assert "items" in body, path
+            if path.endswith("/alerts"):
+                continue
             assert len(body["items"]) > 0, path
 
 

@@ -252,6 +252,46 @@ def overlay_environment(record: EnvironmentRecord | None) -> EnvironmentRecord |
         identity_health = _environment_identity_health(session, updated.identity.provider, updated.identity.region, updated.identity.environment)
         if identity_health:
             patch["identity"] = updated.identity.model_copy(update=identity_health)
+        from app.alerting.models import AlertStatus, AlertSeverity
+        from app.db.models import AlertRow, MaintenanceWindowRow
+        from app.alerting.suppression import _aware
+        from app.db.repository import utcnow
+        from app.domain.models import EnvironmentAlertsSummary, EnvironmentMaintenanceWindow
+
+        scoped_alerts = [
+            row
+            for row in session.scalars(select(AlertRow))
+            if (row.provider or "").lower() == updated.identity.provider.lower()
+            and (row.region or "").lower() == updated.identity.region.lower()
+            and (row.environment or "").upper() == updated.identity.environment
+        ]
+        patch["alertsSummary"] = EnvironmentAlertsSummary(
+            openAlerts=sum(1 for row in scoped_alerts if row.status == AlertStatus.OPEN),
+            criticalAlerts=sum(1 for row in scoped_alerts if row.status in {AlertStatus.OPEN, AlertStatus.ACKNOWLEDGED} and (row.severity or "").upper() == AlertSeverity.CRITICAL),
+            highAlerts=sum(1 for row in scoped_alerts if row.status in {AlertStatus.OPEN, AlertStatus.ACKNOWLEDGED} and (row.severity or "").upper() == "HIGH"),
+            acknowledgedAlerts=sum(1 for row in scoped_alerts if row.status == AlertStatus.ACKNOWLEDGED),
+        )
+        now = utcnow()
+        window = None
+        for item in session.scalars(select(MaintenanceWindowRow).where(MaintenanceWindowRow.enabled.is_(True))):
+            if _aware(item.starts_at) <= now <= _aware(item.ends_at):
+                if item.provider and item.provider.lower() != updated.identity.provider.lower():
+                    continue
+                if item.region and item.region.lower() != updated.identity.region.lower():
+                    continue
+                if item.environment and item.environment.upper() != updated.identity.environment:
+                    continue
+                window = item
+                break
+        if window is not None:
+            patch["maintenanceWindow"] = EnvironmentMaintenanceWindow(
+                id=window.id,
+                name=window.name,
+                startsAt=window.starts_at.isoformat(),
+                endsAt=window.ends_at.isoformat(),
+                reason=window.reason,
+                changeTicket=window.change_ticket,
+            )
         return updated.model_copy(update=patch)
     except Exception:
         logger.exception("Live environment overlay unavailable; using mock data")
@@ -396,9 +436,31 @@ def overlay_alerts(items: list[OperationalAlert]) -> list[OperationalAlert]:
     try:
         from sqlalchemy import select
 
+        from app.alerting.models import AlertStatus
+        from app.alerting.presenters import alert_dump
+        from app.db.models import AlertRow
         from app.services.certificate_monitor import to_operational_alert
         from app.services.github_presenters import to_github_alert
 
+        live_central = []
+        for row in session.scalars(select(AlertRow).where(AlertRow.status.in_((AlertStatus.OPEN, AlertStatus.ACKNOWLEDGED, AlertStatus.SUPPRESSED)))):
+            payload = alert_dump(row)
+            try:
+                live_central.append(
+                    OperationalAlert(
+                        id=payload["id"],
+                        severity=payload["uiSeverity"],  # type: ignore[arg-type]
+                        title=payload["title"],
+                        objectName=payload["objectName"],
+                        provider=payload["provider"],  # type: ignore[arg-type]
+                        region=payload["region"],  # type: ignore[arg-type]
+                        environment=payload["environment"],  # type: ignore[arg-type]
+                        age=payload["age"],
+                        href=payload["href"],
+                    )
+                )
+            except Exception:
+                continue
         live = [
             to_operational_alert(row)
             for row in session.scalars(
@@ -422,7 +484,7 @@ def overlay_alerts(items: list[OperationalAlert]) -> list[OperationalAlert]:
             to_health_alert(session, row)
             for row in session.scalars(select(HealthAlertRow).where(HealthAlertRow.status == "OPEN"))
         ]
-        return health_live + pipeline_live + github_live + live + items
+        return live_central + health_live + pipeline_live + github_live + live + items
     except Exception:
         logger.exception("Live certificate alert overlay unavailable")
         return items

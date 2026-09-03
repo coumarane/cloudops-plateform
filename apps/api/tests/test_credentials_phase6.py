@@ -347,6 +347,7 @@ def test_rbac_read_only_cannot_create() -> None:
             "pipeline:read",
             "health:read",
             "incident:read",
+            "alert:read",
         }
     )
 

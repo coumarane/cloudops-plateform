@@ -112,4 +112,7 @@ export type KpiSummary = {
   openAlerts: number;
   openIncidents?: number;
   unhealthyClusters?: number;
+  criticalAlerts?: number;
+  prdCriticalAlerts?: number;
+  acknowledgedAlerts?: number;
 };

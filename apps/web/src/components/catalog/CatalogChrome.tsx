@@ -148,19 +148,25 @@ export function StatusChip({
 function chipTone(value: string): string {
   const base = "rounded px-2 py-0.5 text-xs font-semibold";
   const key = value.toLowerCase();
+  if (key === "medium" || key === "low") {
+    return `${base} bg-action/10 text-action`;
+  }
   if (key === "unreachable" || key === "failed" || key === "failing" || key === "critical" || key === "unhealthy") {
     return `${base} bg-critical px-2 text-white`;
   }
   if (key === "degraded" || key === "warning" || key === "expiring" || key === "restart loop" || key === "rollout aborted") {
     return `${base} bg-warning/10 text-warning`;
   }
-    if (key === "healthy" || key === "passing" || key === "succeeded" || key === "success" || key === "ok" || key === "connected") {
-    return `${base} bg-healthy/10 text-healthy`;
+    if (key === "open" || key === "high") {
+    return `${base} bg-warning/10 text-warning`;
   }
-  if (key === "info" || key === "running" || key === "queued" || key === "waiting") {
+  if (key === "acknowledged" || key === "info" || key === "running" || key === "queued" || key === "waiting") {
     return `${base} bg-action/10 text-action`;
   }
-  if (key === "cancelled" || key === "canceled" || key === "skipped" || key === "unknown" || key === "partial") {
+  if (key === "resolved" || key === "healthy" || key === "passing" || key === "succeeded" || key === "success" || key === "ok" || key === "connected") {
+    return `${base} bg-healthy/10 text-healthy`;
+  }
+  if (key === "suppressed" || key === "cancelled" || key === "canceled" || key === "skipped" || key === "unknown" || key === "partial") {
     return `${base} bg-surface-low text-muted`;
   }
   if (key === "production") {

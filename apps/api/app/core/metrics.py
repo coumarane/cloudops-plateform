@@ -32,6 +32,12 @@ HELP = {
     "cloudops_health_check_failures_total": "Health check failures isolated per environment (labels: provider, region, environment_class, health_status)",
     "cloudops_open_incidents_total": "Open health incidents (labels: provider, region, environment_class, health_status)",
     "cloudops_health_scan_duration_seconds": "Health scan duration in seconds (labels: provider, region, environment_class, health_status)",
+    "cloudops_alerts_open_total": "Open alerts currently active (labels: severity, provider, environment_class)",
+    "cloudops_alerts_created_total": "Alerts created (labels: severity, provider, environment_class)",
+    "cloudops_alerts_resolved_total": "Alerts resolved (labels: severity, provider, environment_class)",
+    "cloudops_notifications_sent_total": "Notifications delivered (labels: severity, provider, environment_class, notification_provider)",
+    "cloudops_notifications_failed_total": "Notification delivery failures (labels: severity, provider, environment_class, notification_provider)",
+    "cloudops_alert_escalations_total": "Alert escalations delivered (labels: severity, provider, environment_class, notification_provider)",
 }
 
 

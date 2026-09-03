@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
+import { NotificationsAdmin } from "@/components/admin/NotificationsAdmin";
 import { AlibabaScanActions } from "@/components/catalog/AlibabaScanActions";
 import { AwsScanActions } from "@/components/catalog/AwsScanActions";
 import { CatalogBody, CatalogPanel, Kpi, KpiGrid, StatusChip } from "@/components/catalog/CatalogChrome";
@@ -716,6 +717,7 @@ export function AdministrationCatalog({ initial }: { initial: CatalogFilters }) 
           </CatalogPanel>
         )}
       </QueryState>
+      <NotificationsAdmin />
     </CatalogBody>
   );
 }

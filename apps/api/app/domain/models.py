@@ -153,6 +153,9 @@ class KpiSummary(StrictModel):
     openAlerts: int
     openIncidents: int = 0
     unhealthyClusters: int = 0
+    criticalAlerts: int = 0
+    prdCriticalAlerts: int = 0
+    acknowledgedAlerts: int = 0
 
 
 class OperationalAlert(StrictModel):
@@ -474,6 +477,22 @@ class EnvironmentAlert(StrictModel):
     severity: AlertSeverity
 
 
+class EnvironmentAlertsSummary(StrictModel):
+    openAlerts: int = 0
+    criticalAlerts: int = 0
+    highAlerts: int = 0
+    acknowledgedAlerts: int = 0
+
+
+class EnvironmentMaintenanceWindow(StrictModel):
+    id: str
+    name: str
+    startsAt: str
+    endsAt: str
+    reason: str = ""
+    changeTicket: str = ""
+
+
 class EnvironmentRecord(StrictModel):
     identity: EnvironmentIdentity
     clusters: list[ClusterRecord]
@@ -487,6 +506,8 @@ class EnvironmentRecord(StrictModel):
     audit: list[ActivityItem]
     alerts: list[EnvironmentAlert]
     recentActivity: list[ActivityItem]
+    alertsSummary: EnvironmentAlertsSummary | None = None
+    maintenanceWindow: EnvironmentMaintenanceWindow | None = None
 
 
 class AdminUser(StrictModel):

@@ -34,6 +34,33 @@ export function EnvironmentTabContent({
     return (
       <div className="space-y-8">
         <EnvironmentKpis summary={summary} />
+        {record.alertsSummary || record.maintenanceWindow ? (
+          <Panel title={`${identity.provider} / ${identity.region} / ${identity.environment}`}>
+            <div className="grid grid-cols-2 gap-4 p-4 md:grid-cols-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase text-muted">Open Alerts</p>
+                <p className="text-lg font-semibold">{record.alertsSummary?.openAlerts ?? record.alerts.length}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase text-muted">Critical</p>
+                <p className="text-lg font-semibold text-critical">{record.alertsSummary?.criticalAlerts ?? 0}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase text-muted">High</p>
+                <p className="text-lg font-semibold text-warning">{record.alertsSummary?.highAlerts ?? 0}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase text-muted">Acknowledged</p>
+                <p className="text-lg font-semibold">{record.alertsSummary?.acknowledgedAlerts ?? 0}</p>
+              </div>
+            </div>
+            {record.maintenanceWindow ? (
+              <p className="border-t border-outline px-4 py-3 text-sm text-warning">
+                Active maintenance window: {record.maintenanceWindow.name} ({record.maintenanceWindow.startsAt} → {record.maintenanceWindow.endsAt}). {record.maintenanceWindow.reason}
+              </p>
+            ) : null}
+          </Panel>
+        ) : null}
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-12">
           <div className="flex flex-col gap-8 xl:col-span-8">
             <Panel

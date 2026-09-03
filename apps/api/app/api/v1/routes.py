@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.v1.alerts import router as alerts_router
 from app.api.v1.clusters import router as clusters_router
 from app.api.v1.credentials import router as credentials_router
 from app.api.v1.certificates import router as certificates_router
@@ -35,7 +36,7 @@ router.include_router(pipelines_router)
 router.include_router(health_router)
 add_list_route(router, "/jobs", catalog_service.jobs)
 add_list_route(router, "/github-runs", catalog_service.github_runs)
-add_list_route(router, "/alerts", catalog_service.alerts)
+router.include_router(alerts_router)
 add_list_route(router, "/audit-events", catalog_service.audit_events)
 
 router.include_router(clusters_router)

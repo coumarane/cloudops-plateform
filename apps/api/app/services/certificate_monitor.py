@@ -23,7 +23,6 @@ from app.db.models import (
 )
 from app.db.repository import certificate_public_id, utcnow
 from app.db.session import SessionLocal
-from app.notifications.factory import get_notification_provider
 from app.providers.common.certificates import (
     ALERT_KIND,
     CRITICAL,
@@ -219,29 +218,23 @@ def _active_alert(session: Session, certificate_id: str) -> CertificateAlertRow 
     )
 
 
-def _notify(session: Session, certificate_id: str, event_type: str, payload: dict[str, object]) -> None:
-    cooldown = timedelta(seconds=settings.certificate_notification_cooldown_seconds)
-    cutoff = utcnow() - cooldown
-    recent = session.scalar(
-        select(NotificationEventRow).where(
-            NotificationEventRow.certificate_id == certificate_id,
-            NotificationEventRow.event_type == event_type,
-            NotificationEventRow.created_at >= cutoff,
-        )
-    )
-    if recent is not None:
+def _notify(session: Session, row: AcmCertificateRow, event_type: str, payload: dict[str, object], *, recovered: bool = False) -> None:
+    from app.alerting.publishers import publish_certificate, recover_certificate
+
+    if recovered:
+        recover_certificate(session, certificate_id=row.id)
         return
-    provider = get_notification_provider()
-    provider.send(event_type, payload)
-    session.add(
-        NotificationEventRow(
-            id=str(uuid4()),
-            certificate_id=certificate_id,
-            event_type=event_type,
-            channel=provider.name,
-            payload=sanitize_text(json.dumps(payload, default=str)),
-            created_at=utcnow(),
-        )
+    title = str(payload.get("domain") or row.domain_name)
+    summary = f"{event_type} {title}"
+    severity = str(payload.get("severity") or "HIGH")
+    publish_certificate(
+        session,
+        kind=event_type,
+        row=row,
+        title=f"{title} certificate",
+        summary=summary,
+        severity=severity,
+        extra={"daysRemaining": payload.get("days_remaining"), "status": payload.get("status")},
     )
 
 
@@ -289,7 +282,7 @@ def evaluate_alerts(session: Session, *, now: datetime | None = None) -> dict[st
                 )
                 session.add(alert)
                 created += 1
-                _notify(session, row.id, kind, payload)
+                _notify(session, row, kind, payload)
             else:
                 alert.last_evaluated_at = now
                 alert.expires_at = row.not_after
@@ -301,7 +294,7 @@ def evaluate_alerts(session: Session, *, now: datetime | None = None) -> dict[st
                     alert.severity = severity
                     updated += 1
                     if STATUS_RANK.get(status, 0) >= previous_rank:
-                        _notify(session, row.id, kind, payload)
+                        _notify(session, row, kind, payload)
                 else:
                     alert.severity = severity
         elif alert is not None:
@@ -309,7 +302,7 @@ def evaluate_alerts(session: Session, *, now: datetime | None = None) -> dict[st
             alert.resolved_at = now
             alert.last_evaluated_at = now
             resolved += 1
-            _notify(session, row.id, "CERTIFICATE_RECOVERED", {**payload, "status": status})
+            _notify(session, row, "CERTIFICATE_RECOVERED", {**payload, "status": status}, recovered=True)
     session.flush()
     refresh_certificate_gauges(session)
     logger.info("Certificate alerts created=%s updated=%s resolved=%s", created, updated, resolved)

@@ -115,5 +115,13 @@ class Settings(BaseSettings):
     health_alert_npd: str = "HIGH"
     health_alert_prd: str = "HIGH"
 
+    alert_notify_retry_seconds: str = "30,120,300"
+    alert_evaluate_interval_seconds: int = 60
+    alert_notification_dispatch_interval_seconds: int = 30
+    alert_escalation_interval_seconds: int = 60
+    alert_recovery_interval_seconds: int = 60
+    alert_suppression_expiry_interval_seconds: int = 60
+    maintenance_window_expiry_interval_seconds: int = 60
+
 
 settings = Settings()

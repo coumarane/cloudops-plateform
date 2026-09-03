@@ -40,6 +40,21 @@ PERMISSIONS = {
     "health:run_check",
     "incident:read",
     "incident:acknowledge",
+    "alert:read",
+    "alert:acknowledge",
+    "alert:resolve",
+    "alert:suppress",
+    "alert_rule:read",
+    "alert_rule:create",
+    "alert_rule:update",
+    "alert_rule:delete",
+    "notification:read",
+    "notification:update",
+    "notification:test",
+    "maintenance_window:read",
+    "maintenance_window:create",
+    "maintenance_window:update",
+    "maintenance_window:delete",
 }
 
 ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
@@ -74,6 +89,32 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "health:run_check",
             "incident:read",
             "incident:acknowledge",
+            "alert:read",
+            "alert:acknowledge",
+            "alert:suppress",
+            "alert_rule:read",
+            "notification:read",
+            "maintenance_window:read",
+            "maintenance_window:create",
+            "maintenance_window:update",
+            "maintenance_window:delete",
+        }
+    ),
+    "OperationsEngineer": frozenset(
+        {
+            "certificate:read",
+            "github:read",
+            "github_variable:read",
+            "github_secret:read_metadata",
+            "pipeline:read",
+            "health:read",
+            "incident:read",
+            "incident:acknowledge",
+            "alert:read",
+            "alert:acknowledge",
+            "alert_rule:read",
+            "notification:read",
+            "maintenance_window:read",
         }
     ),
     "SecurityAuditor": frozenset(
@@ -89,6 +130,10 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "pipeline_mapping:read",
             "health:read",
             "incident:read",
+            "alert:read",
+            "alert_rule:read",
+            "notification:read",
+            "maintenance_window:read",
         }
     ),
     "Developer": frozenset(
@@ -102,6 +147,7 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "pipeline:read",
             "health:read",
             "incident:read",
+            "alert:read",
         }
     ),
     "ReadOnly": frozenset(
@@ -116,6 +162,10 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "pipeline_mapping:read",
             "health:read",
             "incident:read",
+            "alert:read",
+            "alert_rule:read",
+            "notification:read",
+            "maintenance_window:read",
         }
     ),
 }
@@ -125,6 +175,8 @@ _ROLE_ALIASES = {
     "platform admin": "PlatformAdmin",
     "devopsengineer": "DevOpsEngineer",
     "devops engineer": "DevOpsEngineer",
+    "operationsengineer": "OperationsEngineer",
+    "operations engineer": "OperationsEngineer",
     "securityauditor": "SecurityAuditor",
     "security auditor": "SecurityAuditor",
     "developer": "Developer",

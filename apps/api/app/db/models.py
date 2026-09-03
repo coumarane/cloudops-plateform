@@ -979,3 +979,184 @@ class HealthScanLockRow(Base):
     environment_id: Mapped[str] = mapped_column(String(128), primary_key=True)
     owner: Mapped[str] = mapped_column(String(64), default="")
     locked_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AlertRow(Base):
+    __tablename__ = "alerts"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    alert_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    source_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    provider: Mapped[str] = mapped_column(String(32), default="")
+    region: Mapped[str] = mapped_column(String(32), default="")
+    account_id: Mapped[str] = mapped_column(String(128), default="")
+    environment_id: Mapped[str] = mapped_column(String(128), default="", index=True)
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    application_id: Mapped[str] = mapped_column(String(128), default="", index=True)
+    cluster_id: Mapped[str] = mapped_column(String(128), default="")
+    severity: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(255), default="")
+    summary: Mapped[str] = mapped_column(String(512), default="")
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    occurrence_count: Mapped[int] = mapped_column(Integer, default=1)
+    acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    acknowledged_by: Mapped[str] = mapped_column(String(128), default="")
+    acknowledged_comment: Mapped[str] = mapped_column(Text, default="")
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolution_reason: Mapped[str] = mapped_column(String(255), default="")
+    correlation_id: Mapped[str] = mapped_column(String(64), default="")
+    extra_json: Mapped[str] = mapped_column(Text, default="{}")
+    rule_id: Mapped[str] = mapped_column(String(64), default="")
+    policy_id: Mapped[str] = mapped_column(String(64), default="")
+
+
+class AlertEventRow(Base):
+    __tablename__ = "alert_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    alert_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    event_type: Mapped[str] = mapped_column(String(48), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), default="")
+    detail: Mapped[str] = mapped_column(String(512), default="")
+    actor: Mapped[str] = mapped_column(String(128), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+
+
+class AlertRuleRow(Base):
+    __tablename__ = "alert_rules"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    alert_type: Mapped[str] = mapped_column(String(64), default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    provider_filter: Mapped[str] = mapped_column(String(32), default="")
+    region_filter: Mapped[str] = mapped_column(String(32), default="")
+    environment_filter: Mapped[str] = mapped_column(String(32), default="")
+    application_filter: Mapped[str] = mapped_column(String(128), default="")
+    severity: Mapped[str] = mapped_column(String(16), default="MEDIUM")
+    minimum_occurrences: Mapped[int] = mapped_column(Integer, default=1)
+    evaluation_window_seconds: Mapped[int] = mapped_column(Integer, default=0)
+    notification_policy_id: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class NotificationDestinationRow(Base):
+    __tablename__ = "notification_destinations"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    provider_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    configuration_reference: Mapped[str] = mapped_column(String(256), default="")
+    config_json: Mapped[str] = mapped_column(Text, default="{}")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    description: Mapped[str] = mapped_column(String(255), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class NotificationPolicyRow(Base):
+    __tablename__ = "notification_policies"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    initial_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    repeat_after_seconds: Mapped[int] = mapped_column(Integer, default=0)
+    escalate_after_seconds: Mapped[int] = mapped_column(Integer, default=0)
+    recovery_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class NotificationPolicyStepRow(Base):
+    __tablename__ = "notification_policy_steps"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    policy_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    delay_seconds: Mapped[int] = mapped_column(Integer, default=0)
+    destination_id: Mapped[str] = mapped_column(String(64), default="")
+    step_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class AlertRoutingRuleRow(Base):
+    __tablename__ = "alert_routing_rules"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    provider_filter: Mapped[str] = mapped_column(String(32), default="")
+    region_filter: Mapped[str] = mapped_column(String(32), default="")
+    account_filter: Mapped[str] = mapped_column(String(128), default="")
+    environment_filter: Mapped[str] = mapped_column(String(32), default="")
+    application_filter: Mapped[str] = mapped_column(String(128), default="")
+    severity_filter: Mapped[str] = mapped_column(String(16), default="")
+    alert_type_filter: Mapped[str] = mapped_column(String(64), default="")
+    destination_id: Mapped[str] = mapped_column(String(64), default="")
+    policy_id: Mapped[str] = mapped_column(String(64), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class NotificationDeliveryRow(Base):
+    __tablename__ = "notification_deliveries"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    alert_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    destination_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    notification_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, index=True)
+    attempt: Mapped[int] = mapped_column(Integer, default=0)
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    failed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    next_retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    error_category: Mapped[str] = mapped_column(String(32), default="")
+    external_message_id: Mapped[str] = mapped_column(String(128), default="")
+    detail: Mapped[str] = mapped_column(String(512), default="")
+
+
+class AlertSuppressionRow(Base):
+    __tablename__ = "alert_suppressions"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    scope_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    scope_id: Mapped[str] = mapped_column(String(128), default="")
+    alert_type: Mapped[str] = mapped_column(String(64), default="")
+    reason: Mapped[str] = mapped_column(String(255), default="")
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_by: Mapped[str] = mapped_column(String(128), default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class MaintenanceWindowRow(Base):
+    __tablename__ = "maintenance_windows"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    scope: Mapped[str] = mapped_column(String(64), default="")
+    provider: Mapped[str] = mapped_column(String(32), default="")
+    region: Mapped[str] = mapped_column(String(32), default="")
+    environment: Mapped[str] = mapped_column(String(32), default="")
+    application: Mapped[str] = mapped_column(String(128), default="")
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    reason: Mapped[str] = mapped_column(String(255), default="")
+    change_ticket: Mapped[str] = mapped_column(String(64), default="")
+    created_by: Mapped[str] = mapped_column(String(128), default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class AlertAuditRow(Base):
+    __tablename__ = "alert_audit_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    actor: Mapped[str] = mapped_column(String(128), nullable=False)
+    object_name: Mapped[str] = mapped_column(String(255), default="")
+    result: Mapped[str] = mapped_column(String(32), default="succeeded")
+    detail: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
