@@ -13,6 +13,7 @@ services:
       - CLOUDOPS_CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000"]
     volumes:
       - ~/.aws:/root/.aws:rw
+      - ~/.aliyun:/root/.aliyun:rw
       - api-data:/app/data
     depends_on:
       - redis

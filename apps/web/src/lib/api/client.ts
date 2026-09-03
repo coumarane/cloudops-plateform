@@ -275,7 +275,7 @@ export const cloudOpsApi = {
       principal: string;
       error?: string;
     }>("/admin/aws-credentials/status", undefined, signal),
-  configureAwsCredentials: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    configureAwsCredentials: (body: Record<string, unknown>, signal?: AbortSignal) =>
     postJsonBody<{
       configured: boolean;
       valid: boolean;
@@ -286,4 +286,23 @@ export const cloudOpsApi = {
       profile: string;
       error?: string;
     }>("/admin/aws-credentials", body, signal),
+  alibabaCredentialsStatus: (signal?: AbortSignal) =>
+    getJson<{
+      configured: boolean;
+      valid: boolean;
+      account: string;
+      arn: string;
+      principal: string;
+      error?: string;
+    }>("/admin/alibaba-credentials/status", undefined, signal),
+  configureAlibabaCredentials: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<{
+      configured: boolean;
+      valid: boolean;
+      account: string;
+      arn: string;
+      principal: string;
+      region: string;
+      error?: string;
+    }>("/admin/alibaba-credentials", body, signal),
 };

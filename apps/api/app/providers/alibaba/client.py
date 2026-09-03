@@ -56,6 +56,14 @@ class AlibabaClientFactory:
             raise AlibabaAuthError("Alibaba Certificate SDK is not installed") from error
         return CasClient(self._config_for("cas.aliyuncs.com"))
 
+    def kms_client(self):
+        try:
+            from alibabacloud_kms20160120.client import Client as KmsClient
+        except ImportError as error:
+            raise AlibabaAuthError("Alibaba KMS SDK is not installed") from error
+        region = self._config.cloud_region or "cn-hangzhou"
+        return KmsClient(self._config_for(f"kms.{region}.aliyuncs.com"))
+
     def list_clusters(self) -> list[dict[str, Any]]:
         try:
             from alibabacloud_cs20151215 import models as cs_models

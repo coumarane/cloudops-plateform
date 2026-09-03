@@ -12,6 +12,7 @@ from app.api.v1.scm import router as scm_router
 from app.api.v1.storage import router as storage_router
 from app.api.v1.aws_credentials import router as aws_credentials_router
 from app.api.v1.secret_reveal import router as secret_reveal_router
+from app.api.v1.alibaba_credentials import router as alibaba_credentials_router
 from app.api.v1.listing import add_list_route, listed
 from app.api.v1.params import parse_environment, parse_provider, parse_region, parse_scope
 from app.core.config import settings
@@ -43,6 +44,7 @@ router.include_router(scm_router)
 router.include_router(storage_router)
 router.include_router(aws_credentials_router)
 router.include_router(secret_reveal_router)
+router.include_router(alibaba_credentials_router)
 
 
 @router.get("/environments/{provider}/{region}/{environment}")

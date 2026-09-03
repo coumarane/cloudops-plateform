@@ -103,7 +103,9 @@ export function SecretDetails({
       <section className="rounded border border-outline bg-white">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-outline bg-surface-low px-5 py-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">AWS Secrets Manager</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
+              {secret.provider === "Alibaba" ? "Alibaba Secrets Manager" : "AWS Secrets Manager"}
+            </p>
             <h2 className="mt-1 text-xl font-semibold text-ink">{secret.name}</h2>
             <p className="mt-1 text-xs text-muted">
               {secret.provider} → {secret.region} → {secret.account} → {secret.environment}

@@ -33,7 +33,7 @@ const SECTIONS = [
   "credentials",
   "applications",
   "integrations",
-  "aws-console",
+  "cloud-console",
   "jobs",
   "settings",
 ] as const;
@@ -47,7 +47,7 @@ const LABELS: Record<Section, string> = {
   credentials: "Credentials",
   applications: "Applications",
   integrations: "Integrations",
-  "aws-console": "AWS Console",
+  "cloud-console": "Cloud Credentials",
   jobs: "Discovery Jobs",
   settings: "Platform Settings",
 };
@@ -96,7 +96,7 @@ export function AdministrationApp() {
           {section === "credentials" ? <CredentialsPanel nonce={nonce} onNotice={refresh} /> : null}
           {section === "applications" ? <ApplicationsPanel nonce={nonce} onNotice={refresh} /> : null}
           {section === "integrations" ? <IntegrationsPanel nonce={nonce} onNotice={refresh} /> : null}
-          {section === "aws-console" ? <AwsConsolePanel nonce={nonce} onNotice={refresh} /> : null}
+          {section === "cloud-console" ? <AwsConsolePanel nonce={nonce} onNotice={refresh} /> : null}
           {section === "jobs" ? <JobsPanel nonce={nonce} /> : null}
           {section === "settings" ? <SettingsPanel nonce={nonce} onNotice={refresh} /> : null}
         </div>
@@ -1404,6 +1404,84 @@ function AwsConsolePanel({ nonce, onNotice }: { nonce: number; onNotice: (messag
           ) : null}
         </CatalogPanel>
       ) : null}
+
+      <AlibabaCredentialsPanel nonce={nonce} onNotice={onNotice} />
     </div>
+  );
+}
+
+function AlibabaCredentialsPanel({ nonce, onNotice }: { nonce: number; onNotice: (message: string) => void }) {
+  const credStatus = useResource((signal) => cloudOpsApi.alibabaCredentialsStatus(signal), [nonce]);
+  const [accessKeyId, setAccessKeyId] = useState("");
+  const [accessKeySecret, setAccessKeySecret] = useState("");
+  const [region, setRegion] = useState("cn-hangzhou");
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<{ valid: boolean; account: string; arn: string; error?: string } | null>(null);
+
+  async function handleSave() {
+    if (!accessKeyId || !accessKeySecret) return;
+    setSaving(true);
+    setResult(null);
+    try {
+      const response = await cloudOpsApi.configureAlibabaCredentials({ accessKeyId, accessKeySecret, region });
+      setResult(response);
+      if (response.valid) {
+        onNotice(`Alibaba credentials configured — account ${response.account}`);
+        setAccessKeyId("");
+        setAccessKeySecret("");
+      }
+    } catch (error) {
+      setResult({ valid: false, account: "", arn: "", error: String(error) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <CatalogPanel title="Alibaba Credentials Status" hint="Stored in ~/.aliyun/credentials. Secret values are never displayed.">
+        <QueryState state={credStatus} loadingLabel="Checking Alibaba credentials…">
+          {(data) => (
+            <div className="p-4">
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-2">
+                  <span className={`inline-block h-2.5 w-2.5 rounded-full ${data.valid ? "bg-emerald-500" : data.configured ? "bg-amber-500" : "bg-zinc-300"}`} />
+                  <span className="text-sm font-semibold">{data.valid ? "Valid" : data.configured ? "Invalid" : "Not Configured"}</span>
+                </div>
+                {data.account ? <span className="rounded bg-surface-low px-2 py-0.5 text-xs font-mono">Account: {data.account}</span> : null}
+                {data.principal ? <span className="rounded bg-surface-low px-2 py-0.5 text-xs font-mono">Principal: {data.principal}</span> : null}
+              </div>
+              {data.error ? <p className="mt-2 text-xs text-critical">{data.error}</p> : null}
+            </div>
+          )}
+        </QueryState>
+      </CatalogPanel>
+      <CatalogPanel title="Configure Alibaba Credentials" hint="AccessKey is written to ~/.aliyun/credentials and validated with STS.">
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <AdminField label="Access Key ID" value={accessKeyId} onChange={setAccessKeyId} />
+            <AdminField label="Access Key Secret" value={accessKeySecret} onChange={setAccessKeySecret} />
+            <AdminSelect label="Region" value={region} onChange={setRegion}>
+              <option value="cn-hangzhou">cn-hangzhou</option>
+              <option value="cn-shanghai">cn-shanghai</option>
+              <option value="cn-beijing">cn-beijing</option>
+              <option value="cn-shenzhen">cn-shenzhen</option>
+            </AdminSelect>
+          </div>
+          <PrimaryButton disabled={saving || !accessKeyId || !accessKeySecret} onClick={handleSave}>
+            {saving ? "Saving…" : "Save & Validate"}
+          </PrimaryButton>
+          {result ? (
+            <div className={`rounded border p-3 text-sm ${result.valid ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-red-300 bg-red-50 text-red-800"}`}>
+              {result.valid ? (
+                <p>✓ Credentials valid — Alibaba Account <strong>{result.account}</strong></p>
+              ) : (
+                <p>✗ Validation failed: {result.error}</p>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </CatalogPanel>
+    </>
   );
 }
