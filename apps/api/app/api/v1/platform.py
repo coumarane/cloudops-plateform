@@ -171,7 +171,7 @@ def create_managed_provider(body: ProviderWrite, principal: Principal = Depends(
         raise HTTPException(status_code=400, detail="providerType and name are required")
     session = SessionLocal()
     try:
-        return _payload(platform.create_provider(session, body.model_dump(), principal.user))
+        return _payload(platform.create_provider(session, body.model_dump(exclude_none=True), principal.user))
     except PlatformError as error:
         session.rollback()
         raise _http(error) from error
@@ -278,7 +278,7 @@ def create_managed_account(body: AccountWrite, principal: Principal = Depends(pr
         raise HTTPException(status_code=400, detail="providerId, name, region and accountClass are required")
     session = SessionLocal()
     try:
-        return _payload(platform.create_account(session, body.model_dump(), principal.user))
+        return _payload(platform.create_account(session, body.model_dump(exclude_none=True), principal.user))
     except PlatformError as error:
         session.rollback()
         raise _http(error) from error
@@ -373,7 +373,7 @@ def list_managed_environments(scope: Scope = Depends(parse_scope), principal: Pr
 @router.post("/environments")
 def create_managed_environment(body: EnvironmentWrite, principal: Principal = Depends(principal_from_headers)) -> dict:
     require_bootstrap_admin(principal, "environment:create")
-    payload = body.model_dump()
+    payload = body.model_dump(exclude_none=True)
     payload["code"] = body.environmentClass or body.code
     if not body.accountId or not payload.get("code"):
         raise HTTPException(status_code=400, detail="accountId and environment class are required")
@@ -492,7 +492,7 @@ def create_managed_application(body: ApplicationWrite, principal: Principal = De
         raise HTTPException(status_code=400, detail="name is required")
     session = SessionLocal()
     try:
-        return _payload(platform.create_application(session, body.model_dump(), principal.user))
+        return _payload(platform.create_application(session, body.model_dump(exclude_none=True), principal.user))
     except PlatformError as error:
         session.rollback()
         raise _http(error) from error
@@ -647,7 +647,7 @@ def create_github_integration(body: GithubIntegrationWrite, principal: Principal
     require_bootstrap_admin(principal, "integration:update")
     session = SessionLocal()
     try:
-        return _payload(platform.create_github_integration(session, body.model_dump(), principal.user))
+        return _payload(platform.create_github_integration(session, body.model_dump(exclude_none=True), principal.user))
     except PlatformError as error:
         session.rollback()
         raise _http(error) from error
@@ -689,7 +689,7 @@ def create_azure_devops_integration(body: AzureDevOpsWrite, principal: Principal
     require_bootstrap_admin(principal, "integration:update")
     session = SessionLocal()
     try:
-        return _payload(platform.create_azure_devops_integration(session, body.model_dump(), principal.user))
+        return _payload(platform.create_azure_devops_integration(session, body.model_dump(exclude_none=True), principal.user))
     except PlatformError as error:
         session.rollback()
         raise _http(error) from error

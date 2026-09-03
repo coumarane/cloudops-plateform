@@ -153,6 +153,7 @@ def _store_discovery(account: AccountBinding, clusters: list[DiscoveredCluster],
             platform_region=account.logical_region,
             environment=environment,
             provider=account.provider,
+            account_alias=account.alias,
         )
         repo.mark_scope_success(environment_scope_id(account.alias, environment), "discovery")
     logger.info("Account discovery stored alias=%s count=%s", account.alias, len(clusters))
@@ -267,10 +268,14 @@ def _finish_fleet_job(
     raise first
 
 
+def _aws_workers(accounts: list) -> int:
+    return max(1, min(settings.aws_scan_concurrency, len(accounts) or 1))
+
+
 def run_cluster_discovery(job_id: str) -> int:
     accounts = accounts_for_job(job_id, "AWS")
     _mark_job_running(job_id)
-    results = _run_bounded(accounts, discover_account, max(1, len(accounts) or 1))
+    results = _run_bounded(accounts, discover_account, _aws_workers(accounts))
     return _finish_fleet_job(job_id, kind="discovery", results=results, persist=_store_discovery)
 
 
@@ -282,7 +287,7 @@ def run_health_scan(job_id: str) -> int:
     def collect(account: AccountBinding):
         return health_account(account, clusters.get(account.alias, []))
 
-    results = _run_bounded(accounts, collect, max(1, len(accounts) or 1))
+    results = _run_bounded(accounts, collect, _aws_workers(accounts))
     return _finish_fleet_job(job_id, kind="health", results=results, persist=_store_health)
 
 
@@ -321,12 +326,12 @@ def persist_certificate_results(results: list[tuple[AccountBinding, object, Exce
 
 def scan_aws_certificates() -> int:
     accounts = accounts_for_job("", "AWS")
-    results = _run_bounded(accounts, certificates_account, max(1, len(accounts) or 1))
+    results = _run_bounded(accounts, certificates_account, _aws_workers(accounts))
     return persist_certificate_results(results)
 
 
 def run_certificate_scan(job_id: str) -> int:
     accounts = accounts_for_job(job_id, "AWS")
     _mark_job_running(job_id)
-    results = _run_bounded(accounts, certificates_account, max(1, len(accounts) or 1))
+    results = _run_bounded(accounts, certificates_account, _aws_workers(accounts))
     return _finish_fleet_job(job_id, kind="certificates", results=results, persist=_store_certificates)

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -32,6 +30,18 @@ from app.platform.readiness import account_readiness, environment_readiness
 from app.providers.factory import provider_adapter
 from app.services.jobs import enqueue_job
 from app.topology.models import environment_scope_id
+
+
+def _flag(body: dict, key: str, default: bool = True) -> bool:
+    if body.get(key) is None:
+        return default
+    return bool(body[key])
+
+
+def _apply_enabled(row, body: dict) -> None:
+    if body.get("enabled") is not None:
+        row.enabled = bool(body["enabled"])
+
 
 AUTH_STRATEGIES = {
     "AWS": ("AssumeRole", "IAM"),
@@ -132,7 +142,7 @@ def create_provider(session: Session, body: dict, actor: str) -> dict:
         name=name,
         provider_type=provider_type,
         description=body.get("description") or "",
-        enabled=bool(body.get("enabled", True)),
+        enabled=_flag(body, "enabled"),
         auth_strategy=body.get("authStrategy") or AUTH_STRATEGIES[provider_type][0],
         status="NOT_CONFIGURED",
         created_at=now,
@@ -158,8 +168,8 @@ def update_provider(session: Session, provider_id: str, body: dict, actor: str) 
         row.name = body["name"].strip()
     if "description" in body:
         row.description = body["description"] or ""
-    if "enabled" in body:
-        row.enabled = bool(body["enabled"])
+    _apply_enabled(row, body)
+    if body.get("enabled") is not None:
         row.status = "DISABLED" if not row.enabled else row.status
     if "authStrategy" in body and body["authStrategy"]:
         row.auth_strategy = body["authStrategy"]
@@ -181,7 +191,14 @@ def delete_provider(session: Session, provider_id: str, actor: str) -> None:
 
 
 def list_accounts(session: Session) -> list[dict]:
-    return [account_dump(session, row) for row in session.scalars(select(CloudAccountRow).order_by(CloudAccountRow.alias))]
+    return [
+        account_dump(session, row)
+        for row in session.scalars(
+            select(CloudAccountRow)
+            .where(CloudAccountRow.managed_provider_id != "")
+            .order_by(CloudAccountRow.alias)
+        )
+    ]
 
 
 def get_account(session: Session, account_id: str) -> dict:
@@ -221,7 +238,7 @@ def create_account(session: Session, body: dict, actor: str) -> dict:
         session_name="cloudops-admin",
         credential_ref=body.get("credentialRef") or "",
         managed_provider_id=provider.id,
-        enabled=bool(body.get("enabled", True)),
+        enabled=_flag(body, "enabled"),
         display_name=body["name"].strip(),
         description=body.get("description") or "",
         auth_strategy=body.get("authStrategy") or provider.auth_strategy,
@@ -259,8 +276,7 @@ def update_account(session: Session, account_id: str, body: dict, actor: str) ->
     for key, field in mapping.items():
         if key in body and body[key] is not None:
             setattr(row, field, body[key])
-    if "enabled" in body:
-        row.enabled = bool(body["enabled"])
+    _apply_enabled(row, body)
     if "accountClass" in body:
         row.account_class = _normalize_account_class(body["accountClass"])
         row.readonly = row.account_class == "PROD"
@@ -282,7 +298,14 @@ def delete_account(session: Session, account_id: str, actor: str) -> None:
 
 
 def list_environments(session: Session) -> list[dict]:
-    return [environment_dump(session, row) for row in session.scalars(select(CloudEnvironmentRow))]
+    managed_ids = {
+        row.id for row in session.scalars(select(CloudAccountRow).where(CloudAccountRow.managed_provider_id != ""))
+    }
+    return [
+        environment_dump(session, row)
+        for row in session.scalars(select(CloudEnvironmentRow))
+        if row.account_id in managed_ids
+    ]
 
 
 def get_environment_row(session: Session, environment_id: str) -> dict:
@@ -309,7 +332,7 @@ def create_environment(session: Session, body: dict, actor: str) -> dict:
         environment=environment,
         account_alias=account.alias,
         readonly=account.readonly or environment == "PRD",
-        enabled=bool(body.get("enabled", True)),
+        enabled=_flag(body, "enabled"),
         name=body.get("name") or f"{account.display_name or account.alias} {environment}",
         code=environment_scope_id(account.alias, environment),
         description=body.get("description") or "",
@@ -330,8 +353,7 @@ def update_environment(session: Session, environment_id: str, body: dict, actor:
         row.name = body["name"]
     if "description" in body:
         row.description = body["description"] or ""
-    if "enabled" in body:
-        row.enabled = bool(body["enabled"])
+    _apply_enabled(row, body)
     account = session.get(CloudAccountRow, row.account_id)
     if account is not None:
         row.readiness_status = environment_readiness(row, account)
@@ -463,13 +485,23 @@ def list_discovery_jobs(session: Session) -> list[dict]:
     }
     items = []
     for row in rows:
+        account_name = ""
+        environment_name = row.environment
+        if row.target_id:
+            env = session.get(CloudEnvironmentRow, row.target_id)
+            account = session.get(CloudAccountRow, row.target_id)
+            if env is not None:
+                environment_name = env.environment
+                account = session.get(CloudAccountRow, env.account_id)
+            if account is not None:
+                account_name = account.display_name or account.alias
         items.append(
             {
                 "id": row.id,
                 "job": row.name,
                 "provider": row.provider,
-                "account": row.target_id,
-                "environment": row.environment,
+                "account": account_name,
+                "environment": environment_name,
                 "type": row.kind,
                 "started": row.started_at.isoformat() if row.started_at else row.created_at.isoformat(),
                 "finished": row.finished_at.isoformat() if row.finished_at else None,
@@ -534,8 +566,7 @@ def update_application(session: Session, application_id: str, body: dict, actor:
     for key, field in {"name": "name", "description": "description", "ownerTeam": "owner_team", "repositoryId": "repository_id", "pipelineId": "pipeline_id"}.items():
         if key in body and body[key] is not None:
             setattr(row, field, body[key])
-    if "enabled" in body:
-        row.enabled = bool(body["enabled"])
+    _apply_enabled(row, body)
     if "environments" in body:
         existing = list(session.scalars(select(ApplicationEnvironmentBindingRow).where(ApplicationEnvironmentBindingRow.application_id == row.id)))
         for item in existing:
@@ -723,7 +754,7 @@ def create_azure_devops_integration(session: Session, body: dict, actor: str) ->
             project=body.get("project") or "",
             base_url=body.get("baseUrl") or "https://dev.azure.com",
             auth_ref=ref,
-            enabled=bool(body.get("enabled", True)),
+            enabled=_flag(body, "enabled"),
             status="configured" if ref else "pending",
             created_at=now,
             updated_at=now,
@@ -735,7 +766,8 @@ def create_azure_devops_integration(session: Session, body: dict, actor: str) ->
         row.base_url = body.get("baseUrl") or row.base_url
         row.auth_ref = ref
         row.name = body.get("name") or row.name
-        row.enabled = bool(body.get("enabled", True))
+        if body.get("enabled") is not None:
+            row.enabled = bool(body["enabled"])
         row.status = "configured" if ref else row.status
         row.updated_at = now
     _audit(session, "AZURE_DEVOPS_INTEGRATION_CREATED", actor, organization)

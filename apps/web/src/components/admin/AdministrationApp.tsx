@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { NotificationsAdmin } from "@/components/admin/NotificationsAdmin";
@@ -9,7 +8,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { QueryState } from "@/components/status/QueryState";
 import { cloudOpsApi } from "@/lib/api/client";
 import { useResource } from "@/lib/api/use-resource";
-import { readinessTone, type ManagedAccount, type ManagedEnvironment, type ManagedProvider } from "@/lib/platform";
+import { ONBOARDING_STEPS, type ManagedAccount, type ManagedEnvironment, type ManagedProvider } from "@/lib/platform";
 
 const SECTIONS = [
   "providers",
@@ -100,12 +99,9 @@ function OnboardingCard({ onStart }: { onStart: () => void }) {
       <h2 className="text-lg font-semibold text-ink">Welcome to CloudOps Platform</h2>
       <p className="mt-2 text-sm text-muted">No cloud providers are configured. Mock infrastructure is disabled.</p>
       <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-ink">
-        <li>Configure Cloud Provider</li>
-        <li>Configure Cloud Account</li>
-        <li>Create Environment</li>
-        <li>Configure Authentication</li>
-        <li>Validate Connection</li>
-        <li>Discover Resources</li>
+        {ONBOARDING_STEPS.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
       </ol>
       <button type="button" className="mt-4 rounded bg-action px-4 py-2 text-sm font-semibold text-white" onClick={onStart}>
         Start Setup
@@ -976,11 +972,20 @@ function JobsPanel({ nonce }: { nonce: number }) {
       <div className="xl:col-span-2">
         <QueryState state={state} loadingLabel="Loading discovery jobs…" isEmpty={(data) => data.items.length === 0} emptyLabel="No discovery jobs yet.">
           {(data) => (
-            <CatalogPanel title="Discovery Jobs">
+            <CatalogPanel title="Discovery Jobs" hint="Queued through Celery. Click a job for correlation and result detail.">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-outline text-[11px] font-bold uppercase text-muted">
-                    <th className="p-3">Job</th><th className="p-3">Provider</th><th className="p-3">Type</th><th className="p-3">Status</th><th className="p-3">Found</th><th className="p-3">Errors</th>
+                    <th className="p-3">Job</th>
+                    <th className="p-3">Provider</th>
+                    <th className="p-3">Account</th>
+                    <th className="p-3">Environment</th>
+                    <th className="p-3">Type</th>
+                    <th className="p-3">Started</th>
+                    <th className="p-3">Finished</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3">Found</th>
+                    <th className="p-3">Errors</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -988,7 +993,11 @@ function JobsPanel({ nonce }: { nonce: number }) {
                     <tr key={row.id} className="border-b border-outline">
                       <td className="p-3"><button type="button" className="font-semibold text-action" onClick={() => setSelected(row.id)}>{row.job}</button></td>
                       <td className="p-3">{row.provider}</td>
+                      <td className="p-3">{row.account || "—"}</td>
+                      <td className="p-3">{row.environment || "—"}</td>
                       <td className="p-3 font-mono text-xs">{row.type}</td>
+                      <td className="p-3 text-xs">{row.started || "—"}</td>
+                      <td className="p-3 text-xs">{row.finished || "—"}</td>
                       <td className="p-3"><StatusChip value={row.status} /></td>
                       <td className="p-3">{row.resourcesFound}</td>
                       <td className="p-3">{row.errors}</td>
@@ -1001,7 +1010,7 @@ function JobsPanel({ nonce }: { nonce: number }) {
         </QueryState>
       </div>
       {selected && detail.status === "success" && detail.data ? (
-        <CatalogPanel title="Job details">
+        <CatalogPanel title="Job details" hint="Correlation ID is returned for every asynchronous action.">
           <div className="space-y-2 p-4 text-sm">
             <Meta label="Status" value={detail.data.status} />
             <Meta label="Correlation" value={detail.data.correlationId} />

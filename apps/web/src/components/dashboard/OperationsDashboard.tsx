@@ -11,6 +11,7 @@ import { QueryState } from "@/components/status/QueryState";
 import { cloudOpsApi } from "@/lib/api/client";
 import { useResource } from "@/lib/api/use-resource";
 import type { DashboardSnapshot } from "@/lib/domain";
+import { ONBOARDING_STEPS } from "@/lib/platform";
 import type { DashboardFilters } from "@/lib/types";
 import { useState } from "react";
 
@@ -79,12 +80,9 @@ function OnboardingPanel() {
       <h2 className="text-lg font-semibold text-ink">Welcome to CloudOps Platform</h2>
       <p className="mt-2 text-sm text-muted">No cloud providers configured. Mock infrastructure is disabled until you complete setup.</p>
       <ol className="mt-4 list-decimal space-y-1 pl-5 text-sm text-ink">
-        <li>Configure Cloud Provider</li>
-        <li>Configure Cloud Account</li>
-        <li>Create Environment</li>
-        <li>Configure Authentication</li>
-        <li>Validate Connection</li>
-        <li>Discover Resources</li>
+        {ONBOARDING_STEPS.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
       </ol>
       <Link href="/administration?section=providers" className="mt-4 inline-block rounded bg-action px-4 py-2 text-sm font-semibold text-white">
         Start Setup

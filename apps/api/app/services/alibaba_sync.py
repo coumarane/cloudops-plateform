@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.repository import InventoryRepository
 from app.db.session import SessionLocal
@@ -123,6 +124,7 @@ def _store_discovery(account: AccountBinding, clusters: list[DiscoveredCluster],
             platform_region=account.logical_region,
             environment=environment,
             provider=account.provider,
+            account_alias=account.alias,
         )
         repo.mark_scope_success(environment_scope_id(account.alias, environment), "discovery")
     logger.info("Alibaba discovery stored alias=%s count=%s", account.alias, len(clusters))
@@ -151,17 +153,21 @@ def _store_validation(account: AccountBinding, identity: dict[str, str], repo: I
     return 1
 
 
+def _alibaba_workers(accounts: list) -> int:
+    return max(1, min(settings.alibaba_scan_concurrency, len(accounts) or 1))
+
+
 def run_account_validation(job_id: str) -> int:
     accounts = accounts_for_job(job_id, "Alibaba")
     _mark_job_running(job_id)
-    results = _run_bounded(accounts, validate_account, max(1, len(accounts) or 1))
+    results = _run_bounded(accounts, validate_account, _alibaba_workers(accounts))
     return _finish_fleet_job(job_id, kind="validation", results=results, persist=_store_validation)
 
 
 def run_cluster_discovery(job_id: str) -> int:
     accounts = accounts_for_job(job_id, "Alibaba")
     _mark_job_running(job_id)
-    results = _run_bounded(accounts, discover_account, max(1, len(accounts) or 1))
+    results = _run_bounded(accounts, discover_account, _alibaba_workers(accounts))
     return _finish_fleet_job(job_id, kind="discovery", results=results, persist=_store_discovery)
 
 
@@ -173,14 +179,14 @@ def run_health_scan(job_id: str) -> int:
     def collect(account: AccountBinding):
         return health_account(account, clusters.get(account.alias, []))
 
-    results = _run_bounded(accounts, collect, max(1, len(accounts) or 1))
+    results = _run_bounded(accounts, collect, _alibaba_workers(accounts))
     return _finish_fleet_job(job_id, kind="health", results=results, persist=_store_health)
 
 
 def run_certificate_scan(job_id: str) -> int:
     accounts = accounts_for_job(job_id, "Alibaba")
     _mark_job_running(job_id)
-    results = _run_bounded(accounts, certificates_account, max(1, len(accounts) or 1))
+    results = _run_bounded(accounts, certificates_account, _alibaba_workers(accounts))
     return _finish_fleet_job(job_id, kind="certificates", results=results, persist=_store_certificates)
 
 
@@ -188,7 +194,7 @@ def scan_alibaba_certificates() -> int:
     from app.services.aws_sync import persist_certificate_results
 
     accounts = accounts_for_job("", "Alibaba")
-    results = _run_bounded(accounts, certificates_account, max(1, len(accounts) or 1))
+    results = _run_bounded(accounts, certificates_account, _alibaba_workers(accounts))
     return persist_certificate_results(results)
 
 

@@ -125,6 +125,15 @@ export type ManagedApplication = {
   }>;
 };
 
+export const ONBOARDING_STEPS = [
+  "Configure Cloud Provider",
+  "Configure Cloud Account",
+  "Create Environment",
+  "Configure Authentication",
+  "Validate Connection",
+  "Discover Resources",
+] as const;
+
 export function readinessTone(status: string): "critical" | "warning" | undefined {
   if (status === "VALIDATION_FAILED" || status === "CREDENTIAL_MISSING") return "critical";
   if (status === "NOT_CONFIGURED" || status === "DISCOVERY_PENDING") return "warning";

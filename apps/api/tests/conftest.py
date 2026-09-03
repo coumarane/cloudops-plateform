@@ -26,6 +26,7 @@ from app.db.models import (
     CertificateHistoryRow,
     CertificateValidationRow,
     CloudEnvironmentRow,
+    CloudAccountRow,
     CredentialAuditRow,
     CredentialRotationEventRow,
     CredentialRow,
@@ -171,6 +172,14 @@ def reset_live_tables() -> None:
         PlatformAuditRow,
     ):
         session.query(model).delete()
+    managed_ids = [
+        row.id for row in session.query(CloudAccountRow).filter(CloudAccountRow.managed_provider_id != "")
+    ]
+    if managed_ids:
+        session.query(CloudEnvironmentRow).filter(CloudEnvironmentRow.account_id.in_(managed_ids)).delete(
+            synchronize_session=False
+        )
+        session.query(CloudAccountRow).filter(CloudAccountRow.id.in_(managed_ids)).delete(synchronize_session=False)
     for row in session.query(CloudEnvironmentRow):
         row.discovery_active = False
         row.last_discovery_at = None

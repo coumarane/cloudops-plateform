@@ -168,7 +168,13 @@ def annotate_certificate(record: CertificateRecord) -> CertificateRecord:
 
 
 def to_job_record(row: PlatformJobRow) -> RunRecord:
-    status_map = {"queued": "Running", "running": "Running", "succeeded": "Succeeded", "failed": "Failed"}
+    status_map = {
+        "queued": "Running",
+        "running": "Running",
+        "succeeded": "Succeeded",
+        "partial": "Succeeded",
+        "failed": "Failed",
+    }
     alibaba = row.provider == "Alibaba"
     return RunRecord(
         id=row.id,

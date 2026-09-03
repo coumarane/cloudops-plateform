@@ -39,9 +39,9 @@ export function EnvironmentsIndex() {
             emptyLabel="No environments configured."
             isEmpty={(data) => data.matrix.length === 0}
             emptyAction={
-              <a href="/administration?section=environments" className="rounded bg-action px-3 py-1.5 text-xs font-semibold text-white">
+              <Link href="/administration?section=environments" className="rounded bg-action px-3 py-1.5 text-xs font-semibold text-white">
                 Add Environment
-              </a>
+              </Link>
             }
           >
             {(data) => (

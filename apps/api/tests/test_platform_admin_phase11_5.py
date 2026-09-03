@@ -30,9 +30,14 @@ def _real_mode(monkeypatch, *, stub: bool = True) -> None:
 
 def _wipe() -> None:
     session = SessionLocal()
-    session.query(EksClusterRow).delete()
-    session.query(CloudEnvironmentRow).delete()
-    session.query(CloudAccountRow).delete()
+    managed = list(session.query(CloudAccountRow).filter(CloudAccountRow.managed_provider_id != ""))
+    aliases = [row.alias for row in managed]
+    ids = [row.id for row in managed]
+    if aliases:
+        session.query(EksClusterRow).filter(EksClusterRow.account_alias.in_(aliases)).delete(synchronize_session=False)
+    if ids:
+        session.query(CloudEnvironmentRow).filter(CloudEnvironmentRow.account_id.in_(ids)).delete(synchronize_session=False)
+        session.query(CloudAccountRow).filter(CloudAccountRow.id.in_(ids)).delete(synchronize_session=False)
     session.query(ManagedProviderRow).delete()
     session.commit()
     session.close()
@@ -41,7 +46,7 @@ def _wipe() -> None:
 def _onboard_aws() -> dict[str, str]:
     provider = client.post(
         "/api/v1/providers",
-        json={"providerType": "AWS", "name": "AWS Corporate", "description": "corp", "enabled": True, "authStrategy": "AssumeRole"},
+        json={"providerType": "AWS", "name": "AWS Corporate Admin", "description": "corp", "authStrategy": "AssumeRole"},
     )
     assert provider.status_code == 200, provider.text
     provider_id = provider.json()["id"]
@@ -62,7 +67,7 @@ def _onboard_aws() -> dict[str, str]:
         "/api/v1/accounts",
         json={
             "providerId": provider_id,
-            "name": "AWS EMEA NonProd",
+            "name": "AWS EMEA NonProd Admin",
             "accountId": "123456789012",
             "region": "EMEA",
             "cloudRegion": "eu-west-1",
@@ -151,14 +156,14 @@ def test_alibaba_provider_setup(monkeypatch) -> None:
     _wipe()
     provider = client.post(
         "/api/v1/providers",
-        json={"providerType": "Alibaba", "name": "Alibaba China", "enabled": True, "authStrategy": "RAM"},
+        json={"providerType": "Alibaba", "name": "Alibaba China Admin", "authStrategy": "RAM"},
     )
     assert provider.status_code == 200, provider.text
     account = client.post(
         "/api/v1/accounts",
         json={
             "providerId": provider.json()["id"],
-            "name": "Alibaba China NonProd",
+            "name": "Alibaba China NonProd Admin",
             "accountId": "123456789012",
             "region": "China",
             "cloudRegion": "cn-hangzhou",

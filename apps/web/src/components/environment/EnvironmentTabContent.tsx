@@ -303,7 +303,7 @@ export function EnvironmentTabContent({
   if (tab === "alerts") {
     return (
       <Panel title="Alerts" action={<CatalogLink path="/alerts" identity={identity} label="Open Alerts" />}>
-        <OverviewAlerts alerts={record.alerts} />
+        <OverviewAlerts record={record} />
       </Panel>
     );
   }
