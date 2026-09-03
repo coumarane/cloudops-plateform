@@ -215,6 +215,11 @@ export type SecretRecord = {
   lifecycleStatus?: string | null;
   source?: "mock" | "live";
   maskedValue?: string;
+  keys?: string[];
+  arn?: string | null;
+  description?: string | null;
+  kmsKeyId?: string | null;
+  cloudRegion?: string | null;
 };
 
 export type CredentialRecord = {

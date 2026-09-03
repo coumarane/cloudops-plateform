@@ -365,6 +365,11 @@ class SecretRecord(StrictModel):
     lifecycleStatus: str | None = None
     source: Literal["mock", "live"] = "mock"
     maskedValue: str = "••••••••••••"
+    keys: list[str] = Field(default_factory=list)
+    arn: str | None = None
+    description: str | None = None
+    kmsKeyId: str | None = None
+    cloudRegion: str | None = None
 
 
 class CredentialRecord(StrictModel):

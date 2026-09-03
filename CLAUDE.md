@@ -108,4 +108,4 @@ DEV / INT-TST / UAT / NPD / PRD
 
 Always clearly distinguish production from non-production.
 
-Never expose secret values in UI, logs, API responses or audit records.
+Secret catalog responses stay metadata-only. Revealed values are allowed only after an explicit operator action and must never be written to logs or audit detail.

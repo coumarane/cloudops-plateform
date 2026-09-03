@@ -69,6 +69,8 @@ export const cloudOpsApi = {
       items: Array<{ name: string; createdAt?: string | null; account: string; accountId: string }>;
       errors: Array<{ account: string; accountId: string; detail: string }>;
     }>("/storage/buckets", undefined, signal),
+  revealSecret: (secretId: string, environment: string, signal?: AbortSignal) =>
+    postJsonBody<{ items: Array<{ name: string; revealed: string }> }>("/secrets/reveal", { secretId, environment }, signal),
   certificate: (id: string, signal?: AbortSignal) =>
     getJson<CertificateRecord>(`/certificates/${id}`, undefined, signal),
   certificateHistory: (id: string, signal?: AbortSignal) =>

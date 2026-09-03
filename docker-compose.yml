@@ -6,14 +6,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - CLOUDOPS_DATABASE_URL=sqlite:///./cloudops.db
+      - CLOUDOPS_DATABASE_URL=sqlite:////app/data/cloudops.db
       - CLOUDOPS_REDIS_URL=redis://redis:6379/0
       - CLOUDOPS_APP_ENVIRONMENT=development
       - CLOUDOPS_REQUIRE_AUTH=false
       - CLOUDOPS_CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000"]
     volumes:
       - ~/.aws:/root/.aws:rw
-      - api-data:/app
+      - api-data:/app/data
     depends_on:
       - redis
     restart: unless-stopped

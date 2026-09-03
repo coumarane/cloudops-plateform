@@ -140,25 +140,9 @@ Do not make the application excessively colorful.
 
 ## Secrets
 
-Never expose secret values.
+List and manage secret metadata by default (name, keys, provider, region, account, environment, fingerprint, rotation, status).
 
-Never place secret values in:
-- frontend output
-- API responses
-- logs
-- audit logs
-- Celery results
-
-Display metadata only:
-- secret name
-- provider
-- region
-- account
-- environment
-- fingerprint
-- last rotation
-- next rotation
-- status
+Operators with `credential:reveal` may retrieve values on an explicit reveal action (eye icon). Do not log revealed values or write them to audit detail. Catalog list responses stay metadata-only.
 
 Production secret updates require explicit confirmation.
 

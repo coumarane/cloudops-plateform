@@ -181,11 +181,12 @@ class CatalogService:
             session.close()
 
     def secrets(self, scope: Scope):
+        from app.providers.aws.secrets import list_live_aws_secrets
         from app.services.credentials import overlay_secret_records
 
         if self._use_demo():
             return filter_items(overlay_secret_records(self._collect("list_secrets")), scope)
-        return filter_items(overlay_secret_records([]), scope)
+        return filter_items(overlay_secret_records(list_live_aws_secrets()), scope)
 
     def health_checks(self, scope: Scope):
         if self._use_demo():

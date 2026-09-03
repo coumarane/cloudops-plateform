@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ProductionWarningBanner } from "@/components/secrets/ProductionWarningBanner";
 import { SecretActionDialog } from "@/components/secrets/SecretActionDialog";
+import { SecretDetails } from "@/components/secrets/SecretDetails";
 import { SecretsTable } from "@/components/secrets/SecretsTable";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { regionsForProvider } from "@/lib/dashboard";
@@ -79,6 +80,18 @@ export function SecretsManagement({
     }
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname);
+  }
+
+  function openSecret(secret: ManagedSecret) {
+    setNotice(null);
+    setFilter({
+      secret: secret.id,
+      action: null,
+      provider: providerToSlug(secret.provider),
+      region: regionToSlug(secret.region),
+      account: secret.account,
+      environment: environmentToSlug(secret.environment),
+    });
   }
 
   function openAction(secret: ManagedSecret, action: SecretAction) {
@@ -255,6 +268,7 @@ export function SecretsManagement({
           >
             {() => (
               <>
+                {selected && !selectedAction ? null : (
                 <section aria-label="Secrets summary" className="grid grid-cols-2 gap-4 md:grid-cols-5">
                   <Kpi label="Secrets in scope" value={summary.inScope} />
                   <Kpi label="Rotation overdue" value={summary.overdue} tone={summary.overdue > 0 ? "warning" : undefined} />
@@ -262,15 +276,24 @@ export function SecretsManagement({
                   <Kpi label="Validation failures" value={summary.invalid} tone={summary.invalid > 0 ? "warning" : undefined} />
                   <Kpi label="PRD secrets" value={summary.prd} tone={summary.prd > 0 ? "prd" : undefined} />
                 </section>
-                <section className="rounded border border-outline bg-white">
-                  <div className="border-b border-outline bg-surface-low px-4 py-3">
-                    <h2 className="text-[15px] font-semibold text-ink">Secrets catalog</h2>
-                    <p className="mt-1 text-xs text-muted">
-                      Metadata, fingerprints, and rotation state only. Secret values are never displayed and cannot be retrieved.
-                    </p>
-                  </div>
-                  <SecretsTable secrets={secrets} onAction={openAction} />
-                </section>
+                )}
+                {selected && !selectedAction ? (
+                  <SecretDetails
+                    secret={selected}
+                    onBack={() => setFilter({ secret: null, action: null })}
+                    onAction={(action) => openAction(selected, action)}
+                  />
+                ) : (
+                  <section className="rounded border border-outline bg-white">
+                    <div className="border-b border-outline bg-surface-low px-4 py-3">
+                      <h2 className="text-[15px] font-semibold text-ink">Secrets catalog</h2>
+                      <p className="mt-1 text-xs text-muted">
+                        Click a secret name to inspect keys. Values stay masked and are never retrieved.
+                      </p>
+                    </div>
+                    <SecretsTable secrets={secrets} onAction={openAction} onOpen={openSecret} />
+                  </section>
+                )}
               </>
             )}
           </QueryState>
