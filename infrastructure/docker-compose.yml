@@ -92,6 +92,8 @@ services:
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
+      args:
+        API_PROXY_TARGET: http://api:8000
     environment:
       API_PROXY_TARGET: http://api:8000
     ports:
