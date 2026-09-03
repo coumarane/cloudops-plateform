@@ -1,15 +1,31 @@
 "use client";
 
 import { useState } from "react";
+import {
+  AdminDialog,
+  AdminField,
+  AdminSelect,
+  AdminTabs,
+  EmptyCatalog,
+  GhostButton,
+  PrimaryButton,
+} from "@/components/admin/AdminChrome";
 import { CatalogPanel, StatusChip } from "@/components/catalog/CatalogChrome";
 import { cloudOpsApi } from "@/lib/api/client";
 import { useResource } from "@/lib/api/use-resource";
 import type { AlertRoutingRule, MaintenanceWindow, NotificationDestination, NotificationPolicy } from "@/lib/alerts";
 
 const TABS = ["Destinations", "Policies", "Routing", "Maintenance Windows"] as const;
+type Tab = (typeof TABS)[number];
+const LABELS: Record<Tab, string> = {
+  Destinations: "Destinations",
+  Policies: "Policies",
+  Routing: "Routing",
+  "Maintenance Windows": "Maintenance Windows",
+};
 
-export function NotificationsAdmin() {
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Destinations");
+export function NotificationsAdmin({ onNotice }: { onNotice?: (message: string) => void }) {
+  const [tab, setTab] = useState<Tab>("Destinations");
   const [nonce, setNonce] = useState(0);
   const destinations = useResource((signal) => cloudOpsApi.notificationDestinations(signal), [nonce]);
   const policies = useResource((signal) => cloudOpsApi.notificationPolicies(signal), [nonce]);
@@ -18,43 +34,46 @@ export function NotificationsAdmin() {
 
   return (
     <CatalogPanel title="Notifications" hint="Destinations, policies, routing, and maintenance windows. Webhook URLs, tokens, and SMTP passwords are write-only and never redisplayed.">
-      <div className="flex flex-wrap gap-2 border-b border-outline p-3">
-        {TABS.map((item) => (
-          <button
-            key={item}
-            type="button"
-            className={tab === item ? "rounded bg-action px-3 py-1 text-xs font-semibold text-white" : "rounded border border-outline px-3 py-1 text-xs"}
-            onClick={() => setTab(item)}
-          >
-            {item}
-          </button>
-        ))}
+      <div className="px-4">
+        <AdminTabs items={TABS} value={tab} labels={LABELS} onChange={setTab} ariaLabel="Notification configuration" />
       </div>
       {tab === "Destinations" ? (
         <DestinationsPanel
           items={destinations.status === "success" ? destinations.data.items : []}
           onChanged={() => setNonce((value) => value + 1)}
+          onNotice={onNotice}
         />
       ) : null}
       {tab === "Policies" ? <PoliciesPanel items={policies.status === "success" ? policies.data.items : []} /> : null}
       {tab === "Routing" ? <RoutingPanel items={routes.status === "success" ? routes.data.items : []} /> : null}
       {tab === "Maintenance Windows" ? (
-        <WindowsPanel items={windows.status === "success" ? windows.data.items : []} onChanged={() => setNonce((value) => value + 1)} />
+        <WindowsPanel items={windows.status === "success" ? windows.data.items : []} onChanged={() => setNonce((value) => value + 1)} onNotice={onNotice} />
       ) : null}
     </CatalogPanel>
   );
 }
 
-function DestinationsPanel({ items, onChanged }: { items: NotificationDestination[]; onChanged: () => void }) {
+function DestinationsPanel({
+  items,
+  onChanged,
+  onNotice,
+}: {
+  items: NotificationDestination[];
+  onChanged: () => void;
+  onNotice?: (message: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [providerType, setProviderType] = useState("email");
   const [description, setDescription] = useState("");
   const [secretValue, setSecretValue] = useState("");
   const [to, setTo] = useState("");
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   async function create() {
-    setMessage("");
+    setError("");
+    setBusy(true);
     try {
       await cloudOpsApi.createNotificationDestination({
         name,
@@ -66,47 +85,60 @@ function DestinationsPanel({ items, onChanged }: { items: NotificationDestinatio
       setName("");
       setSecretValue("");
       setTo("");
+      setDescription("");
+      setOpen(false);
       onChanged();
-      setMessage("Destination saved. Secret values are not redisplayed.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to save destination.");
+      onNotice?.("Destination saved. Secret values are not redisplayed.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to save destination.");
+    } finally {
+      setBusy(false);
     }
   }
 
   async function test(id: string) {
-    setMessage("");
     try {
       const result = await cloudOpsApi.testNotificationDestination(id);
-      setMessage(`Test ${result.status}.`);
+      onNotice?.(`Test ${result.status}.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Test failed.");
+      onNotice?.(error instanceof Error ? error.message : "Test failed.");
     }
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 p-4 xl:grid-cols-2">
-      <div>
+    <>
+      <div className="flex justify-end border-b border-outline px-4 py-3">
+        <PrimaryButton onClick={() => setOpen(true)}>Add destination</PrimaryButton>
+      </div>
+      {items.length === 0 ? (
+        <EmptyCatalog
+          title="No notification destinations"
+          description="Add email, Slack, Teams, webhook, or log destinations. Secret values are write-only."
+          action="Add destination"
+          onClick={() => setOpen(true)}
+        />
+      ) : (
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-outline text-[11px] font-bold uppercase text-muted">
-              <th className="p-2">Name</th>
-              <th className="p-2">Type</th>
-              <th className="p-2">Secret</th>
-              <th className="p-2">Enabled</th>
-              <th className="p-2" />
+              <th className="p-3">Name</th>
+              <th className="p-3">Type</th>
+              <th className="p-3">Secret</th>
+              <th className="p-3">Enabled</th>
+              <th className="p-3" />
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.id} className="border-b border-outline">
-                <td className="p-2 font-semibold">{item.name}</td>
-                <td className="p-2 font-mono text-xs">{item.providerType}</td>
-                <td className="p-2 text-xs text-muted">{item.hasSecret ? "configured" : "none"}</td>
-                <td className="p-2">
+              <tr key={item.id} className="border-b border-outline hover:bg-surface-low/70">
+                <td className="p-3 font-semibold">{item.name}</td>
+                <td className="p-3 font-mono text-xs">{item.providerType}</td>
+                <td className="p-3 text-xs text-muted">{item.hasSecret ? "configured" : "none"}</td>
+                <td className="p-3">
                   <StatusChip value={item.enabled ? "Connected" : "disabled"} />
                 </td>
-                <td className="p-2">
-                  <button type="button" className="text-xs font-semibold text-action hover:underline" onClick={() => test(item.id)}>
+                <td className="p-3">
+                  <button type="button" className="text-xs font-semibold text-action hover:underline" onClick={() => void test(item.id)}>
                     Test
                   </button>
                 </td>
@@ -114,44 +146,43 @@ function DestinationsPanel({ items, onChanged }: { items: NotificationDestinatio
             ))}
           </tbody>
         </table>
-      </div>
-      <form
-        className="space-y-3 rounded border border-outline p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void create();
-        }}
-      >
-        <p className="text-sm font-semibold">New destination</p>
-        <input className="w-full rounded border border-outline px-2 py-1 text-sm" placeholder="Name" value={name} onChange={(event) => setName(event.target.value)} required />
-        <select className="w-full rounded border border-outline px-2 py-1 text-sm" value={providerType} onChange={(event) => setProviderType(event.target.value)}>
-          <option value="email">Email</option>
-          <option value="slack">Slack</option>
-          <option value="teams">Teams</option>
-          <option value="webhook">Webhook</option>
-          <option value="log">Log</option>
-        </select>
-        <input className="w-full rounded border border-outline px-2 py-1 text-sm" placeholder="Description" value={description} onChange={(event) => setDescription(event.target.value)} />
-        <input className="w-full rounded border border-outline px-2 py-1 text-sm" placeholder="Recipient (email)" value={to} onChange={(event) => setTo(event.target.value)} />
-        <input
-          className="w-full rounded border border-outline px-2 py-1 text-sm"
-          placeholder="Webhook URL / token / SMTP password"
-          type="password"
-          autoComplete="new-password"
-          value={secretValue}
-          onChange={(event) => setSecretValue(event.target.value)}
-        />
-        <p className="text-[11px] text-muted">Write-only. Existing secrets are never shown again.</p>
-        <button type="submit" className="rounded bg-action px-3 py-1.5 text-xs font-semibold text-white">
-          Save destination
-        </button>
-        {message ? <p className="text-xs text-muted">{message}</p> : null}
-      </form>
-    </div>
+      )}
+      {open ? (
+        <AdminDialog
+          title="Add destination"
+          hint="Webhook URLs, tokens, and SMTP passwords are write-only and never redisplayed."
+          onClose={() => setOpen(false)}
+          footer={
+            <>
+              <GhostButton onClick={() => setOpen(false)}>Cancel</GhostButton>
+              <PrimaryButton disabled={busy || !name} onClick={() => void create()}>{busy ? "Saving…" : "Save destination"}</PrimaryButton>
+            </>
+          }
+        >
+          <div className="grid gap-4">
+            <AdminField label="Name" value={name} onChange={setName} />
+            <AdminSelect label="Type" value={providerType} onChange={setProviderType}>
+              <option value="email">Email</option>
+              <option value="slack">Slack</option>
+              <option value="teams">Teams</option>
+              <option value="webhook">Webhook</option>
+              <option value="log">Log</option>
+            </AdminSelect>
+            <AdminField label="Description" value={description} onChange={setDescription} />
+            <AdminField label="Recipient (email)" value={to} onChange={setTo} />
+            <AdminField label="Webhook URL / token / SMTP password" value={secretValue} onChange={setSecretValue} type="password" autoComplete="new-password" />
+            {error ? <p className="text-sm text-critical">{error}</p> : null}
+          </div>
+        </AdminDialog>
+      ) : null}
+    </>
   );
 }
 
 function PoliciesPanel({ items }: { items: NotificationPolicy[] }) {
+  if (items.length === 0) {
+    return <p className="p-6 text-sm text-muted">No notification policies configured.</p>;
+  }
   return (
     <table className="w-full text-left text-sm">
       <thead>
@@ -166,7 +197,7 @@ function PoliciesPanel({ items }: { items: NotificationPolicy[] }) {
       </thead>
       <tbody>
         {items.map((item) => (
-          <tr key={item.id} className="border-b border-outline">
+          <tr key={item.id} className="border-b border-outline hover:bg-surface-low/70">
             <td className="p-3 font-semibold">{item.name}</td>
             <td className="p-3">{item.initialEnabled ? "Yes" : "No"}</td>
             <td className="p-3 font-mono text-xs">{item.repeatAfterSeconds}s</td>
@@ -181,6 +212,9 @@ function PoliciesPanel({ items }: { items: NotificationPolicy[] }) {
 }
 
 function RoutingPanel({ items }: { items: AlertRoutingRule[] }) {
+  if (items.length === 0) {
+    return <p className="p-6 text-sm text-muted">No alert routing rules configured.</p>;
+  }
   return (
     <table className="w-full text-left text-sm">
       <thead>
@@ -196,7 +230,7 @@ function RoutingPanel({ items }: { items: AlertRoutingRule[] }) {
       </thead>
       <tbody>
         {items.map((item) => (
-          <tr key={item.id} className={item.environmentFilter === "PRD" ? "border-b border-prd/30 bg-prd/5" : "border-b border-outline"}>
+          <tr key={item.id} className={item.environmentFilter === "PRD" ? "border-b border-prd/30 bg-prd/5" : "border-b border-outline hover:bg-surface-low/70"}>
             <td className="p-3 font-semibold">{item.name}</td>
             <td className="p-3">{item.providerFilter || "any"}</td>
             <td className="p-3">{item.regionFilter || "any"}</td>
@@ -211,17 +245,28 @@ function RoutingPanel({ items }: { items: AlertRoutingRule[] }) {
   );
 }
 
-function WindowsPanel({ items, onChanged }: { items: MaintenanceWindow[]; onChanged: () => void }) {
+function WindowsPanel({
+  items,
+  onChanged,
+  onNotice,
+}: {
+  items: MaintenanceWindow[];
+  onChanged: () => void;
+  onNotice?: (message: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
   const [name, setName] = useState("PRD payments deployment");
   const [environment, setEnvironment] = useState("PRD");
   const [application, setApplication] = useState("payments-api");
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [reason, setReason] = useState("");
-  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   async function create() {
-    setMessage("");
+    setError("");
+    setBusy(true);
     try {
       await cloudOpsApi.createMaintenanceWindow({
         name,
@@ -234,56 +279,77 @@ function WindowsPanel({ items, onChanged }: { items: MaintenanceWindow[]; onChan
         reason,
         changeTicket: "",
       });
+      setOpen(false);
       onChanged();
-      setMessage("Maintenance window created. Notifications are suppressed during the window.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to create window.");
+      onNotice?.("Maintenance window created. Notifications are suppressed during the window.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to create window.");
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 p-4 xl:grid-cols-2">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-outline text-[11px] font-bold uppercase text-muted">
-            <th className="p-2">Window</th>
-            <th className="p-2">Scope</th>
-            <th className="p-2">Starts</th>
-            <th className="p-2">Ends</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr key={item.id} className="border-b border-outline">
-              <td className="p-2 font-semibold">{item.name}</td>
-              <td className="p-2 font-mono text-xs">
-                {item.provider} {item.region} {item.environment} {item.application}
-              </td>
-              <td className="p-2 font-mono text-xs">{item.startsAt}</td>
-              <td className="p-2 font-mono text-xs">{item.endsAt}</td>
+    <>
+      <div className="flex justify-end border-b border-outline px-4 py-3">
+        <PrimaryButton onClick={() => setOpen(true)}>Add window</PrimaryButton>
+      </div>
+      {items.length === 0 ? (
+        <EmptyCatalog
+          title="No maintenance windows"
+          description="Create a one-time window to suppress notifications during a planned change."
+          action="Add window"
+          onClick={() => setOpen(true)}
+        />
+      ) : (
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-outline text-[11px] font-bold uppercase text-muted">
+              <th className="p-3">Window</th>
+              <th className="p-3">Scope</th>
+              <th className="p-3">Starts</th>
+              <th className="p-3">Ends</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      <form
-        className="space-y-3 rounded border border-outline p-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void create();
-        }}
-      >
-        <p className="text-sm font-semibold">New one-time window</p>
-        <input className="w-full rounded border border-outline px-2 py-1 text-sm" value={name} onChange={(event) => setName(event.target.value)} required />
-        <input className="w-full rounded border border-outline px-2 py-1 text-sm" value={environment} onChange={(event) => setEnvironment(event.target.value)} />
-        <input className="w-full rounded border border-outline px-2 py-1 text-sm" value={application} onChange={(event) => setApplication(event.target.value)} />
-        <input className="w-full rounded border border-outline px-2 py-1 text-sm" type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} required />
-        <input className="w-full rounded border border-outline px-2 py-1 text-sm" type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} required />
-        <input className="w-full rounded border border-outline px-2 py-1 text-sm" placeholder="Reason" value={reason} onChange={(event) => setReason(event.target.value)} />
-        <button type="submit" className="rounded bg-action px-3 py-1.5 text-xs font-semibold text-white">
-          Create window
-        </button>
-        {message ? <p className="text-xs text-muted">{message}</p> : null}
-      </form>
-    </div>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.id} className="border-b border-outline hover:bg-surface-low/70">
+                <td className="p-3 font-semibold">{item.name}</td>
+                <td className="p-3 font-mono text-xs">
+                  {item.provider} {item.region} {item.environment} {item.application}
+                </td>
+                <td className="p-3 font-mono text-xs">{item.startsAt}</td>
+                <td className="p-3 font-mono text-xs">{item.endsAt}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {open ? (
+        <AdminDialog
+          title="Add maintenance window"
+          hint="Notifications are suppressed during the window. Secret values are not stored here."
+          onClose={() => setOpen(false)}
+          footer={
+            <>
+              <GhostButton onClick={() => setOpen(false)}>Cancel</GhostButton>
+              <PrimaryButton disabled={busy || !name || !startsAt || !endsAt} onClick={() => void create()}>
+                {busy ? "Saving…" : "Create window"}
+              </PrimaryButton>
+            </>
+          }
+        >
+          <div className="grid gap-4">
+            <AdminField label="Name" value={name} onChange={setName} />
+            <AdminField label="Environment" value={environment} onChange={setEnvironment} />
+            <AdminField label="Application" value={application} onChange={setApplication} />
+            <AdminField label="Starts" value={startsAt} onChange={setStartsAt} type="datetime-local" />
+            <AdminField label="Ends" value={endsAt} onChange={setEndsAt} type="datetime-local" />
+            <AdminField label="Reason" value={reason} onChange={setReason} />
+            {error ? <p className="text-sm text-critical">{error}</p> : null}
+          </div>
+        </AdminDialog>
+      ) : null}
+    </>
   );
 }

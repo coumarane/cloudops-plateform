@@ -119,17 +119,22 @@ export function Kpi({
 export function CatalogPanel({
   title,
   hint,
+  action,
   children,
 }: {
   title: string;
   hint?: string;
+  action?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section className="rounded border border-outline bg-white">
-      <div className="border-b border-outline bg-surface-low px-4 py-3">
-        <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
-        {hint ? <p className="mt-1 text-xs text-muted">{hint}</p> : null}
+      <div className="flex items-start justify-between gap-4 border-b border-outline bg-surface-low px-4 py-3">
+        <div>
+          <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
+          {hint ? <p className="mt-1 text-xs text-muted">{hint}</p> : null}
+        </div>
+        {action ? <div className="shrink-0">{action}</div> : null}
       </div>
       {children}
     </section>
