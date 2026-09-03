@@ -54,7 +54,7 @@ def test_partial_account_failure_does_not_stop_other_accounts() -> None:
             mock.list_clusters.return_value = []
         return mock
 
-    with patch("app.services.aws_sync.EksDiscovery", side_effect=discovery):
+    with patch("app.providers.aws.adapter.EksDiscovery", side_effect=discovery):
         response = client.post("/api/v1/jobs/aws/cluster-discovery")
     assert response.status_code == 200
     body = response.json()
@@ -80,7 +80,7 @@ def test_partial_account_failure_does_not_stop_other_accounts() -> None:
 
 
 def test_replace_clusters_is_scoped_to_environment() -> None:
-    with patch("app.services.aws_sync.EksDiscovery", side_effect=_discovery_for_config):
+    with patch("app.providers.aws.adapter.EksDiscovery", side_effect=_discovery_for_config):
         client.post("/api/v1/jobs/aws/cluster-discovery")
     alibaba = client.get("/api/v1/clusters", params={"provider": "alibaba"}).json()["items"]
     assert alibaba
@@ -98,7 +98,7 @@ def test_scan_concurrency_is_bounded() -> None:
         seen.append(int(workers))
         return RealExecutor(*args, **kwargs)
 
-    with patch("app.services.aws_sync.EksDiscovery", side_effect=_discovery_for_config):
+    with patch("app.providers.aws.adapter.EksDiscovery", side_effect=_discovery_for_config):
         with patch("app.services.aws_sync.ThreadPoolExecutor", side_effect=factory):
             client.post("/api/v1/jobs/aws/cluster-discovery")
     assert seen

@@ -63,6 +63,7 @@ class AccountBinding:
             environment=self.environments[0] if self.environments else "",
             account_alias=self.alias,
             cluster_environment_tag=self.cluster_environment_tag,
+            credential_ref=self.credential_ref,
         )
 
     def environment_ids(self) -> dict[str, str]:

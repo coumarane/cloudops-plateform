@@ -17,6 +17,7 @@ class AwsConnectionConfig:
     account_alias: str
     cluster_environment_tag: str
     environment_id: str = ""
+    credential_ref: str | None = None
 
 
 __all__ = [

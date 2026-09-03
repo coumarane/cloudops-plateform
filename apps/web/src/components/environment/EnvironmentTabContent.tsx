@@ -300,6 +300,32 @@ export function EnvironmentTabContent({
     );
   }
 
+  if (tab === "alerts") {
+    return (
+      <Panel title="Alerts" action={<CatalogLink path="/alerts" identity={identity} label="Open Alerts" />}>
+        <OverviewAlerts alerts={record.alerts} />
+      </Panel>
+    );
+  }
+
+  if (tab === "configuration") {
+    return (
+      <Panel title="Configuration">
+        <div className="space-y-2 p-4 text-sm">
+          <p>Provider: {identity.provider}</p>
+          <p>Region: {identity.region}</p>
+          <p>Environment: {identity.environment}</p>
+          <p>Account: {identity.account}</p>
+          <p>Readiness: {identity.readiness || "—"}</p>
+          <p>Discovery: {identity.discoveryActive ? "Active" : "Not synchronized"}</p>
+          <Link href="/administration?section=environments" className="inline-block pt-2 text-xs font-semibold text-action">
+            Edit environment
+          </Link>
+        </div>
+      </Panel>
+    );
+  }
+
   return (
     <Panel title="Audit" action={<CatalogLink path="/audit" identity={identity} label="Open Audit" />}>
       <ActivityList items={record.audit} empty="No audit events for this environment." />

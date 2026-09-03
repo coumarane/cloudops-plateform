@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ProductionWarningBanner } from "@/components/secrets/ProductionWarningBanner";
 import { SecretActionDialog } from "@/components/secrets/SecretActionDialog";
@@ -241,7 +242,17 @@ export function SecretsManagement({
               {notice.text}
             </p>
           ) : null}
-          <QueryState state={state} loadingLabel="Loading secrets…" emptyLabel="No secrets in the current hierarchy filter." isEmpty={(data) => data.items.length === 0}>
+          <QueryState
+            state={state}
+            loadingLabel="Loading secrets…"
+            emptyLabel="No credentials configured."
+            isEmpty={(data) => data.items.length === 0}
+            emptyAction={
+              <Link href="/administration?section=credentials" className="rounded bg-action px-3 py-1.5 text-xs font-semibold text-white">
+                Add Credential
+              </Link>
+            }
+          >
             {() => (
               <>
                 <section aria-label="Secrets summary" className="grid grid-cols-2 gap-4 md:grid-cols-5">

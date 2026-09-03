@@ -123,5 +123,21 @@ class Settings(BaseSettings):
     alert_suppression_expiry_interval_seconds: int = 60
     maintenance_window_expiry_interval_seconds: int = 60
 
+    app_environment: str = "development"
+    demo_mode: bool = False
+    seed_topology: bool = False
+    bootstrap_admin_enabled: bool = False
+    provider_stub: bool = False
+
+    def is_local_environment(self) -> bool:
+        return self.app_environment.lower() in {"development", "local", "test"}
+
+    def bootstrap_admin_allowed(self) -> bool:
+        if self.require_auth:
+            return True
+        if self.is_local_environment():
+            return True
+        return self.bootstrap_admin_enabled
+
 
 settings = Settings()

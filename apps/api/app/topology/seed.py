@@ -65,7 +65,32 @@ def _upsert_accounts(session: Session, accounts: tuple[AccountBinding, ...]) -> 
             env_row.enabled = True
 
 
+def seed_system_catalog(session: Session) -> None:
+    for provider_id, name in (("AWS", "AWS"), ("Alibaba", "Alibaba")):
+        if session.get(CloudProviderRow, provider_id) is None:
+            session.add(CloudProviderRow(id=provider_id, name=name))
+    defaults = (
+        ("aws-amer", "AWS", "AMER", "us-east-1"),
+        ("aws-emea", "AWS", "EMEA", "eu-west-1"),
+        ("aws-apac", "AWS", "APAC", "ap-southeast-1"),
+        ("alibaba-china", "Alibaba", "China", "cn-hangzhou"),
+    )
+    for region_id, provider, name, cloud in defaults:
+        row = session.get(PlatformRegionRow, region_id)
+        if row is None:
+            session.add(PlatformRegionRow(id=region_id, provider=provider, name=name, cloud_region=cloud))
+        else:
+            row.cloud_region = row.cloud_region or cloud
+    session.flush()
+
+
 def seed_topology(session: Session) -> None:
+    from app.core.config import settings
+
+    seed_system_catalog(session)
+    if not (settings.demo_mode or settings.seed_topology):
+        logger.info("Skipped operational topology seed (demo_mode=%s)", settings.demo_mode)
+        return
     aws = load_topology()
     alibaba = load_alibaba_topology()
     _upsert_accounts(session, aws.accounts)

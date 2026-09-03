@@ -40,6 +40,11 @@ Prefer IAM role assumption. Do not put access keys in PostgreSQL.
 | `CLOUDOPS_ALLOW_LOCAL_SECRETS` | Must be `false` in production |
 | `CLOUDOPS_REQUIRE_AUTH` | Require `X-CloudOps-User` |
 | `CLOUDOPS_REQUIRE_HTTPS` | Reject non-HTTPS when `X-Forwarded-Proto` is not https |
+| `CLOUDOPS_DEMO_MODE` | `true` loads catalog demo data. Default `false` |
+| `CLOUDOPS_SEED_TOPOLOGY` | Seed fake accounts/environments from topology JSON. Default `false` |
+| `CLOUDOPS_BOOTSTRAP_ADMIN_ENABLED` | Allow mutating admin APIs without OIDC. Default `false` outside local/dev/test |
+| `CLOUDOPS_PROVIDER_STUB` | Deterministic provider adapter for local E2E without cloud credentials |
+| `CLOUDOPS_APP_ENVIRONMENT` | `development` / `local` / `test` enable bootstrap admin. Use `production` when deployed |
 
 Secret values, tokens, private keys, PEM, kubeconfig, AWS access keys, and Alibaba AccessKey Secrets are never returned. Credential lifecycle: [docs/credentials.md](../../docs/credentials.md). Certificate monitoring: [docs/certificate-monitoring.md](../../docs/certificate-monitoring.md).
 

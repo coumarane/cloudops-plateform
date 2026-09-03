@@ -190,4 +190,72 @@ export const cloudOpsApi = {
   dashboard: (scope?: ScopeQuery, signal?: AbortSignal) => getJson<DashboardSnapshot>("/dashboard", scope, signal),
   adminUsers: (signal?: AbortSignal) => getList<AdminUser>("/admin/users", undefined, signal),
   adminIntegrations: (signal?: AbortSignal) => getList<AdminIntegration>("/admin/integrations", undefined, signal),
+  platformStatus: (signal?: AbortSignal) => getJson<import("@/lib/platform").PlatformStatus>("/platform/status", undefined, signal),
+  providerTypes: (signal?: AbortSignal) => getList<{ id: string; name: string; platform: string; authStrategies: string[] }>("/provider-types", undefined, signal),
+  managedProviders: (signal?: AbortSignal) => getList<import("@/lib/platform").ManagedProvider>("/providers", undefined, signal),
+  managedProvider: (id: string, signal?: AbortSignal) =>
+    getJson<import("@/lib/platform").ManagedProvider>(`/providers/${id}`, undefined, signal),
+  createProvider: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<import("@/lib/platform").ManagedProvider>("/providers", body, signal),
+  updateProvider: (id: string, body: Record<string, unknown>, signal?: AbortSignal) =>
+    putJsonBody<import("@/lib/platform").ManagedProvider>(`/providers/${id}`, body, signal),
+  deleteProvider: (id: string, signal?: AbortSignal) => deleteJson<{ deleted: boolean }>(`/providers/${id}`, undefined, signal),
+  validateProvider: (id: string, signal?: AbortSignal) =>
+    postJson<{ connected: boolean; account: string; principal: string; region: string; jobId?: string; detail: string }>(
+      `/providers/${id}/validate`,
+      signal,
+    ),
+  discoverProvider: (id: string, signal?: AbortSignal) =>
+    postJson<{ jobId: string; jobs?: Array<{ jobId: string }> }>(`/providers/${id}/discover`, signal),
+  managedAccounts: (signal?: AbortSignal) => getList<import("@/lib/platform").ManagedAccount>("/accounts", undefined, signal),
+  managedAccount: (id: string, signal?: AbortSignal) =>
+    getJson<import("@/lib/platform").ManagedAccount>(`/accounts/${id}`, undefined, signal),
+  createAccount: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<import("@/lib/platform").ManagedAccount>("/accounts", body, signal),
+  updateAccount: (id: string, body: Record<string, unknown>, signal?: AbortSignal) =>
+    putJsonBody<import("@/lib/platform").ManagedAccount>(`/accounts/${id}`, body, signal),
+  deleteAccount: (id: string, signal?: AbortSignal) => deleteJson<{ deleted: boolean }>(`/accounts/${id}`, undefined, signal),
+  validateAccount: (id: string, signal?: AbortSignal) =>
+    postJson<{ connected: boolean; account: string; principal: string; region: string; status: string; detail: string }>(
+      `/accounts/${id}/validate`,
+      signal,
+    ),
+  discoverAccount: (id: string, signal?: AbortSignal) => postJson<{ jobId: string; status: string; detail: string }>(`/accounts/${id}/discover`, signal),
+  managedEnvironments: (signal?: AbortSignal) =>
+    getList<import("@/lib/platform").ManagedEnvironment>("/environments", undefined, signal),
+  createEnvironment: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<import("@/lib/platform").ManagedEnvironment>("/environments", body, signal),
+  updateEnvironment: (id: string, body: Record<string, unknown>, signal?: AbortSignal) =>
+    putJsonBody<import("@/lib/platform").ManagedEnvironment>(`/environments/${id}`, body, signal),
+  discoverEnvironment: (id: string, signal?: AbortSignal) =>
+    postJson<{ jobId: string; status: string; detail: string }>(`/environments/${id}/discover`, signal),
+  environmentHealthScan: (id: string, signal?: AbortSignal) =>
+    postJson<{ jobId: string }>(`/environments/${id}/health-scan`, signal),
+  environmentCertificateScan: (id: string, signal?: AbortSignal) =>
+    postJson<{ jobId: string }>(`/environments/${id}/certificate-scan`, signal),
+  managedApplications: (signal?: AbortSignal) =>
+    getList<import("@/lib/platform").ManagedApplication>("/applications", undefined, signal),
+  createApplication: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<import("@/lib/platform").ManagedApplication>("/applications", body, signal),
+  updateApplication: (id: string, body: Record<string, unknown>, signal?: AbortSignal) =>
+    putJsonBody<import("@/lib/platform").ManagedApplication>(`/applications/${id}`, body, signal),
+  createGithubIntegration: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<import("@/lib/domain").AdminIntegration>("/admin/integrations/github", body, signal),
+  updateGithubIntegration: (id: string, body: Record<string, unknown>, signal?: AbortSignal) =>
+    putJsonBody<import("@/lib/domain").AdminIntegration>(`/admin/integrations/github/${id}`, body, signal),
+  validateGithubIntegration: (id: string, signal?: AbortSignal) =>
+    postJson<{ connected: boolean; detail: string; status: string }>(`/admin/integrations/github/${id}/validate`, signal),
+  createAzureDevOpsIntegration: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<import("@/lib/domain").AdminIntegration>("/admin/integrations/azure-devops", body, signal),
+  updateAzureDevOpsIntegration: (id: string, body: Record<string, unknown>, signal?: AbortSignal) =>
+    putJsonBody<import("@/lib/domain").AdminIntegration>(`/admin/integrations/azure-devops/${id}`, body, signal),
+  validateAzureDevOpsIntegration: (id: string, signal?: AbortSignal) =>
+    postJson<{ connected: boolean; detail: string; status: string }>(`/admin/integrations/azure-devops/${id}/validate`, signal),
+  discoveryJobs: (signal?: AbortSignal) => getList<import("@/lib/platform").DiscoveryJob>("/discovery-jobs", undefined, signal),
+  discoveryJob: (id: string, signal?: AbortSignal) => getJson<import("@/lib/platform").DiscoveryJob>(`/discovery-jobs/${id}`, undefined, signal),
+  platformSettings: (signal?: AbortSignal) => getList<import("@/lib/platform").PlatformSetting>("/platform/settings", undefined, signal),
+  updatePlatformSettings: (values: Record<string, string>, signal?: AbortSignal) =>
+    putJsonBody<{ items: import("@/lib/platform").PlatformSetting[] }>("/platform/settings", { values }, signal),
+  updateClusterMonitoring: (id: string, body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<{ id: string; ignored: boolean; monitoringEnabled: boolean }>(`/clusters/${id}/monitoring`, body, signal),
 };

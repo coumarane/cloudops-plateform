@@ -24,17 +24,21 @@ describe("environment routing", () => {
       "/environments/aws/amer/int-tst?tab=github",
     );
     expect(parseTab("secrets")).toBe("secrets");
+    expect(parseTab("alerts")).toBe("alerts");
+    expect(parseTab("configuration")).toBe("configuration");
     expect(parseTab("unknown")).toBe("overview");
     expect(ENVIRONMENT_TABS).toEqual([
       "overview",
       "clusters",
       "applications",
-      "secrets",
       "certificates",
-      "deployments",
       "pipelines",
-      "github",
       "health",
+      "alerts",
+      "configuration",
+      "secrets",
+      "deployments",
+      "github",
       "audit",
     ]);
   });

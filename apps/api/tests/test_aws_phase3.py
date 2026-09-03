@@ -67,7 +67,7 @@ def _health(arn: str) -> ClusterHealthSnapshot:
 
 
 def test_live_clusters_replace_aws_emea_dev_mock() -> None:
-    with patch("app.services.aws_sync.EksDiscovery", side_effect=_discovery_for_config):
+    with patch("app.providers.aws.adapter.EksDiscovery", side_effect=_discovery_for_config):
         response = client.post("/api/v1/jobs/aws/cluster-discovery")
     assert response.status_code == 200
     clusters = client.get("/api/v1/clusters", params={"provider": "aws", "region": "emea", "environment": "dev"}).json()["items"]
@@ -81,9 +81,9 @@ def test_live_clusters_replace_aws_emea_dev_mock() -> None:
 
 
 def test_health_and_certificate_scan_endpoints() -> None:
-    with patch("app.services.aws_sync.EksDiscovery", side_effect=_discovery_for_config):
+    with patch("app.providers.aws.adapter.EksDiscovery", side_effect=_discovery_for_config):
         client.post("/api/v1/jobs/aws/cluster-discovery")
-        with patch("app.services.aws_sync.ClusterHealthCollector") as collector:
+        with patch("app.providers.aws.adapter.ClusterHealthCollector") as collector:
             snapshot = _health(_cluster().arn)
             collector.return_value.collect.return_value = snapshot
             collector.return_value.collect_inventory.return_value = (snapshot, [])
@@ -118,7 +118,7 @@ def test_health_and_certificate_scan_endpoints() -> None:
         mock.list_certificates.return_value = [cert] if config.account_alias == "aws-emea-nonprod" else []
         return mock
 
-    with patch("app.services.aws_sync.AcmScanner", side_effect=_acm):
+    with patch("app.providers.aws.adapter.AcmScanner", side_effect=_acm):
         client.post("/api/v1/jobs/aws/certificate-scan")
     certs = client.get("/api/v1/certificates", params={"provider": "aws", "region": "emea", "environment": "dev"}).json()["items"]
     assert any(item["domain"] == "dev.emea.example.com" and item["source"] in {"aws", "acm"} for item in certs)
@@ -164,7 +164,7 @@ def test_repository_never_stores_access_keys() -> None:
 
 
 def test_discovery_without_credentials_returns_failed_job() -> None:
-    with patch("app.services.aws_sync.EksDiscovery") as discovery:
+    with patch("app.providers.aws.adapter.EksDiscovery") as discovery:
         discovery.return_value.list_clusters.side_effect = AwsAuthError("missing credentials")
         response = client.post("/api/v1/jobs/aws/cluster-discovery")
     assert response.status_code == 200

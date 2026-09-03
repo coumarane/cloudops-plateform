@@ -46,6 +46,9 @@ services:
       CLOUDOPS_DATABASE_URL: postgresql+psycopg://cloudops:cloudops@postgres:5432/cloudops
       CLOUDOPS_REDIS_URL: redis://redis:6379/0
       CLOUDOPS_CELERY_EAGER: "false"
+      CLOUDOPS_DEMO_MODE: "false"
+      CLOUDOPS_SEED_TOPOLOGY: "false"
+      CLOUDOPS_APP_ENVIRONMENT: "development"
     ports:
       - "8000:8000"
     depends_on:
@@ -67,6 +70,9 @@ services:
       CLOUDOPS_DATABASE_URL: postgresql+psycopg://cloudops:cloudops@postgres:5432/cloudops
       CLOUDOPS_REDIS_URL: redis://redis:6379/0
       CLOUDOPS_CELERY_EAGER: "false"
+      CLOUDOPS_DEMO_MODE: "false"
+      CLOUDOPS_SEED_TOPOLOGY: "false"
+      CLOUDOPS_APP_ENVIRONMENT: "development"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -82,6 +88,9 @@ services:
       CLOUDOPS_DATABASE_URL: postgresql+psycopg://cloudops:cloudops@postgres:5432/cloudops
       CLOUDOPS_REDIS_URL: redis://redis:6379/0
       CLOUDOPS_CELERY_EAGER: "false"
+      CLOUDOPS_DEMO_MODE: "false"
+      CLOUDOPS_SEED_TOPOLOGY: "false"
+      CLOUDOPS_APP_ENVIRONMENT: "development"
     depends_on:
       migrate:
         condition: service_completed_successfully

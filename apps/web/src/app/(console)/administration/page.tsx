@@ -1,12 +1,12 @@
-import { AdministrationCatalog } from "@/components/catalog/console-pages";
-import { CatalogRoute } from "../catalog-route";
+import { Suspense } from "react";
+import { AdministrationApp } from "@/components/admin/AdministrationApp";
 
 export const dynamic = "force-dynamic";
 
-export default function AdministrationPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ provider?: string; region?: string; environment?: string; selected?: string }>;
-}) {
-  return <CatalogRoute Catalog={AdministrationCatalog} label="administration" searchParams={searchParams} />;
+export default function AdministrationPage() {
+  return (
+    <Suspense fallback={<p className="p-6 text-sm text-muted">Loading administration…</p>}>
+      <AdministrationApp />
+    </Suspense>
+  );
 }
