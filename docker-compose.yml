@@ -1,0 +1,42 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - CLOUDOPS_DATABASE_URL=sqlite:///./cloudops.db
+      - CLOUDOPS_REDIS_URL=redis://redis:6379/0
+      - CLOUDOPS_APP_ENVIRONMENT=development
+      - CLOUDOPS_REQUIRE_AUTH=false
+      - CLOUDOPS_CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000"]
+    volumes:
+      - ~/.aws:/root/.aws:rw
+      - api-data:/app
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        API_PROXY_TARGET: http://api:8000
+    ports:
+      - "3000:3000"
+    environment:
+      - API_PROXY_TARGET=http://api:8000
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  api-data:

@@ -33,6 +33,7 @@ const SECTIONS = [
   "credentials",
   "applications",
   "integrations",
+  "aws-console",
   "jobs",
   "settings",
 ] as const;
@@ -46,6 +47,7 @@ const LABELS: Record<Section, string> = {
   credentials: "Credentials",
   applications: "Applications",
   integrations: "Integrations",
+  "aws-console": "AWS Console",
   jobs: "Discovery Jobs",
   settings: "Platform Settings",
 };
@@ -94,6 +96,7 @@ export function AdministrationApp() {
           {section === "credentials" ? <CredentialsPanel nonce={nonce} onNotice={refresh} /> : null}
           {section === "applications" ? <ApplicationsPanel nonce={nonce} onNotice={refresh} /> : null}
           {section === "integrations" ? <IntegrationsPanel nonce={nonce} onNotice={refresh} /> : null}
+          {section === "aws-console" ? <AwsConsolePanel nonce={nonce} onNotice={refresh} /> : null}
           {section === "jobs" ? <JobsPanel nonce={nonce} /> : null}
           {section === "settings" ? <SettingsPanel nonce={nonce} onNotice={refresh} /> : null}
         </div>
@@ -1248,5 +1251,159 @@ function SettingsPanel({ nonce, onNotice }: { nonce: number; onNotice: (message:
         </CatalogPanel>
       )}
     </QueryState>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  AWS Console – configure credentials, validate, test S3 listing    */
+/* ------------------------------------------------------------------ */
+
+function AwsConsolePanel({ nonce, onNotice }: { nonce: number; onNotice: (message: string) => void }) {
+  const credStatus = useResource((signal) => cloudOpsApi.awsCredentialsStatus(signal), [nonce]);
+  const [accessKeyId, setAccessKeyId] = useState("");
+  const [secretAccessKey, setSecretAccessKey] = useState("");
+  const [sessionToken, setSessionToken] = useState("");
+  const [region, setRegion] = useState("eu-west-1");
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<{ valid: boolean; account: string; arn: string; error?: string } | null>(null);
+  const [buckets, setBuckets] = useState<{ items: Array<{ name: string; createdAt?: string | null; account: string; accountId: string }>; errors: Array<{ account: string; accountId: string; detail: string }> } | null>(null);
+  const [loadingBuckets, setLoadingBuckets] = useState(false);
+
+  async function handleSave() {
+    if (!accessKeyId || !secretAccessKey) return;
+    setSaving(true);
+    setResult(null);
+    try {
+      const response = await cloudOpsApi.configureAwsCredentials({
+        accessKeyId,
+        secretAccessKey,
+        sessionToken: sessionToken || undefined,
+        region,
+      });
+      setResult(response);
+      if (response.valid) {
+        onNotice(`AWS credentials configured — account ${response.account}`);
+        setAccessKeyId("");
+        setSecretAccessKey("");
+        setSessionToken("");
+      }
+    } catch (error) {
+      setResult({ valid: false, account: "", arn: "", error: String(error) });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleTestS3() {
+    setLoadingBuckets(true);
+    setBuckets(null);
+    try {
+      const data = await cloudOpsApi.storageBuckets();
+      setBuckets(data);
+    } catch (error) {
+      setBuckets({ items: [], errors: [{ account: "-", accountId: "-", detail: String(error) }] });
+    } finally {
+      setLoadingBuckets(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Current status */}
+      <CatalogPanel title="AWS Credentials Status" hint="Current state of local AWS credentials (~/.aws/credentials). Secret values are never displayed.">
+        <QueryState state={credStatus} loadingLabel="Checking credentials…">
+          {(data) => (
+            <div className="p-4">
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-2">
+                  <span className={`inline-block h-2.5 w-2.5 rounded-full ${data.valid ? "bg-emerald-500" : data.configured ? "bg-amber-500" : "bg-zinc-300"}`} />
+                  <span className="text-sm font-semibold">{data.valid ? "Valid" : data.configured ? "Invalid / Expired" : "Not Configured"}</span>
+                </div>
+                {data.account ? <span className="rounded bg-surface-low px-2 py-0.5 text-xs font-mono">Account: {data.account}</span> : null}
+                {data.principal ? <span className="rounded bg-surface-low px-2 py-0.5 text-xs font-mono">Principal: {data.principal}</span> : null}
+                {data.profiles?.length ? <span className="rounded bg-surface-low px-2 py-0.5 text-xs">Profiles: {data.profiles.join(", ")}</span> : null}
+              </div>
+              {data.error ? <p className="mt-2 text-xs text-critical">{data.error}</p> : null}
+            </div>
+          )}
+        </QueryState>
+      </CatalogPanel>
+
+      {/* Configure credentials form */}
+      <CatalogPanel title="Configure AWS Credentials" hint="Enter your AWS access keys. Values are written to ~/.aws/credentials and validated with STS.">
+        <div className="p-4 space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <AdminField label="Access Key ID" value={accessKeyId} onChange={setAccessKeyId} />
+            <AdminField label="Secret Access Key" value={secretAccessKey} onChange={setSecretAccessKey} />
+            <AdminField label="Session Token (optional)" value={sessionToken} onChange={setSessionToken} />
+            <AdminSelect label="Region" value={region} onChange={setRegion}>
+              <option value="eu-west-1">eu-west-1 (Ireland)</option>
+              <option value="eu-north-1">eu-north-1 (Stockholm)</option>
+              <option value="us-east-1">us-east-1 (N. Virginia)</option>
+              <option value="us-west-2">us-west-2 (Oregon)</option>
+              <option value="ap-southeast-1">ap-southeast-1 (Singapore)</option>
+              <option value="ap-northeast-1">ap-northeast-1 (Tokyo)</option>
+              <option value="cn-hangzhou">cn-hangzhou (China)</option>
+            </AdminSelect>
+          </div>
+          <div className="flex items-center gap-3">
+            <PrimaryButton disabled={saving || !accessKeyId || !secretAccessKey} onClick={handleSave}>{saving ? "Saving…" : "Save & Validate"}</PrimaryButton>
+            <GhostButton disabled={loadingBuckets} onClick={handleTestS3}>Test S3 Buckets</GhostButton>
+          </div>
+
+          {/* Validation result */}
+          {result ? (
+            <div className={`rounded border p-3 text-sm ${result.valid ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-red-300 bg-red-50 text-red-800"}`}>
+              {result.valid ? (
+                <p>✓ Credentials valid — AWS Account <strong>{result.account}</strong>, Identity <code className="text-xs">{result.arn}</code></p>
+              ) : (
+                <p>✗ Validation failed: {result.error}</p>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </CatalogPanel>
+
+      {/* S3 bucket listing results */}
+      {loadingBuckets ? (
+        <CatalogPanel title="S3 Buckets"><p className="p-4 text-sm text-muted">Loading buckets…</p></CatalogPanel>
+      ) : buckets ? (
+        <CatalogPanel title={`S3 Buckets (${buckets.items.length})`} hint="Bucket metadata from all enabled AWS accounts.">
+          {buckets.errors.length > 0 ? (
+            <div className="border-b border-outline bg-red-50 p-3">
+              {buckets.errors.map((err, i) => (
+                <p key={i} className="text-xs text-red-700">
+                  <strong>{err.account}</strong> ({err.accountId}): {err.detail}
+                </p>
+              ))}
+            </div>
+          ) : null}
+          {buckets.items.length > 0 ? (
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-outline text-[11px] font-bold uppercase text-muted">
+                  <th className="p-3">Bucket Name</th>
+                  <th className="p-3">Created</th>
+                  <th className="p-3">Account</th>
+                  <th className="p-3">Account ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                {buckets.items.map((b) => (
+                  <tr key={b.name} className="border-b border-outline hover:bg-surface-low/70">
+                    <td className="p-3 font-mono text-xs">{b.name}</td>
+                    <td className="p-3 text-xs text-muted">{b.createdAt ?? "—"}</td>
+                    <td className="p-3">{b.account}</td>
+                    <td className="p-3 font-mono text-xs">{b.accountId}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : buckets.errors.length === 0 ? (
+            <p className="p-4 text-sm text-muted">No buckets found.</p>
+          ) : null}
+        </CatalogPanel>
+      ) : null}
+    </div>
   );
 }

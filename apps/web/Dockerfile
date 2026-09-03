@@ -2,13 +2,12 @@ FROM node:22-alpine AS dependencies
 
 WORKDIR /app
 COPY apps/web/package.json apps/web/package-lock.json ./
-RUN npm ci
+RUN npm ci --force
 
 FROM node:22-alpine AS build
 
 WORKDIR /app
 
-# Next.js evaluates rewrite targets during its production build.
 ARG API_PROXY_TARGET=http://127.0.0.1:8000
 ENV API_PROXY_TARGET=${API_PROXY_TARGET}
 

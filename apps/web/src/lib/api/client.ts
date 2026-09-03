@@ -263,4 +263,25 @@ export const cloudOpsApi = {
     putJsonBody<{ items: import("@/lib/platform").PlatformSetting[] }>("/platform/settings", { values }, signal),
   updateClusterMonitoring: (id: string, body: Record<string, unknown>, signal?: AbortSignal) =>
     postJsonBody<{ id: string; ignored: boolean; monitoringEnabled: boolean }>(`/clusters/${id}/monitoring`, body, signal),
+  awsCredentialsStatus: (signal?: AbortSignal) =>
+    getJson<{
+      configured: boolean;
+      valid: boolean;
+      profiles: string[];
+      account: string;
+      arn: string;
+      principal: string;
+      error?: string;
+    }>("/admin/aws-credentials/status", undefined, signal),
+  configureAwsCredentials: (body: Record<string, unknown>, signal?: AbortSignal) =>
+    postJsonBody<{
+      configured: boolean;
+      valid: boolean;
+      account: string;
+      arn: string;
+      principal: string;
+      region: string;
+      profile: string;
+      error?: string;
+    }>("/admin/aws-credentials", body, signal),
 };
