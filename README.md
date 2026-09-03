@@ -2,7 +2,11 @@
 
 Enterprise multi-cloud operations portal for AWS EKS and Alibaba ACK.
 
-## Docker Compose
+## Run With Docker Or Podman
+
+Both container runtimes launch PostgreSQL, Redis, the API, web console, Celery worker, scheduler, and database migrations. The web console is available at [http://localhost:3000](http://localhost:3000) and the API health endpoint at [http://localhost:8000/health](http://localhost:8000/health).
+
+### Docker
 
 Launch the complete local stack, including PostgreSQL migrations:
 
@@ -10,9 +14,28 @@ Launch the complete local stack, including PostgreSQL migrations:
 docker compose -f infrastructure/docker-compose.yml up --build
 ```
 
-The web console is available at [http://localhost:3000](http://localhost:3000) and the API health endpoint at [http://localhost:8000/health](http://localhost:8000/health). The `migrate` service runs `alembic upgrade head` once PostgreSQL is healthy; the API, Celery worker, and scheduler start only after it succeeds.
+The `migrate` service runs `alembic upgrade head` once PostgreSQL is healthy; the API, Celery worker, and scheduler start only after it succeeds.
 
 Stop the stack with `docker compose -f infrastructure/docker-compose.yml down`. Add `-v` only when you intend to remove the local PostgreSQL and Redis data volumes.
+
+### Podman On Windows
+
+Install Podman Desktop or Podman, then initialize and start its Linux machine in PowerShell:
+
+```powershell
+podman machine init
+podman machine start
+podman compose -f infrastructure/docker-compose.yml up --build -d
+```
+
+Confirm that a Compose provider is available with `podman compose version`. Podman delegates Compose support to an installed provider. If that provider does not support the migration dependency condition, run the migration explicitly before starting the services:
+
+```powershell
+podman compose -f infrastructure/docker-compose.yml run --rm migrate
+podman compose -f infrastructure/docker-compose.yml up -d postgres redis api worker beat web
+```
+
+Stop the Podman stack with `podman compose -f infrastructure/docker-compose.yml down`. Add `-v` only when you intend to remove the local PostgreSQL and Redis data volumes.
 
 ## Manual local run
 
