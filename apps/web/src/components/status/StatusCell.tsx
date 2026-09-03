@@ -1,23 +1,27 @@
-import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
-import { cellExceptionLabel, cellSeverity } from "@/lib/dashboard";
+import { AlertTriangle, CheckCircle2, Minus, XCircle } from "lucide-react";
+import { cellExceptionLabel, cellIsUnconfigured, cellSeverity } from "@/lib/dashboard";
 import type { CellMetrics } from "@/lib/types";
 
 export function StatusCell({ cell, dimmed }: { cell: CellMetrics; dimmed?: boolean }) {
   const severity = cellSeverity(cell);
   const label = cellExceptionLabel(cell);
+  const unconfigured = cellIsUnconfigured(cell);
 
   return (
     <div
       className={`flex flex-col items-center gap-1 ${dimmed ? "opacity-30" : ""}`}
-      title={cell.lastError || undefined}
+      title={cell.lastError || (unconfigured ? "Not configured" : undefined)}
     >
-      {severity === "healthy" ? (
+      {unconfigured ? (
+        <Minus className="h-4 w-4 text-muted" aria-label="Not configured" />
+      ) : null}
+      {!unconfigured && severity === "healthy" ? (
         <CheckCircle2 className="h-4 w-4 text-healthy" aria-label="Healthy" />
       ) : null}
-      {severity === "warning" ? (
+      {!unconfigured && severity === "warning" ? (
         <AlertTriangle className="h-4 w-4 text-warning" aria-label={label ?? "Warning"} />
       ) : null}
-      {severity === "critical" ? (
+      {!unconfigured && severity === "critical" ? (
         <XCircle className="h-4 w-4 text-critical" aria-label={label ?? "Critical"} />
       ) : null}
       {label ? (

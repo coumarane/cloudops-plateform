@@ -45,6 +45,11 @@ export function regionsForProvider(provider: DashboardFilters["provider"]): Regi
   return ["AMER", "EMEA", "APAC", "China"];
 }
 
+export function cellIsUnconfigured(cell: CellMetrics): boolean {
+  const clusterCount = cell.clustersHealthy + cell.clustersDegraded + cell.clustersUnreachable;
+  return !cell.live && clusterCount === 0 && !cell.lastError;
+}
+
 export function cellSeverity(cell: CellMetrics): Severity {
   if (
     cell.clustersUnreachable > 0 ||
