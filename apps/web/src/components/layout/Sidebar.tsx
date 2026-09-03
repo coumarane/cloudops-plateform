@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { NAV_ITEMS, type NavItem } from "@/lib/navigation";
+import { cloudOpsApi } from "@/lib/api/client";
+import { useResource } from "@/lib/api/use-resource";
 
 const ICONS: Record<NavItem["icon"], LucideIcon> = {
   overview: LayoutDashboard,
@@ -50,12 +52,23 @@ function isNavActive(pathname: string, href: string): boolean {
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+  const status = useResource((signal) => cloudOpsApi.platformStatus(signal), []);
 
   return (
     <aside className="fixed inset-y-0 left-0 z-50 flex w-60 flex-col bg-sidebar py-6 text-sm">
       <div className="mb-8 px-6">
         <p className="text-xl font-semibold tracking-tight text-white">CloudOps Platform</p>
         <p className="mt-1 text-xs text-slate-400">Enterprise Ops</p>
+        {status.status === "success" && status.data.demoMode ? (
+          <p className="mt-2 inline-flex rounded bg-warning px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ink">
+            DEMO DATA
+          </p>
+        ) : null}
+        {status.status === "success" && !status.data.demoMode ? (
+          <p className="sr-only" data-source={status.data.dataSource}>
+            Data source {status.data.dataSource}
+          </p>
+        ) : null}
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-4" aria-label="Primary">
         {NAV_ITEMS.map((item) => {

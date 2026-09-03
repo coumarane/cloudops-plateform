@@ -71,6 +71,9 @@ def to_cluster_record(cluster: EksClusterRow, health: EksClusterHealthRow | None
         platformVersion=cluster.platform_version,
         createdAt=cluster.created_at.isoformat() if cluster.created_at else None,
         lastChecked=health.last_checked.isoformat() if health else cluster.last_seen_at.isoformat(),
+        ignored=bool(getattr(cluster, "ignored", False)),
+        monitoringEnabled=bool(getattr(cluster, "monitoring_enabled", True)),
+        externalClusterId=cluster.arn,
     )
 
 
@@ -165,7 +168,13 @@ def annotate_certificate(record: CertificateRecord) -> CertificateRecord:
 
 
 def to_job_record(row: PlatformJobRow) -> RunRecord:
-    status_map = {"queued": "Running", "running": "Running", "succeeded": "Succeeded", "failed": "Failed"}
+    status_map = {
+        "queued": "Running",
+        "running": "Running",
+        "succeeded": "Succeeded",
+        "partial": "Succeeded",
+        "failed": "Failed",
+    }
     alibaba = row.provider == "Alibaba"
     return RunRecord(
         id=row.id,

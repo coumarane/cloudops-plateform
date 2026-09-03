@@ -8,12 +8,14 @@ export function QueryState<T>({
   loadingLabel,
   emptyLabel,
   isEmpty,
+  emptyAction,
   children,
 }: {
   state: ResourceState<T>;
   loadingLabel: string;
   emptyLabel?: string;
   isEmpty?: (data: T) => boolean;
+  emptyAction?: ReactNode;
   children: (data: T) => ReactNode;
 }) {
   if (state.status === "loading") {
@@ -42,6 +44,7 @@ export function QueryState<T>({
     return (
       <div className="rounded border border-outline bg-white p-6">
         <p className="text-sm text-muted">{emptyLabel ?? "No records in the current filter."}</p>
+        {emptyAction ? <div className="mt-3">{emptyAction}</div> : null}
       </div>
     );
   }

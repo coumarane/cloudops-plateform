@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { EnvironmentActions } from "@/components/environment/EnvironmentActions";
 import { EnvironmentIdentityHeader } from "@/components/environment/EnvironmentIdentityHeader";
 import { EnvironmentTabContent } from "@/components/environment/EnvironmentTabContent";
 import { EnvironmentTabs } from "@/components/environment/EnvironmentTabs";
@@ -41,6 +42,9 @@ export function EnvironmentDetails({
               meta={`Last synced: ${record.lastSynced ?? "—"}`}
             />
             <EnvironmentIdentityHeader identity={record.identity} />
+            <div className="border-b border-outline bg-white px-6 py-4">
+              <EnvironmentActions identity={record.identity} />
+            </div>
             <EnvironmentTabs identity={record.identity} current={tab} />
             <main className="flex-1 overflow-y-auto p-6 pb-16">
               <div className="mx-auto max-w-[1600px] space-y-6">

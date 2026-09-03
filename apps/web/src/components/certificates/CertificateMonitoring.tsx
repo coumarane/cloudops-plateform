@@ -202,8 +202,13 @@ export function CertificateMonitoring({
           <QueryState
             state={state}
             loadingLabel="Loading certificates…"
-            emptyLabel="No certificates in the current hierarchy filter."
+            emptyLabel="No certificates discovered."
             isEmpty={(data) => data.items.length === 0}
+            emptyAction={
+              <Link href="/administration?section=environments" className="rounded bg-action px-3 py-1.5 text-xs font-semibold text-white">
+                Scan Certificates
+              </Link>
+            }
           >
             {() => (
               <>

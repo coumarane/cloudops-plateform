@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from app.core.config import settings
 from app.core.logging import get_logger, sanitize_text
+from app.db.models import PlatformJobRow
 from app.db.repository import InventoryRepository
 from app.db.session import SessionLocal
 from app.providers.aws.acm import AcmScanner
@@ -14,7 +16,8 @@ from app.providers.aws.k8s import ClusterHealthCollector
 from app.providers.aws.models import DiscoveredCertificate, DiscoveredCluster
 from app.providers.kubernetes.collector import inventory_payload
 from app.services.mappers import discovered_from_row
-from app.topology.loader import load_topology
+from app.platform.fleet import accounts_for_job
+from app.providers.factory import provider_adapter
 from app.topology.models import AccountBinding, environment_scope_id
 
 logger = get_logger(__name__)
@@ -43,36 +46,19 @@ def _run_bounded(items: list, fn, max_workers: int) -> list[tuple[object, object
 
 
 def discover_account(account: AccountBinding) -> list[DiscoveredCluster]:
-    factory = AwsClientFactory(config=account.connection_config())
-    return EksDiscovery(factory, account.connection_config()).list_clusters(account.environments)
+    return provider_adapter("AWS").discover_clusters(account)
 
 
 def health_account(account: AccountBinding, clusters: list[tuple[str, DiscoveredCluster]]) -> list[tuple]:
-    if not clusters:
-        return []
-    factory = AwsClientFactory(config=account.connection_config())
-    discovery = EksDiscovery(factory, account.connection_config())
-    collector = ClusterHealthCollector(factory)
-    snapshots: list[tuple] = []
-    for cluster_id, cluster in clusters:
-        try:
-            raw = discovery.describe_raw(cluster.name)
-            cluster.endpoint = raw.get("endpoint")
-            ca_data = (raw.get("certificateAuthority") or {}).get("data")
-            snapshot, resources = inventory_payload(collector, cluster, ca_data)
-            snapshots.append((cluster_id, snapshot, resources))
-        except Exception as error:
-            mapped = classify_aws_error(error)
-            if isinstance(mapped, AwsTransientError):
-                raise
-            logger.warning("Health scan skipped cluster=%s error=%s", cluster.name, mapped)
-    return snapshots
+    return provider_adapter("AWS").collect_health(account, clusters)
 
 
 def certificates_account(account: AccountBinding) -> list[DiscoveredCertificate]:
-    factory = AwsClientFactory(config=account.connection_config())
-    discovered = AcmScanner(factory, account.connection_config()).list_certificates()
+    discovered = list(provider_adapter("AWS").discover_certificates(account))
+    if settings.provider_stub:
+        return discovered
     try:
+        factory = AwsClientFactory(config=account.connection_config())
         discovered.extend(_eks_tls_certificates(account, factory))
     except Exception as error:
         logger.warning("EKS TLS certificate scan skipped account=%s error=%s", account.alias, classify_aws_error(error))
@@ -167,6 +153,7 @@ def _store_discovery(account: AccountBinding, clusters: list[DiscoveredCluster],
             platform_region=account.logical_region,
             environment=environment,
             provider=account.provider,
+            account_alias=account.alias,
         )
         repo.mark_scope_success(environment_scope_id(account.alias, environment), "discovery")
     logger.info("Account discovery stored alias=%s count=%s", account.alias, len(clusters))
@@ -262,7 +249,15 @@ def _finish_fleet_job(
                 f"{kind}: {len(succeeded)}/{len(results)} accounts succeeded "
                 f"({total} records). Failed: {failed_aliases}"
             )
-            repo.mark_job_finished(job_id, status="succeeded", detail=detail)
+            status = "partial" if failed and succeeded else "succeeded"
+            if not results:
+                status = "succeeded"
+                detail = f"{kind}: no accounts in scope"
+            job = session.get(PlatformJobRow, job_id)
+            if job is not None:
+                job.resources_found = total
+                job.error_count = len(failed)
+            repo.mark_job_finished(job_id, status=status, detail=detail)
             session.commit()
             return total
     except Exception:
@@ -273,22 +268,26 @@ def _finish_fleet_job(
     raise first
 
 
+def _aws_workers(accounts: list) -> int:
+    return max(1, min(settings.aws_scan_concurrency, len(accounts) or 1))
+
+
 def run_cluster_discovery(job_id: str) -> int:
-    topology = load_topology()
+    accounts = accounts_for_job(job_id, "AWS")
     _mark_job_running(job_id)
-    results = _run_bounded(list(topology.accounts), discover_account, topology.scan_concurrency)
+    results = _run_bounded(accounts, discover_account, _aws_workers(accounts))
     return _finish_fleet_job(job_id, kind="discovery", results=results, persist=_store_discovery)
 
 
 def run_health_scan(job_id: str) -> int:
-    topology = load_topology()
+    accounts = accounts_for_job(job_id, "AWS")
     _mark_job_running(job_id)
-    clusters = _clusters_by_account(list(topology.accounts))
+    clusters = _clusters_by_account(accounts)
 
     def collect(account: AccountBinding):
         return health_account(account, clusters.get(account.alias, []))
 
-    results = _run_bounded(list(topology.accounts), collect, topology.scan_concurrency)
+    results = _run_bounded(accounts, collect, _aws_workers(accounts))
     return _finish_fleet_job(job_id, kind="health", results=results, persist=_store_health)
 
 
@@ -326,13 +325,13 @@ def persist_certificate_results(results: list[tuple[AccountBinding, object, Exce
 
 
 def scan_aws_certificates() -> int:
-    topology = load_topology()
-    results = _run_bounded(list(topology.accounts), certificates_account, topology.scan_concurrency)
+    accounts = accounts_for_job("", "AWS")
+    results = _run_bounded(accounts, certificates_account, _aws_workers(accounts))
     return persist_certificate_results(results)
 
 
 def run_certificate_scan(job_id: str) -> int:
-    topology = load_topology()
+    accounts = accounts_for_job(job_id, "AWS")
     _mark_job_running(job_id)
-    results = _run_bounded(list(topology.accounts), certificates_account, topology.scan_concurrency)
+    results = _run_bounded(accounts, certificates_account, _aws_workers(accounts))
     return _finish_fleet_job(job_id, kind="certificates", results=results, persist=_store_certificates)

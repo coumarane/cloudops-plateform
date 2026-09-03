@@ -62,6 +62,8 @@ class AccountRecord(StrictModel):
 
 
 class EnvironmentIdentity(StrictModel):
+    id: str | None = None
+    readiness: str | None = None
     provider: Provider
     region: Region
     environment: Environment
@@ -201,6 +203,9 @@ class ClusterRecord(StrictModel):
     platformVersion: str | None = None
     createdAt: str | None = None
     lastChecked: str | None = None
+    ignored: bool = False
+    monitoringEnabled: bool = True
+    externalClusterId: str | None = None
 
 
 class ClusterHealthRecord(StrictModel):
@@ -537,3 +542,7 @@ class DashboardResponse(StrictModel):
     matrix: list[MatrixRow]
     alerts: list[OperationalAlert]
     failures: list[RecentFailure]
+    demoMode: bool = False
+    dataSource: str = "REAL"
+    onboarding: bool = False
+    configuredProviders: int = 0

@@ -37,6 +37,7 @@ def connection_config(cfg: Settings | None = None, override: AwsConnectionConfig
         environment=active.aws_environment,
         account_alias=active.aws_account_alias,
         cluster_environment_tag=active.aws_cluster_environment_tag,
+        credential_ref=None,
     )
 
 
@@ -79,6 +80,7 @@ def _merge_secret_config(config: AwsConnectionConfig, secret: dict[str, Any]) ->
         account_alias=secret.get("accountAlias") or config.account_alias,
         cluster_environment_tag=secret.get("clusterEnvironmentTag") or config.cluster_environment_tag,
         environment_id=config.environment_id,
+        credential_ref=config.credential_ref,
     )
 
 
@@ -136,6 +138,13 @@ def build_session(cfg: Settings | None = None, config: AwsConnectionConfig | Non
             ephemeral = _ephemeral_key_session(session, secret, resolved.cloud_region)
             if ephemeral is not None:
                 session = ephemeral
+        elif resolved.credential_ref:
+            secret = _load_backend_secret(resolved.credential_ref)
+            if secret:
+                resolved = _merge_secret_config(resolved, secret)
+                ephemeral = _ephemeral_key_session(session, secret, resolved.cloud_region)
+                if ephemeral is not None:
+                    session = ephemeral
         session = assume_role_session(session, resolved)
         sts = session.client("sts", config=_RETRY_CONFIG)
         identity = sts.get_caller_identity()
@@ -153,6 +162,32 @@ def build_session(cfg: Settings | None = None, config: AwsConnectionConfig | Non
         raise
     except Exception as error:
         raise classify_aws_error(error) from error
+
+
+def caller_identity(config: AwsConnectionConfig) -> dict[str, str]:
+    session = build_session(config=config)
+    identity = session.client("sts", config=_RETRY_CONFIG).get_caller_identity()
+    arn = str(identity.get("Arn") or "")
+    principal = arn.rsplit("/", 1)[-1] if arn else "CloudOpsRole"
+    return {
+        "account_id": str(identity.get("Account") or ""),
+        "principal": principal,
+        "arn": arn,
+        "region": config.cloud_region,
+    }
+
+
+def _load_backend_secret(reference: str) -> dict[str, Any]:
+    from app.secrets.factory import secret_backend
+
+    raw = secret_backend().get_secret(reference) or ""
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
 
 
 def client_config() -> Config:

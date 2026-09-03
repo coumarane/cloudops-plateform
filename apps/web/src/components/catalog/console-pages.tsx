@@ -47,6 +47,7 @@ function Shell<T>({
   initial,
   loadingLabel,
   emptyLabel,
+  emptyAction,
   loader,
   kpis,
   children,
@@ -57,6 +58,7 @@ function Shell<T>({
   initial: CatalogFilters;
   loadingLabel: string;
   emptyLabel: string;
+  emptyAction?: ReactNode;
   loader: (scope: ScopeFilters, signal: AbortSignal) => Promise<ListResponse<T>>;
   kpis: (rows: T[]) => ReactNode;
   children: (rows: T[], selected: string | null) => ReactNode;
@@ -95,7 +97,13 @@ function Shell<T>({
         )
       }
     >
-      <QueryState state={state} loadingLabel={loadingLabel} emptyLabel={emptyLabel} isEmpty={(data) => data.items.length === 0}>
+      <QueryState
+        state={state}
+        loadingLabel={loadingLabel}
+        emptyLabel={emptyLabel}
+        emptyAction={emptyAction}
+        isEmpty={(data) => data.items.length === 0}
+      >
         {(data) => children(data.items, filters.selected)}
       </QueryState>
     </CatalogBody>
@@ -134,7 +142,12 @@ export function InfrastructureCatalog({ initial }: { initial: CatalogFilters }) 
       subtitle="Provider → Region → Account across AWS EKS and Alibaba ACK."
       initial={initial}
       loadingLabel="Loading accounts…"
-      emptyLabel="No accounts in the current hierarchy filter."
+      emptyLabel="No cloud accounts configured."
+      emptyAction={
+        <Link href="/administration?section=accounts" className="rounded bg-action px-3 py-1.5 text-xs font-semibold text-white">
+          Add Account
+        </Link>
+      }
       loader={(scope, signal) => cloudOpsApi.accounts(scope, signal)}
       kpis={(rows: AccountRecord[]) => {
         const summary = summarizeStatus(rows, "accounts");
@@ -174,13 +187,20 @@ export function InfrastructureCatalog({ initial }: { initial: CatalogFilters }) 
 }
 
 export function ClustersCatalog({ initial }: { initial: CatalogFilters }) {
+  const [nonce, setNonce] = useState(0);
   return (
     <Shell
       title="Clusters"
       subtitle="EKS and ACK clusters across AWS AMER, EMEA, APAC, and Alibaba China."
       initial={initial}
       loadingLabel="Loading clusters…"
-      emptyLabel="No clusters in the current hierarchy filter."
+      emptyLabel="No clusters discovered."
+      emptyAction={
+        <Link href="/administration?section=environments" className="rounded bg-action px-3 py-1.5 text-xs font-semibold text-white">
+          Discover Clusters
+        </Link>
+      }
+      refreshKey={nonce}
       loader={(scope, signal) => cloudOpsApi.clusters(scope, signal)}
       kpis={(rows: ClusterRecord[]) => {
         const summary = summarizeStatus(rows, "clusters");
@@ -198,7 +218,7 @@ export function ClustersCatalog({ initial }: { initial: CatalogFilters }) {
       {(rows: ClusterRecord[], selected) => (
         <div className="space-y-4">
           <CatalogPanel title="Cluster fleet" hint="Cluster health and identity only. Kubeconfig material is never displayed.">
-            <Table headers={["Cluster", "Platform", "Version", "Nodes", "Provider", "Region", "Environment", "Account", "Source", "Status", "Apps"]}>
+            <Table headers={["Cluster", "Platform", "Version", "Nodes", "Provider", "Region", "Environment", "Account", "Source", "Status", "Apps", "Monitoring"]}>
               {rows.map((row) => (
                 <tr key={row.id} className={rowClass(row.id === selected, row.status !== "Healthy")}>
                   <td className="p-3 font-mono text-xs font-semibold text-ink">
@@ -223,11 +243,35 @@ export function ClustersCatalog({ initial }: { initial: CatalogFilters }) {
                     <EnvBadge environment={row.environment} />
                   </td>
                   <td className="p-3 font-mono text-xs text-muted">{row.account}</td>
-                  <td className="p-3 text-xs text-muted">{row.source === "aws" ? "AWS live" : "Mock"}</td>
+                  <td className="p-3 text-xs text-muted">{row.source === "mock" ? "Catalog" : `${row.source === "alibaba" ? "Alibaba" : "AWS"} live`}</td>
                   <td className="p-3">
                     <StatusChip value={row.status} />
                   </td>
                   <td className="p-3 text-xs text-muted">{row.appsLabel}</td>
+                  <td className="p-3">
+                    <div className="flex flex-col gap-1">
+                      <button
+                        type="button"
+                        className="text-left text-xs font-semibold text-action"
+                        onClick={() =>
+                          void cloudOpsApi
+                            .updateClusterMonitoring(row.id, { monitoringEnabled: !(row.monitoringEnabled ?? true) })
+                            .then(() => setNonce((value) => value + 1))
+                        }
+                      >
+                        {(row.monitoringEnabled ?? true) ? "Disable monitoring" : "Enable monitoring"}
+                      </button>
+                      <button
+                        type="button"
+                        className="text-left text-xs font-semibold text-muted"
+                        onClick={() =>
+                          void cloudOpsApi.updateClusterMonitoring(row.id, { ignored: true }).then(() => setNonce((value) => value + 1))
+                        }
+                      >
+                        Ignore
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </Table>
@@ -246,7 +290,12 @@ export function ApplicationsCatalog({ initial }: { initial: CatalogFilters }) {
       subtitle="Workloads across AWS EKS and Alibaba ACK."
       initial={initial}
       loadingLabel="Loading applications…"
-      emptyLabel="No applications in the current hierarchy filter."
+      emptyLabel="No applications configured."
+      emptyAction={
+        <Link href="/administration?section=applications" className="rounded bg-action px-3 py-1.5 text-xs font-semibold text-white">
+          Add Application
+        </Link>
+      }
       loader={(scope, signal) => cloudOpsApi.applications(scope, signal)}
       kpis={(rows: ApplicationRecord[]) => {
         const summary = summarizeStatus(rows, "apps");

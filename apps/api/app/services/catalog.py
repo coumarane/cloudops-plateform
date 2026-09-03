@@ -1,7 +1,18 @@
 from collections.abc import Sequence
 
+from app.core.config import settings
 from app.domain.enums import ENVIRONMENTS, Environment
-from app.domain.models import CellMetrics, DashboardResponse, KpiSummary, MatrixRow, OperationalAlert, RecentFailure, Scope
+from app.domain.models import (
+    CellMetrics,
+    DashboardResponse,
+    EnvironmentRecord,
+    KpiSummary,
+    MatrixRow,
+    OperationalAlert,
+    ProviderRecord,
+    RecentFailure,
+    Scope,
+)
 from app.providers.registry import registry
 from app.services.overlay import (
     apply_environment_certificates,
@@ -57,78 +68,223 @@ class CatalogService:
             rows.extend(getattr(adapter, method)())
         return rows
 
-    def providers(self):
-        from app.data.inventory import MOCK_INVENTORY
+    def _use_demo(self) -> bool:
+        return bool(settings.demo_mode)
 
-        return MOCK_INVENTORY.providers
+    def providers(self):
+        if self._use_demo():
+            from app.data.inventory import MOCK_INVENTORY
+
+            return MOCK_INVENTORY.providers
+        from app.db.session import SessionLocal
+        from app.platform.presenters import configured_provider_count
+        from app.domain.enums import platform_for, regions_for
+
+        session = SessionLocal()
+        try:
+            from sqlalchemy import select
+            from app.db.models import ManagedProviderRow
+
+            types = {
+                row.provider_type
+                for row in session.scalars(select(ManagedProviderRow).where(ManagedProviderRow.enabled.is_(True)))
+            }
+            return [
+                ProviderRecord(id=item, name=item, platform=platform_for(item), regions=list(regions_for(item)))  # type: ignore[arg-type]
+                for item in ("AWS", "Alibaba")
+                if item in types
+            ]
+        finally:
+            session.close()
 
     def regions(self, scope: Scope):
-        return filter_items(self._collect("list_regions"), scope)
+        if self._use_demo():
+            return filter_items(self._collect("list_regions"), scope)
+        from app.db.session import SessionLocal
+        from app.platform.presenters import live_regions
+
+        session = SessionLocal()
+        try:
+            return live_regions(session, scope)
+        finally:
+            session.close()
 
     def accounts(self, scope: Scope):
-        return filter_items(self._collect("list_accounts"), scope)
+        if self._use_demo():
+            return filter_items(self._collect("list_accounts"), scope)
+        from app.db.session import SessionLocal
+        from app.platform.presenters import live_accounts
+
+        session = SessionLocal()
+        try:
+            return live_accounts(session, scope)
+        finally:
+            session.close()
 
     def environments(self, scope: Scope):
-        return filter_items(overlay_environment_identities(self._collect("list_environments")), scope)
+        if self._use_demo():
+            return filter_items(overlay_environment_identities(self._collect("list_environments")), scope)
+        from app.db.session import SessionLocal
+        from app.platform.presenters import live_environments
+
+        session = SessionLocal()
+        try:
+            return live_environments(session, scope)
+        finally:
+            session.close()
 
     def environment_detail(self, provider, region, environment):
-        record = overlay_environment(registry.get(provider).get_environment(region, environment))
-        if record is None:
-            return None
-        certs = self.certificates(Scope(provider=provider, region=region, environment=environment))
-        return apply_environment_certificates(record, certs)
+        if self._use_demo():
+            record = overlay_environment(registry.get(provider).get_environment(region, environment))
+            if record is None:
+                return None
+            certs = self.certificates(Scope(provider=provider, region=region, environment=environment))
+            return apply_environment_certificates(record, certs)
+        return _live_environment_detail(provider, region, environment)
 
     def clusters(self, scope: Scope):
-        return filter_items(overlay_clusters(self._collect("list_clusters")), scope)
+        if self._use_demo():
+            return filter_items(overlay_clusters(self._collect("list_clusters")), scope)
+        from app.db.session import SessionLocal
+        from app.platform.presenters import live_clusters
+
+        session = SessionLocal()
+        try:
+            return live_clusters(session, scope)
+        finally:
+            session.close()
 
     def applications(self, scope: Scope):
-        return filter_items(overlay_applications(self._collect("list_applications")), scope)
+        if self._use_demo():
+            return filter_items(overlay_applications(self._collect("list_applications")), scope)
+        from app.db.session import SessionLocal
+        from app.platform.presenters import live_applications
+
+        session = SessionLocal()
+        try:
+            return live_applications(session, scope)
+        finally:
+            session.close()
 
     def certificates(self, scope: Scope):
         from app.services.mappers import annotate_certificate
 
-        return [annotate_certificate(item) for item in filter_items(overlay_certificates(self._collect("list_certificates")), scope)]
+        if self._use_demo():
+            return [annotate_certificate(item) for item in filter_items(overlay_certificates(self._collect("list_certificates")), scope)]
+        from app.db.session import SessionLocal
+        from app.platform.presenters import live_certificates
+
+        session = SessionLocal()
+        try:
+            return [annotate_certificate(item) for item in live_certificates(session, scope)]
+        finally:
+            session.close()
 
     def secrets(self, scope: Scope):
         from app.services.credentials import overlay_secret_records
 
-        return filter_items(overlay_secret_records(self._collect("list_secrets")), scope)
+        if self._use_demo():
+            return filter_items(overlay_secret_records(self._collect("list_secrets")), scope)
+        return filter_items(overlay_secret_records([]), scope)
 
     def health_checks(self, scope: Scope):
-        return filter_items(overlay_health_checks(self._collect("list_health_checks")), scope)
+        if self._use_demo():
+            return filter_items(overlay_health_checks(self._collect("list_health_checks")), scope)
+        return filter_items(overlay_health_checks([]), scope)
 
     def deployments(self, scope: Scope):
-        return filter_items(self._collect("list_deployments"), scope)
+        if self._use_demo():
+            return filter_items(self._collect("list_deployments"), scope)
+        return []
 
     def pipelines(self, scope: Scope):
-        return filter_items(overlay_pipelines(self._collect("list_pipelines")), scope)
+        if self._use_demo():
+            return filter_items(overlay_pipelines(self._collect("list_pipelines")), scope)
+        return filter_items(overlay_pipelines([]), scope)
 
     def jobs(self, scope: Scope):
-        return filter_items(overlay_jobs(self._collect("list_jobs")), scope)
+        if self._use_demo():
+            return filter_items(overlay_jobs(self._collect("list_jobs")), scope)
+        from app.db.session import SessionLocal
+        from app.platform.presenters import live_jobs
+
+        session = SessionLocal()
+        try:
+            return live_jobs(session, scope)
+        finally:
+            session.close()
 
     def github_runs(self, scope: Scope):
-        return filter_items(overlay_github_runs(self._collect("list_github_runs")), scope)
+        if self._use_demo():
+            return filter_items(overlay_github_runs(self._collect("list_github_runs")), scope)
+        return filter_items(overlay_github_runs([]), scope)
 
     def alerts(self, scope: Scope):
-        return filter_items(overlay_alerts(self._collect("list_alerts")), scope)
+        if self._use_demo():
+            return filter_items(overlay_alerts(self._collect("list_alerts")), scope)
+        return filter_items(overlay_alerts([]), scope)
 
     def audit_events(self, scope: Scope):
         from app.services.credentials import overlay_audit_events
 
-        return filter_items(overlay_pipeline_audit(overlay_github_audit(overlay_certificate_audit(overlay_audit_events(self._collect("list_audit_events"))))), scope)
+        if self._use_demo():
+            return filter_items(overlay_pipeline_audit(overlay_github_audit(overlay_certificate_audit(overlay_audit_events(self._collect("list_audit_events"))))), scope)
+        return filter_items(overlay_pipeline_audit(overlay_github_audit(overlay_certificate_audit(overlay_audit_events([])))), scope)
 
     def admin_users(self):
-        from app.data.inventory import MOCK_INVENTORY
+        if self._use_demo():
+            from app.data.inventory import MOCK_INVENTORY
 
-        return MOCK_INVENTORY.admin_users
+            return MOCK_INVENTORY.admin_users
+        return []
 
     def admin_integrations(self):
-        from app.data.inventory import MOCK_INVENTORY
+        if self._use_demo():
+            from app.data.inventory import MOCK_INVENTORY
 
-        return MOCK_INVENTORY.admin_integrations
+            return MOCK_INVENTORY.admin_integrations
+        return []
 
 
 catalog_service = CatalogService()
+
+
+def _live_environment_detail(provider, region, environment) -> EnvironmentRecord | None:
+    from app.db.repository import InventoryRepository
+    from app.db.session import SessionLocal
+    from app.domain.models import ActivityItem, EnvironmentAlert, EnvironmentSecret
+    from app.platform.presenters import identity_from_row, live_applications, live_clusters
+    from app.services.overlay import overlay_environment as overlay_env_unused  # noqa: F401
+
+    session = SessionLocal()
+    try:
+        repo = InventoryRepository(session)
+        row = repo.environment_row(provider, region, environment)
+        if row is None:
+            return None
+        identity = identity_from_row(row)
+        scope = Scope(provider=provider, region=region, environment=environment)
+        record = EnvironmentRecord(
+            identity=identity,
+            clusters=live_clusters(session, scope),
+            applications=live_applications(session, scope),
+            secrets=[],
+            certificates=[],
+            deployments=[],
+            pipelines=[],
+            github=[],
+            health=[],
+            audit=[],
+            alerts=[],
+            recentActivity=[],
+        )
+        from app.services.overlay import overlay_environment
+
+        record = overlay_environment(record) or record
+        certs = catalog_service.certificates(scope)
+        return apply_environment_certificates(record, certs)
+    finally:
+        session.close()
 
 
 def _empty_kpis() -> KpiSummary:
@@ -194,20 +350,34 @@ def summarize_kpis(rows: list[MatrixRow], scope: Scope) -> KpiSummary:
 
 def dashboard_snapshot(scope: Scope, last_synced: str) -> DashboardResponse:
     from app.data.inventory import MOCK_INVENTORY
+    from app.db.session import SessionLocal
+    from app.platform.presenters import configured_provider_count, data_source, live_matrix
     from app.services.overlay import overlay_matrix
 
-    live_matrix = overlay_matrix(MOCK_INVENTORY.matrix)
+    session = SessionLocal()
+    try:
+        demo = bool(settings.demo_mode)
+        configured = configured_provider_count(session)
+        source = data_source(session)
+        if demo:
+            live_matrix_rows = overlay_matrix(MOCK_INVENTORY.matrix)
+            alerts = filter_items(overlay_alerts(MOCK_INVENTORY.alerts), scope)
+            dashboard_alerts = [item for item in alerts if item.id != "alert-apac-prd-deploy"]
+            failures = filter_items(overlay_pipeline_failures(overlay_github_failures(MOCK_INVENTORY.failures)), scope)
+        else:
+            live_matrix_rows = live_matrix(session, scope)
+            alerts = filter_items(overlay_alerts([]), scope)
+            dashboard_alerts = alerts
+            failures = filter_items(overlay_pipeline_failures(overlay_github_failures([])), scope)
+    finally:
+        session.close()
     matrix = [
         row
-        for row in live_matrix
+        for row in live_matrix_rows
         if (not scope.provider or row.provider == scope.provider)
         and (not scope.region or row.region == scope.region)
     ]
-    alerts = filter_items(overlay_alerts(MOCK_INVENTORY.alerts), scope)
-    # Dashboard feed uses the four primary operational alerts, not the extra APAC deploy card.
-    dashboard_alerts = [item for item in alerts if item.id != "alert-apac-prd-deploy"]
-    failures = filter_items(overlay_pipeline_failures(overlay_github_failures(MOCK_INVENTORY.failures)), scope)
-    kpis = summarize_kpis(live_matrix, scope)
+    kpis = summarize_kpis(live_matrix_rows, scope)
     certs = catalog_service.certificates(scope)
     kpis = kpis.model_copy(
         update={
@@ -328,4 +498,8 @@ def dashboard_snapshot(scope: Scope, last_synced: str) -> DashboardResponse:
         matrix=matrix,
         alerts=dashboard_alerts,
         failures=failures,
+        demoMode=demo,
+        dataSource=source,
+        onboarding=not demo and configured == 0,
+        configuredProviders=configured,
     )

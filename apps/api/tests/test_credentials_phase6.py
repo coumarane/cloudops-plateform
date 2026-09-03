@@ -348,6 +348,10 @@ def test_rbac_read_only_cannot_create() -> None:
             "health:read",
             "incident:read",
             "alert:read",
+            "provider:read",
+            "account:read",
+            "environment:read",
+            "application:read",
         }
     )
 

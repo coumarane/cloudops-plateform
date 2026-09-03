@@ -51,3 +51,34 @@ class AWSProviderAdapter:
     def discover_certificates(self, account: AccountBinding) -> list[DiscoveredCertificate]:
         config = account.connection_config()
         return AcmScanner(AwsClientFactory(config=config), config).list_certificates()
+
+    def collect_health(self, account: AccountBinding, clusters: list[tuple[str, DiscoveredCluster]]) -> list[tuple]:
+        return self.scan_health(account, clusters)
+
+    def validate_connection(self, account: AccountBinding):
+        from app.core.config import settings
+        from app.providers.contract import ConnectionValidation
+
+        if settings.provider_stub:
+            from app.providers.stub import StubCloudProviderAdapter
+
+            return StubCloudProviderAdapter("AWS").validate_connection(account)
+        from app.providers.aws.auth import caller_identity
+        from app.providers.aws.errors import classify_aws_error
+
+        try:
+            identity = caller_identity(account.connection_config())
+        except Exception as error:
+            mapped = classify_aws_error(error)
+            return ConnectionValidation(
+                connected=False,
+                region=account.cloud_region,
+                error_category=mapped.__class__.__name__,
+                detail=str(mapped),
+            )
+        return ConnectionValidation(
+            connected=True,
+            account_id=identity["account_id"],
+            principal=identity["principal"],
+            region=identity["region"],
+        )

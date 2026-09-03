@@ -33,7 +33,17 @@ export function EnvironmentsIndex() {
       />
       <main className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-[1600px] space-y-6">
-          <QueryState state={state} loadingLabel="Loading environment catalog…">
+          <QueryState
+            state={state}
+            loadingLabel="Loading environment catalog…"
+            emptyLabel="No environments configured."
+            isEmpty={(data) => data.matrix.length === 0}
+            emptyAction={
+              <Link href="/administration?section=environments" className="rounded bg-action px-3 py-1.5 text-xs font-semibold text-white">
+                Add Environment
+              </Link>
+            }
+          >
             {(data) => (
               <section className="rounded border border-outline bg-white">
                 <div className="border-b border-outline p-4">

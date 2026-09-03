@@ -72,6 +72,9 @@ export type ClusterRecord = {
   platformVersion?: string | null;
   createdAt?: string | null;
   lastChecked?: string | null;
+  ignored?: boolean;
+  monitoringEnabled?: boolean;
+  externalClusterId?: string | null;
 };
 
 export type ClusterHealthRecord = {
@@ -177,9 +180,11 @@ export type AdminUser = {
 export type AdminIntegration = {
   id: string;
   name: string;
-  status: "Connected" | "Degraded";
+  status: string;
   scope: string;
   note: string;
+  type?: string;
+  enabled?: boolean;
 };
 
 export type SecretHistoryEvent = {
@@ -288,6 +293,8 @@ export type CertificateRecord = {
 };
 
 export type EnvironmentIdentity = {
+  id?: string | null;
+  readiness?: string | null;
   provider: Provider;
   region: Region;
   environment: Environment;
@@ -358,4 +365,8 @@ export type DashboardSnapshot = {
   matrix: MatrixRow[];
   alerts: OperationalAlert[];
   failures: RecentFailure[];
+  demoMode?: boolean;
+  dataSource?: string;
+  onboarding?: boolean;
+  configuredProviders?: number;
 };

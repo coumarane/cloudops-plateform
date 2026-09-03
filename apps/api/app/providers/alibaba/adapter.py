@@ -51,3 +51,33 @@ class AlibabaProviderAdapter:
     def discover_certificates(self, account: AccountBinding) -> list[DiscoveredCertificate]:
         config = account.connection_config()
         return AlibabaCertificateScanner(AlibabaClientFactory(config), config).list_certificates()
+
+    def collect_health(self, account: AccountBinding, clusters: list[tuple[str, DiscoveredCluster]]) -> list[tuple]:
+        return self.scan_health(account, clusters)
+
+    def validate_connection(self, account: AccountBinding):
+        from app.core.config import settings
+        from app.providers.contract import ConnectionValidation
+
+        if settings.provider_stub:
+            from app.providers.stub import StubCloudProviderAdapter
+
+            return StubCloudProviderAdapter("Alibaba").validate_connection(account)
+        from app.providers.alibaba.exceptions import classify_alibaba_error
+
+        try:
+            identity = self.validate_account(account)
+        except Exception as error:
+            mapped = classify_alibaba_error(error)
+            return ConnectionValidation(
+                connected=False,
+                region=account.cloud_region,
+                error_category=mapped.__class__.__name__,
+                detail=str(mapped),
+            )
+        return ConnectionValidation(
+            connected=True,
+            account_id=identity.get("account_id") or "",
+            principal="CloudOpsRole",
+            region=account.cloud_region,
+        )

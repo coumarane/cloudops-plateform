@@ -42,6 +42,7 @@ def identity_of(provider, region, environment) -> EnvironmentIdentity:
         cloudRegion=cloud_region(provider, region),
         account=account_name(provider, region, environment),
         clusterName=cluster_name(provider, region, environment),
+        readonly=is_production(environment),
     )
 
 

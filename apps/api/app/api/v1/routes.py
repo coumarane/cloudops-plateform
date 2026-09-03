@@ -7,6 +7,7 @@ from app.api.v1.certificates import router as certificates_router
 from app.api.v1.health import router as health_router
 from app.api.v1.jobs import router as jobs_router
 from app.api.v1.pipelines import router as pipelines_router
+from app.api.v1.platform import router as platform_router
 from app.api.v1.scm import router as scm_router
 from app.api.v1.listing import add_list_route, listed
 from app.api.v1.params import parse_environment, parse_provider, parse_region, parse_scope
@@ -16,18 +17,11 @@ from app.domain.models import Scope
 from app.services.catalog import catalog_service, dashboard_snapshot
 
 router = APIRouter()
-
-
-@router.get("/providers")
-def list_providers() -> dict:
-    return listed(catalog_service.providers())
+router.include_router(platform_router)
 
 
 add_list_route(router, "/regions", catalog_service.regions)
-add_list_route(router, "/accounts", catalog_service.accounts)
-add_list_route(router, "/environments", catalog_service.environments)
 add_list_route(router, "/clusters", catalog_service.clusters)
-add_list_route(router, "/applications", catalog_service.applications)
 router.include_router(certificates_router)
 add_list_route(router, "/secrets", catalog_service.secrets)
 add_list_route(router, "/health-checks", catalog_service.health_checks)
@@ -82,8 +76,3 @@ def get_dashboard(scope: Scope = Depends(parse_scope)) -> dict:
 @router.get("/admin/users")
 def list_admin_users() -> dict:
     return listed(catalog_service.admin_users())
-
-
-@router.get("/admin/integrations")
-def list_admin_integrations() -> dict:
-    return listed(catalog_service.admin_integrations())

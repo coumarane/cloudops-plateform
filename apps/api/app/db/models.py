@@ -42,6 +42,16 @@ class CloudAccountRow(Base):
     credential_fingerprint: Mapped[str] = mapped_column(String(64), default="")
     last_validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     validation_status: Mapped[str] = mapped_column(String(32), default="")
+    managed_provider_id: Mapped[str] = mapped_column(String(64), default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    display_name: Mapped[str] = mapped_column(String(128), default="")
+    description: Mapped[str] = mapped_column(String(255), default="")
+    auth_strategy: Mapped[str] = mapped_column(String(32), default="")
+    ram_role: Mapped[str] = mapped_column(String(512), default="")
+    cloud_regions_json: Mapped[str] = mapped_column(Text, default="[]")
+    last_error_class: Mapped[str] = mapped_column(String(64), default="")
+    identity_account: Mapped[str] = mapped_column(String(64), default="")
+    identity_principal: Mapped[str] = mapped_column(String(255), default="")
 
 
 class CloudEnvironmentRow(Base):
@@ -65,6 +75,10 @@ class CloudEnvironmentRow(Base):
     last_error_class: Mapped[str] = mapped_column(String(64), default="")
     last_error_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_attempted_scan_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    name: Mapped[str] = mapped_column(String(128), default="")
+    code: Mapped[str] = mapped_column(String(64), default="")
+    description: Mapped[str] = mapped_column(String(255), default="")
+    readiness_status: Mapped[str] = mapped_column(String(32), default="NOT_CONFIGURED")
 
 
 class EksClusterRow(Base):
@@ -90,6 +104,8 @@ class EksClusterRow(Base):
     environment_id: Mapped[str] = mapped_column(String(128), default="")
     cluster_type: Mapped[str] = mapped_column(String(64), default="")
     extra_json: Mapped[str] = mapped_column(Text, default="{}")
+    ignored: Mapped[bool] = mapped_column(Boolean, default=False)
+    monitoring_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
 class EksClusterHealthRow(Base):
@@ -170,6 +186,8 @@ class PlatformJobRow(Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     error_class: Mapped[str] = mapped_column(String(64), default="")
     target_id: Mapped[str] = mapped_column(String(128), default="")
+    resources_found: Mapped[int] = mapped_column(Integer, default=0)
+    error_count: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class LiveScopeStateRow(Base):
@@ -1148,6 +1166,76 @@ class MaintenanceWindowRow(Base):
     change_ticket: Mapped[str] = mapped_column(String(64), default="")
     created_by: Mapped[str] = mapped_column(String(128), default="")
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class ManagedProviderRow(Base):
+    __tablename__ = "managed_providers"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    provider_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    description: Mapped[str] = mapped_column(String(255), default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    auth_strategy: Mapped[str] = mapped_column(String(32), default="")
+    status: Mapped[str] = mapped_column(String(32), default="NOT_CONFIGURED")
+    last_validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_synchronized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    validation_status: Mapped[str] = mapped_column(String(32), default="")
+    error_category: Mapped[str] = mapped_column(String(64), default="")
+    identity_account: Mapped[str] = mapped_column(String(64), default="")
+    identity_principal: Mapped[str] = mapped_column(String(255), default="")
+    extra_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ManagedApplicationRow(Base):
+    __tablename__ = "managed_applications"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    description: Mapped[str] = mapped_column(String(255), default="")
+    owner_team: Mapped[str] = mapped_column(String(128), default="")
+    repository_id: Mapped[str] = mapped_column(String(128), default="")
+    pipeline_id: Mapped[str] = mapped_column(String(128), default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    extra_json: Mapped[str] = mapped_column(Text, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ApplicationEnvironmentBindingRow(Base):
+    __tablename__ = "application_environment_bindings"
+    __table_args__ = (UniqueConstraint("application_id", "environment_id", name="uq_app_env_binding"),)
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    application_id: Mapped[str] = mapped_column(String(64), ForeignKey("managed_applications.id"), nullable=False)
+    environment_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    cluster_id: Mapped[str] = mapped_column(String(128), default="")
+    namespace: Mapped[str] = mapped_column(String(255), default="")
+    workload: Mapped[str] = mapped_column(String(255), default="")
+    health_endpoint: Mapped[str] = mapped_column(String(512), default="")
+
+
+class PlatformSettingRow(Base):
+    __tablename__ = "platform_settings"
+
+    key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    value: Mapped[str] = mapped_column(Text, default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_by: Mapped[str] = mapped_column(String(128), default="")
+
+
+class PlatformAuditRow(Base):
+    __tablename__ = "platform_audit_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    action: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    actor: Mapped[str] = mapped_column(String(128), nullable=False)
+    object_name: Mapped[str] = mapped_column(String(255), default="")
+    result: Mapped[str] = mapped_column(String(32), default="succeeded")
+    detail: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class AlertAuditRow(Base):

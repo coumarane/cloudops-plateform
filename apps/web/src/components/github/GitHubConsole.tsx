@@ -102,7 +102,7 @@ export function GitHubConsole({ initial }: { initial: GithubFilters }) {
             <Kpi label="Unmapped repos" value={overview.unmappedRepositories} tone={overview.unmappedRepositories ? "warning" : undefined} />
             <Kpi label="Unmapped GitHub envs" value={overview.unmappedGithubEnvironments} tone={overview.unmappedGithubEnvironments ? "warning" : undefined} />
           </KpiGrid>
-          <QueryState state={overviewState} loadingLabel="Loading GitHub overview…" emptyLabel="No GitHub data yet. Configure a GitHub App or keep using mock workflow runs." isEmpty={() => false}>
+          <QueryState state={overviewState} loadingLabel="Loading GitHub overview…" emptyLabel="No GitHub data yet. Add a GitHub App under Administration → Integrations." isEmpty={() => false}>
             {() => (
               <CatalogPanel title="Recent workflow failures" hint="Failed GitHub Actions runs. Full logs stay on GitHub.">
                 <RunTable runs={(overview.recentFailures || []).filter(Boolean) as GithubWorkflowRun[]} onOpen={(id) => setQuery({ run: id })} />

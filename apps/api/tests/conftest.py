@@ -7,6 +7,8 @@ os.environ.setdefault("AWS_EC2_METADATA_DISABLED", "true")
 os.environ.setdefault("CLOUDOPS_SECRET_BACKEND", "local")
 os.environ.setdefault("CLOUDOPS_ALLOW_LOCAL_SECRETS", "true")
 os.environ.setdefault("CLOUDOPS_REQUIRE_AUTH", "false")
+os.environ.setdefault("CLOUDOPS_DEMO_MODE", "true")
+os.environ.setdefault("CLOUDOPS_SEED_TOPOLOGY", "true")
 
 from app.db.session import init_db
 
@@ -24,6 +26,7 @@ from app.db.models import (
     CertificateHistoryRow,
     CertificateValidationRow,
     CloudEnvironmentRow,
+    CloudAccountRow,
     CredentialAuditRow,
     CredentialRotationEventRow,
     CredentialRow,
@@ -79,6 +82,11 @@ from app.db.models import (
     NotificationDestinationRow,
     NotificationPolicyRow,
     NotificationPolicyStepRow,
+    ApplicationEnvironmentBindingRow,
+    ManagedApplicationRow,
+    ManagedProviderRow,
+    PlatformSettingRow,
+    PlatformAuditRow,
 )
 from app.db.session import SessionLocal
 from app.secrets.backends.local import LocalDevSecretBackend
@@ -108,11 +116,16 @@ def reset_live_tables() -> None:
         HealthIncidentRow,
         ApplicationDependencyRow,
         ApplicationResourceMappingRow,
-        ApplicationHealthRow,
-        ResourceHealthRow,
-        HealthCheckDefinitionRow,
-        HealthScanLockRow,
-        NotificationDeliveryRow,
+    ApplicationHealthRow,
+    ResourceHealthRow,
+    HealthCheckDefinitionRow,
+    HealthScanLockRow,
+    ApplicationEnvironmentBindingRow,
+    ManagedApplicationRow,
+    ManagedProviderRow,
+    PlatformSettingRow,
+    PlatformAuditRow,
+    NotificationDeliveryRow,
         AlertEventRow,
         AlertAuditRow,
         AlertSuppressionRow,
@@ -152,8 +165,21 @@ def reset_live_tables() -> None:
         AcmCertificateRow,
         PlatformJobRow,
         LiveScopeStateRow,
+        ApplicationEnvironmentBindingRow,
+        ManagedApplicationRow,
+        ManagedProviderRow,
+        PlatformSettingRow,
+        PlatformAuditRow,
     ):
         session.query(model).delete()
+    managed_ids = [
+        row.id for row in session.query(CloudAccountRow).filter(CloudAccountRow.managed_provider_id != "")
+    ]
+    if managed_ids:
+        session.query(CloudEnvironmentRow).filter(CloudEnvironmentRow.account_id.in_(managed_ids)).delete(
+            synchronize_session=False
+        )
+        session.query(CloudAccountRow).filter(CloudAccountRow.id.in_(managed_ids)).delete(synchronize_session=False)
     for row in session.query(CloudEnvironmentRow):
         row.discovery_active = False
         row.last_discovery_at = None

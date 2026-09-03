@@ -122,14 +122,14 @@ export function CatalogPanel({
   children,
 }: {
   title: string;
-  hint: string;
+  hint?: string;
   children: ReactNode;
 }) {
   return (
     <section className="rounded border border-outline bg-white">
       <div className="border-b border-outline bg-surface-low px-4 py-3">
         <h2 className="text-[15px] font-semibold text-ink">{title}</h2>
-        <p className="mt-1 text-xs text-muted">{hint}</p>
+        {hint ? <p className="mt-1 text-xs text-muted">{hint}</p> : null}
       </div>
       {children}
     </section>

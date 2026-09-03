@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { containsSecretValue, filterAlerts, filterRows, summarizeKpis } from "./dashboard";
+import { containsSecretValue, filterAlerts, filterRows, summarizeKpis, cellIsUnconfigured } from "./dashboard";
 import type { MatrixRow, OperationalAlert } from "./types";
 
 const MATRIX_ROWS: MatrixRow[] = [
@@ -95,5 +95,25 @@ describe("dashboard aggregations", () => {
     });
     expect(alerts).toHaveLength(1);
     expect(alerts[0]?.href).toContain("/certificates");
+  });
+
+  it("treats unconfigured matrix cells as empty instead of healthy", () => {
+    expect(
+      cellIsUnconfigured({
+        clustersHealthy: 0,
+        clustersDegraded: 0,
+        clustersUnreachable: 0,
+        appsHealthy: 0,
+        appsDegraded: 0,
+        certsExpiring14d: 0,
+        secretsOverdue: 0,
+        secretsDueSoon: 0,
+        failedDeploys: 0,
+        githubFailures: 0,
+        pipelineFailures: 0,
+        openAlerts: 0,
+      }),
+    ).toBe(true);
+    expect(cellIsUnconfigured({ ...empty(), live: true, clustersHealthy: 0, appsHealthy: 0 })).toBe(false);
   });
 });

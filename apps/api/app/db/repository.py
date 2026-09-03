@@ -106,17 +106,19 @@ class InventoryRepository:
         platform_region: str,
         environment: str,
         provider: str | None = None,
+        account_alias: str | None = None,
     ) -> list[EksClusterRow]:
         now = utcnow()
         seen_ids: set[str] = set()
         rows: list[EksClusterRow] = []
         resolved_provider = provider or (clusters[0].provider if clusters else "AWS")
+        resolved_alias = account_alias or (clusters[0].account_alias if clusters else "")
         if clusters:
             environment_id = clusters[0].environment_id or environment_scope_id(
                 clusters[0].account_alias, environment
             )
         else:
-            environment_id = environment_scope_id("", environment)
+            environment_id = environment_scope_id(resolved_alias, environment)
         for cluster in clusters:
             public_id = cluster_public_id(
                 cluster.name, cluster.cloud_region, cluster.aws_account_id, cluster.provider
@@ -145,13 +147,14 @@ class InventoryRepository:
             row.cluster_type = cluster.cluster_type
             row.extra_json = cluster.extra_json or "{}"
             rows.append(row)
-        existing = self.session.scalars(
-            select(EksClusterRow).where(
-                EksClusterRow.provider == resolved_provider,
-                EksClusterRow.platform_region == platform_region,
-                EksClusterRow.environment == environment,
-            )
-        ).all()
+        query = select(EksClusterRow).where(
+            EksClusterRow.provider == resolved_provider,
+            EksClusterRow.platform_region == platform_region,
+            EksClusterRow.environment == environment,
+        )
+        if resolved_alias:
+            query = query.where(EksClusterRow.account_alias == resolved_alias)
+        existing = self.session.scalars(query).all()
         for row in existing:
             if row.id not in seen_ids:
                 row.present = False
@@ -170,6 +173,7 @@ class InventoryRepository:
                     platform_region=platform_region,
                     environment=environment,
                     provider=items[0].provider,
+                    account_alias=items[0].account_alias,
                 )
             )
             env_id = items[0].environment_id or environment_scope_id(items[0].account_alias, environment)

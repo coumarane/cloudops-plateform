@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.db.repository import InventoryRepository
 from app.db.session import SessionLocal
@@ -12,7 +13,8 @@ from app.providers.common.k8s_certs import apply_ingress_usage, ingress_secret_h
 from app.providers.common.models import DiscoveredCertificate, DiscoveredCluster
 from app.services.aws_sync import _clusters_by_account, _finish_fleet_job, _mark_job_running, _run_bounded
 from app.services.mappers import discovered_from_row
-from app.topology.alibaba import load_alibaba_topology
+from app.platform.fleet import accounts_for_job
+from app.providers.factory import provider_adapter
 from app.topology.models import AccountBinding, environment_scope_id
 
 logger = get_logger(__name__)
@@ -20,18 +22,18 @@ ADAPTER = AlibabaProviderAdapter()
 
 
 def discover_account(account: AccountBinding) -> list[DiscoveredCluster]:
-    return ADAPTER.discover_clusters(account)
+    return provider_adapter("Alibaba").discover_clusters(account)
 
 
 def health_account(account: AccountBinding, clusters: list[tuple[str, DiscoveredCluster]]) -> list[tuple]:
-    return ADAPTER.scan_health(account, clusters)
+    return provider_adapter("Alibaba").collect_health(account, clusters)
 
 
 def certificates_account(account: AccountBinding) -> list[DiscoveredCertificate]:
     config = account.connection_config()
     factory = AlibabaClientFactory(config)
     try:
-        certificates = ADAPTER.discover_certificates(account)
+        certificates = provider_adapter("Alibaba").discover_certificates(account)
     except AlibabaTransientError:
         raise
     except Exception as error:
@@ -122,6 +124,7 @@ def _store_discovery(account: AccountBinding, clusters: list[DiscoveredCluster],
             platform_region=account.logical_region,
             environment=environment,
             provider=account.provider,
+            account_alias=account.alias,
         )
         repo.mark_scope_success(environment_scope_id(account.alias, environment), "discovery")
     logger.info("Alibaba discovery stored alias=%s count=%s", account.alias, len(clusters))
@@ -150,44 +153,48 @@ def _store_validation(account: AccountBinding, identity: dict[str, str], repo: I
     return 1
 
 
+def _alibaba_workers(accounts: list) -> int:
+    return max(1, min(settings.alibaba_scan_concurrency, len(accounts) or 1))
+
+
 def run_account_validation(job_id: str) -> int:
-    topology = load_alibaba_topology()
+    accounts = accounts_for_job(job_id, "Alibaba")
     _mark_job_running(job_id)
-    results = _run_bounded(list(topology.accounts), validate_account, topology.scan_concurrency)
+    results = _run_bounded(accounts, validate_account, _alibaba_workers(accounts))
     return _finish_fleet_job(job_id, kind="validation", results=results, persist=_store_validation)
 
 
 def run_cluster_discovery(job_id: str) -> int:
-    topology = load_alibaba_topology()
+    accounts = accounts_for_job(job_id, "Alibaba")
     _mark_job_running(job_id)
-    results = _run_bounded(list(topology.accounts), discover_account, topology.scan_concurrency)
+    results = _run_bounded(accounts, discover_account, _alibaba_workers(accounts))
     return _finish_fleet_job(job_id, kind="discovery", results=results, persist=_store_discovery)
 
 
 def run_health_scan(job_id: str) -> int:
-    topology = load_alibaba_topology()
+    accounts = accounts_for_job(job_id, "Alibaba")
     _mark_job_running(job_id)
-    clusters = _clusters_by_account(list(topology.accounts))
+    clusters = _clusters_by_account(accounts)
 
     def collect(account: AccountBinding):
         return health_account(account, clusters.get(account.alias, []))
 
-    results = _run_bounded(list(topology.accounts), collect, topology.scan_concurrency)
+    results = _run_bounded(accounts, collect, _alibaba_workers(accounts))
     return _finish_fleet_job(job_id, kind="health", results=results, persist=_store_health)
 
 
 def run_certificate_scan(job_id: str) -> int:
-    topology = load_alibaba_topology()
+    accounts = accounts_for_job(job_id, "Alibaba")
     _mark_job_running(job_id)
-    results = _run_bounded(list(topology.accounts), certificates_account, topology.scan_concurrency)
+    results = _run_bounded(accounts, certificates_account, _alibaba_workers(accounts))
     return _finish_fleet_job(job_id, kind="certificates", results=results, persist=_store_certificates)
 
 
 def scan_alibaba_certificates() -> int:
     from app.services.aws_sync import persist_certificate_results
 
-    topology = load_alibaba_topology()
-    results = _run_bounded(list(topology.accounts), certificates_account, topology.scan_concurrency)
+    accounts = accounts_for_job("", "Alibaba")
+    results = _run_bounded(accounts, certificates_account, _alibaba_workers(accounts))
     return persist_certificate_results(results)
 
 

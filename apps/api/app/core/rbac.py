@@ -55,6 +55,30 @@ PERMISSIONS = {
     "maintenance_window:create",
     "maintenance_window:update",
     "maintenance_window:delete",
+    "provider:read",
+    "provider:create",
+    "provider:update",
+    "provider:delete",
+    "provider:validate",
+    "account:read",
+    "account:create",
+    "account:update",
+    "account:delete",
+    "account:validate",
+    "environment:read",
+    "environment:create",
+    "environment:update",
+    "environment:delete",
+    "environment:discover",
+    "application:read",
+    "application:create",
+    "application:update",
+    "application:delete",
+    "platform_setting:read",
+    "platform_setting:update",
+    "integration:read",
+    "integration:update",
+    "integration:sync",
 }
 
 ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
@@ -98,6 +122,25 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "maintenance_window:create",
             "maintenance_window:update",
             "maintenance_window:delete",
+            "provider:read",
+            "provider:create",
+            "provider:update",
+            "provider:validate",
+            "account:read",
+            "account:create",
+            "account:update",
+            "account:validate",
+            "environment:read",
+            "environment:create",
+            "environment:update",
+            "environment:discover",
+            "application:read",
+            "application:create",
+            "application:update",
+            "platform_setting:read",
+            "integration:read",
+            "integration:update",
+            "integration:sync",
         }
     ),
     "OperationsEngineer": frozenset(
@@ -115,6 +158,12 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "alert_rule:read",
             "notification:read",
             "maintenance_window:read",
+            "provider:read",
+            "account:read",
+            "environment:read",
+            "application:read",
+            "platform_setting:read",
+            "integration:read",
         }
     ),
     "SecurityAuditor": frozenset(
@@ -134,6 +183,12 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "alert_rule:read",
             "notification:read",
             "maintenance_window:read",
+            "provider:read",
+            "account:read",
+            "environment:read",
+            "application:read",
+            "platform_setting:read",
+            "integration:read",
         }
     ),
     "Developer": frozenset(
@@ -148,6 +203,10 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "health:read",
             "incident:read",
             "alert:read",
+            "provider:read",
+            "account:read",
+            "environment:read",
+            "application:read",
         }
     ),
     "ReadOnly": frozenset(
@@ -166,6 +225,12 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
             "alert_rule:read",
             "notification:read",
             "maintenance_window:read",
+            "provider:read",
+            "account:read",
+            "environment:read",
+            "application:read",
+            "platform_setting:read",
+            "integration:read",
         }
     ),
 }
@@ -219,3 +284,13 @@ def principal_from_headers(
 def require_permission(principal: Principal, permission: str) -> None:
     if not principal.can(permission):
         raise HTTPException(status_code=403, detail="Permission denied")
+
+
+def require_bootstrap_admin(principal: Principal, permission: str) -> None:
+    require_permission(principal, permission)
+    mutating = permission.split(":")[-1] not in {"read"}
+    if mutating and not settings.bootstrap_admin_allowed():
+        raise HTTPException(
+            status_code=403,
+            detail="Bootstrap administration is disabled outside local development",
+        )
