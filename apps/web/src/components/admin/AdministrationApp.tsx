@@ -85,7 +85,7 @@ export function AdministrationApp() {
               )
             }
           </QueryState>
-          <div className="rounded border border-outline bg-white px-4">
+          <div className="rounded border border-outline bg-white">
             <AdminTabs items={SECTIONS} value={section} labels={LABELS} onChange={setSection} />
           </div>
           {section === "providers" ? <ProvidersPanel nonce={nonce} onNotice={refresh} /> : null}

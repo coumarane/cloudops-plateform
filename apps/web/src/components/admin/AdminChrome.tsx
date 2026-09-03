@@ -128,7 +128,7 @@ export function AdminTabs<T extends string>({
 }) {
   return (
     <div className="border-b border-outline bg-white">
-      <nav className="flex gap-6 overflow-x-auto px-1" aria-label={ariaLabel}>
+      <nav className="flex gap-6 overflow-x-auto px-4" aria-label={ariaLabel}>
         {items.map((item) => {
           const active = item === value;
           return (
@@ -187,20 +187,20 @@ export function AdminToast({ message, onDismiss }: { message: string; onDismiss:
 
 export function WizardStepper({ steps, current }: { steps: readonly string[]; current: number }) {
   return (
-    <ol className="mb-6 flex items-center gap-2">
+    <ol className="mb-6 grid grid-cols-5 gap-2">
       {steps.map((label, index) => {
         const step = index + 1;
         const done = step < current;
         const active = step === current;
         return (
-          <li key={label} className="flex min-w-0 flex-1 items-center gap-2">
+          <li key={label} className="flex flex-col items-center text-center">
             <span
               className={
                 active
-                  ? "flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-action text-xs font-bold text-white"
+                  ? "flex h-7 w-7 items-center justify-center rounded-full bg-action text-xs font-bold text-white"
                   : done
-                    ? "flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-healthy text-xs font-bold text-white"
-                    : "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-outline text-xs font-bold text-muted"
+                    ? "flex h-7 w-7 items-center justify-center rounded-full bg-healthy text-xs font-bold text-white"
+                    : "flex h-7 w-7 items-center justify-center rounded-full border border-outline text-xs font-bold text-muted"
               }
             >
               {done ? "✓" : step}
@@ -208,15 +208,12 @@ export function WizardStepper({ steps, current }: { steps: readonly string[]; cu
             <span
               className={
                 active
-                  ? "hidden truncate text-[11px] font-bold uppercase tracking-wide text-action sm:block"
-                  : "hidden truncate text-[11px] font-bold uppercase tracking-wide text-muted sm:block"
+                  ? "mt-2 text-[10px] font-bold uppercase tracking-wide text-action"
+                  : "mt-2 text-[10px] font-bold uppercase tracking-wide text-muted"
               }
             >
               {label}
             </span>
-            {index < steps.length - 1 ? (
-              <span className={`h-px min-w-4 flex-1 ${done ? "bg-healthy" : "bg-outline"}`} />
-            ) : null}
           </li>
         );
       })}
